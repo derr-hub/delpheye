@@ -51,7 +51,8 @@ $manifest = [ordered]@{
   }
 }
 $json = Join-Path $bundle "latest.json"
-$manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $json -Encoding utf8
+# UTF-8 without a byte-order mark: Windows PowerShell's "utf8" adds one, which the updater rejects.
+[System.IO.File]::WriteAllText($json, ($manifest | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
 Write-Host ""
 Write-Host "Release v$version is ready. Attach these two files to a GitHub release tagged v${version}:"
 Write-Host "  $setup"
