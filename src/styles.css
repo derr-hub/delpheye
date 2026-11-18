@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* DelphEye design tokens — Dark Slate, Fluent 2 semantics. */
+@theme {
+  --color-bg: #0f1216;
+  --color-surface: #171b21;
+  --color-raised: #1f242c;
+  --color-line: #2a313b;
+  --color-fg: #e6e9ee;
+  --color-muted: #8b95a5;
+  --color-accent: #4cc2ff;
+  --color-safe: #6ccb5f;
+  --color-warn: #fce100;
+  --color-risk: #ff99a4;
+
+  --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+
+  --radius-card: 14px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin, unobtrusive scrollbars. */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 999px;
+  border: 3px solid var(--color-bg);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Mica (Windows 11): the window backdrop shows through the title bar and navigation; pages
+   sit on a translucent layer above it, the way WinUI apps are built. */
+.content-layer {
+  background: var(--color-bg);
+}
+html.mica,
+html.mica body {
+  background: transparent;
+}
+html.mica .shell {
+  background: transparent !important;
+}
+html.mica .content-layer {
+  background: rgb(15 18 22 / 0.66);
+  border-top-left-radius: 12px;
+  box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* Reveal highlight: borders near the pointer catch a soft light, as if the surface were glass.
+   App.tsx keeps --rx / --ry (pointer position) and --ro (closeness) up to date. */
+.reveal {
+  position: relative;
+  isolation: isolate;
+}
+.reveal::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: radial-gradient(180px circle at var(--rx, -999px) var(--ry, -999px), rgb(76 194 255 / 0.55), rgb(76 194 255 / 0.14) 45%, transparent 72%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: var(--ro, 0);
+  transition: opacity 0.25s ease-out;
+}
+.reveal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(260px circle at var(--rx, -999px) var(--ry, -999px), rgb(255 255 255 / 0.035), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+.reveal:hover::before {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal::after,
+  .reveal::before {
+    display: none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
