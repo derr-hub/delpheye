@@ -1,51 +1,65 @@
-# DelphEye
+# 👁️ DelphEye
 
 **A Windows checkup that explains what it finds — and lets you decide.**
 
-DelphEye looks first and changes nothing until you choose. Every finding comes with a plain
-explanation of what it is, why it matters and what to do about it. Interface in Ukrainian and
-English.
+DelphEye inspects your system first and changes nothing until you choose. Every finding comes with a plain explanation of what it is, why it matters, and what to do about it. 
 
-## What it does
+🌐 **Interface:** Ukrainian & English | 💻 **OS:** Windows 10 / 11 (64-bit)
 
-- **Overview** — a short summary of what is fine and what is not.
-- **Cleanup** — temporary files and caches, with a report before anything is deleted.
-- **App leftovers** — folders and registry keys left behind by uninstalled programs; moved to a
-  quarantine for 7 days, so anything can be put back.
-- **Startup** — programs, scheduled tasks and services that start with Windows, how much each
-  slows the boot, and whether it is safe to turn off. Every change can be undone.
-- **Disk** — instant search through the NTFS file table, "time layers" (which data has not been
-  touched for years), duplicates, Recycle Bin.
-- **Monitoring** — sensors, throttling measured without drivers, a stress test for the processor,
-  memory and graphics card with error checking, a cooling profile compared run to run, and the
-  crash record explained incident by incident.
-- **Processes** — a process tree with what each one is and what ending it would do.
-- **Network** — who talks to which servers, traffic per program, open ports, suspicious
-  connections and a connection check (router, internet, DNS).
-- **Protection** — places malware hides, signs of tampering, a Windows security score and
-  optional online file reputation (only file hashes are sent).
-- **Journal** — everything DelphEye changed, with the means to restore it.
+[![Download Latest Release](https://img.shields.io/github/v/release/derr-hub/delpheye?label=Download%20DelphEye&style=for-the-badge&color=2ea44f)](https://github.com/derr-hub/delpheye/releases/latest)
 
-## Install
+---
 
-Download `DelphEye_x.y.z_x64-setup.exe` from [Releases](../../releases/latest) and run it. No
-administrator rights are needed to install. Windows may show "Windows protected your PC"
-because the app is not commercially signed: choose *More info → Run anyway*. Installed copies
-update themselves from this repository's releases.
+<!-- ВСТАВЬТЕ СЮДА 1-2 СКРИНШОТА ИНТЕРФЕЙСА -->
+<!-- Пример: ![DelphEye Overview](screenshots/overview.png) -->
 
-Requires Windows 10 or 11 (64-bit).
+---
 
-## Building
+## ✨ Why DelphEye?
+* **Safe by default:** Zero automatic changes. Everything can be reviewed first and rolled back later.
+* **No admin rights required to install:** Runs cleanly in user space without cluttering the system.
+* **Built-in auto-updates:** Installed copies automatically check and update from this repository's releases.
+* **Privacy-first:** All diagnostics run locally. Online file reputation checks are optional and send **only file hashes**.
 
-Rust (stable), Node.js 20+, and the .NET 9 SDK for the sensor helper.
+---
 
-```powershell
+## 🛠️ What It Does
+
+* **Overview** — A concise summary of what is healthy on your PC and what needs attention.
+* **Cleanup** — Scans temporary files and caches, generating a clear report before anything is deleted.
+* **App Leftovers** — Finds folders and registry keys left behind by uninstalled software. Items are moved to a **7-day quarantine**, so anything can be restored.
+* **Startup** — Analyzes startup programs, scheduled tasks, and services, showing boot impact and whether disabling them is safe (with full undo support).
+* **Disk** — Instant search directly through the NTFS file table (MFT), *"time layers"* (data untouched for years), duplicate finder, and Recycle Bin breakdown.
+* **Monitoring** — Hardware sensors, throttling detection without extra drivers, CPU/RAM/GPU stress tests with error checking, run-to-run cooling profiles, and crash records explained incident by incident.
+* **Processes** — Detailed process tree explaining what each process actually does and what happens if you terminate it.
+* **Network** — Shows which apps talk to which servers, per-program traffic, open ports, suspicious connections, and a network health check (router, internet, DNS).
+* **Protection** — Scans common malware hiding spots, checks for signs of system tampering, calculates a Windows security score, and offers optional hash-based file reputation checks.
+* **Journal** — A complete log of every change made by DelphEye with one-click restoration.
+
+---
+
+## 📥 Installation
+
+1. Go to [**Releases**](https://github.com/derr-hub/delpheye/releases/latest) and download `DelphEye_x.y.z_x64-setup.exe`.
+2. Run the installer (**no administrator rights required**).
+3. *Note on Windows SmartScreen:* Because the app is open-source and not commercially signed, Windows may show *"Windows protected your PC"*. Click **More info → Run anyway**.
+
+---
+
+## 🔧 Building from Source
+
+### Prerequisites
+* **Rust** (stable)
+* **Node.js** 20+
+* **.NET 9 SDK** (required for the hardware sensor helper)
+
+### Commands
+```bash
+# Install dependencies
 npm install
-npm run tauri dev                              # development
-scripts\release.ps1 -Notes "What changed"      # signed release + latest.json
-```
 
-The release script expects the update signing key at `%USERPROFILE%\.tauri\delpheye.key`; it is
-never part of this repository.
+# Run in development mode
+npm run tauri dev
 
-Built with Tauri 2, Rust, React and TypeScript; hardware sensors through LibreHardwareMonitor.
+# Build a signed release + latest.json
+scripts\release.ps1 -Notes "What changed"
