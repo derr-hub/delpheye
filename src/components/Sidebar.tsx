@@ -14,12 +14,14 @@ import {
   PackageCheck,
   Webcam,
   Wifi,
+  BellRing,
   Rocket,
   type LucideIcon,
 } from "lucide-react";
 
 import { useApp, type Page } from "../lib/app";
 import { UpdateChip } from "./UpdateChip";
+import { unread, useWatcher } from "../lib/watcher";
 
 export const PAGES: { id: Page; icon: LucideIcon }[] = [
   { id: "overview", icon: LayoutDashboard },
@@ -34,6 +36,7 @@ export const PAGES: { id: Page; icon: LucideIcon }[] = [
   { id: "wifi", icon: Wifi },
   { id: "privacy", icon: Webcam },
   { id: "security", icon: ShieldHalf },
+  { id: "watcher", icon: BellRing },
   { id: "journal", icon: History },
 ];
 
@@ -41,6 +44,8 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
   const { t, i18n } = useTranslation();
   const elevated = useApp((s) => s.status?.elevated);
   const lang = i18n.language.startsWith("uk") ? "uk" : "en";
+  const alerts = useWatcher((s) => s.alerts);
+  const fresh = unread(alerts);
 
   return (
     <nav className="shell flex w-[212px] shrink-0 flex-col bg-bg p-3">
@@ -68,6 +73,11 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
                 )}
                 <Icon size={17} className={`relative ${active ? "text-accent" : ""}`} />
                 <span className="relative">{t(`nav.${id}`)}</span>
+                {id === "watcher" && fresh > 0 && (
+                  <span className="num relative ml-auto rounded-full bg-warn px-1.5 text-[10px] font-semibold text-bg" data-testid="watcher-badge">
+                    {fresh}
+                  </span>
+                )}
               </button>
             </li>
           );

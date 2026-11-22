@@ -23,6 +23,9 @@ import { Startup } from "./pages/Startup";
 import { Updates } from "./pages/Updates";
 import { Privacy } from "./pages/Privacy";
 import { Wifi } from "./pages/Wifi";
+import { Watcher } from "./pages/Watcher";
+import { saveWatcher, startWatcher } from "./lib/watcher";
+import i18n from "./i18n";
 import { startPrivacy } from "./lib/privacy";
 import { Journal } from "./pages/Journal";
 import { Overview } from "./pages/Overview";
@@ -41,6 +44,8 @@ function PageBody({ page }: { page: Page }) {
       return <Privacy />;
     case "wifi":
       return <Wifi />;
+    case "watcher":
+      return <Watcher />;
     case "leftovers":
       return <Leftovers />;
     case "disk":
@@ -115,6 +120,8 @@ function App() {
     startLeftoversEvents();
     startMonitor();
     startPrivacy();
+    startWatcher(i18n.language.startsWith("en") ? "en" : "uk");
+    i18n.on("languageChanged", (lng) => saveWatcher({ lang: lng.startsWith("en") ? "en" : "uk" }));
     loadDrives();
     // A quiet look for a newer release, at most once a day.
     window.setTimeout(() => checkForUpdate(true), 8000);

@@ -15,6 +15,7 @@ mod security;
 mod startup;
 mod system;
 mod updates;
+mod watcher;
 mod wifi;
 
 use tauri::Manager;
@@ -57,6 +58,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(cleanup::CleanupState::default())
         .manage(disk::DiskState::default())
         .manage(leftovers::LeftoversState::default())
@@ -65,12 +67,21 @@ pub fn run() {
         .manage(security::SecurityState::default())
         .manage(updates::UpdatesState::default())
         .manage(router::RouterState::default())
+        .manage(watcher::WatcherState::default())
         .manage(std::sync::Arc::new(network::NetworkState::default()))
         .setup(|app| {
             open_main_window(app)?;
             app.manage(journal::Journal::open_for(app.handle()));
             privacy::start(app.handle().clone());
             wifi::start_history(app.handle().clone());
+            watcher::start(app.handle().clone());
+            watcher::tray(app)?;
+            // Started with Windows: straight to the tray, no window.
+            if std::env::args().any(|a| a == "--background") {
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.hide();
+                }
+            }
             // Whatever has sat in quarantine for its full week is deleted for good.
             let handle = app.handle().clone();
             std::thread::spawn(move || leftovers::purge_expired(&handle.state::<journal::Journal>()));
@@ -125,6 +136,12 @@ pub fn run() {
             router::router_read,
             router::router_disconnect,
             router::router_apply,
+            watcher::watcher_settings,
+            watcher::watcher_save,
+            watcher::watcher_alerts,
+            watcher::watcher_read_all,
+            watcher::watcher_test,
+            watcher::watcher_autostart,
             router::router_debug_hook,
             wifi::wifi_snapshot,
             wifi::wifi_link,
@@ -142,6 +159,15 @@ pub fn run() {
             security::security_reputation,
             security::security_act,
         ])
+        // Closing the window keeps DelphEye watching from the tray, unless the user turned that off.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && window.app_handle().state::<watcher::WatcherState>().settings.lock().unwrap().tray_on_close {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

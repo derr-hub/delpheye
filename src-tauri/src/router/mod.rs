@@ -5,7 +5,7 @@
 //! Only ASUS routers so far. The user types the router's password; it can be kept in Windows
 //! Credential Manager. Everything here only reads.
 
-mod asus;
+pub mod asus;
 mod vault;
 
 use std::sync::Mutex;
@@ -166,6 +166,35 @@ pub async fn router_apply(state: State<'_, RouterState>, action: String, guest: 
 
 async fn tokio_sleep(ms: u64) {
     let _ = tauri::async_runtime::spawn_blocking(move || std::thread::sleep(std::time::Duration::from_millis(ms))).await;
+}
+
+/// For the background watcher: the devices on the router, read with the saved login. Keeps its own
+/// session; a wrong saved password is reported as Err("wrong") and never retried by the caller.
+pub fn watch_clients(session: &mut Option<(String, String)>) -> Result<Vec<asus::Client>, String> {
+    let host = host().ok_or("unreachable")?;
+    let read = |token: &str| asus::hook(&host, token, "get_clientlist()").map(|v| asus::clients(&v));
+    if let Some((h, token)) = session.as_ref() {
+        if *h == host {
+            match read(token) {
+                Err(e) if e == "expired" => {}
+                other => return other,
+            }
+        }
+    }
+    let (user, password) = vault::load(&host).ok_or("no-saved")?;
+    let token = asus::login(&host, &user, &password).map_err(|e| match e {
+        asus::LoginError::Wrong => "wrong".to_string(),
+        asus::LoginError::Captcha => "captcha".to_string(),
+        asus::LoginError::Locked(_) => "locked".to_string(),
+        _ => "unreachable".to_string(),
+    })?;
+    let clients = read(&token)?;
+    *session = Some((host, token));
+    Ok(clients)
+}
+
+pub fn has_saved_login() -> bool {
+    host().is_some_and(|h| vault::exists(&h))
 }
 
 /// Logs out of the router; `forget` also removes the saved login.

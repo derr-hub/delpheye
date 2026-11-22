@@ -115,6 +115,14 @@ fn power() -> (Option<bool>, bool, Option<&'static str>) {
     (on_battery, saver, plan)
 }
 
+/// Free and total bytes of a drive such as "C:".
+pub fn drive_free(drive: &str) -> Option<(u64, u64)> {
+    let (mut free, mut total) = (0u64, 0u64);
+    // SAFETY: plain query.
+    unsafe { GetDiskFreeSpaceExW(&HSTRING::from(format!(r"{drive}\")), Some(&mut free), Some(&mut total), None).ok()? };
+    Some((free, total))
+}
+
 fn system_drive_free() -> Option<(u64, u64)> {
     let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".into());
     let (mut free, mut total) = (0u64, 0u64);

@@ -265,6 +265,24 @@ fn impact(footprint: &Footprint, boot_delay_ms: Option<u64>) -> Impact {
     }
 }
 
+/// What starts with Windows, for the background watcher: (id, name). Windows' own scheduled
+/// tasks and services inside the Windows folder are left out — updates add and remove those.
+pub fn watch_list(windows: &Path) -> Vec<(String, String)> {
+    sources::collect(windows)
+        .into_iter()
+        .filter(|r| match &r.switch {
+            Switch::Task { path } => !path.to_lowercase().starts_with("\\microsoft\\"),
+            Switch::Service { .. } => {
+                let auto = r.service.as_ref().is_some_and(|s| matches!(s.start, sources::StartType::Auto | sources::StartType::Delayed));
+                let in_windows = r.program.as_ref().is_some_and(|p| p.starts_with(windows));
+                auto && !in_windows
+            }
+            Switch::Approved { .. } => true,
+        })
+        .map(|r| (entry_id(&r), r.name.clone()))
+        .collect()
+}
+
 fn entry_id(raw: &Raw) -> String {
     match &raw.switch {
         Switch::Approved { machine, list, value } => {
