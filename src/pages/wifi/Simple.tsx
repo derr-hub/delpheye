@@ -75,7 +75,7 @@ function Hero() {
               />
             ))}
           </div>
-          <p className="mt-1.5 text-[11px] text-muted">{t("wifi.simple.overlapping", { count: own.overlapping })}</p>
+          <p className="mt-1.5 text-[11px] text-muted">{own.overlapping ? t("wifi.simple.overlapping", { count: own.overlapping }) : t("wifi.simple.overlappingNone")}</p>
         </div>
       </div>
     </div>
@@ -131,6 +131,7 @@ function Around() {
             <Bars rssi={b.rssi} />
             <span className={`min-w-0 flex-1 truncate text-[13px] ${b.hidden ? "italic text-muted" : ""}`}>{nameOf(b, t("wifi.hidden"))}</span>
             {b.connected && <span className="rounded bg-accent/15 px-1.5 text-[10px] text-accent">{t("wifi.yours")}</span>}
+            {!b.connected && a.mine.includes(b.bssid) && <span className="rounded bg-raised px-1.5 text-[10px] text-muted">{t("wifi.yourRouter")}</span>}
             <span className="w-12 text-right text-[11px]" style={{ color: BAND_COLORS[b.band] }}>
               {b.band}
             </span>

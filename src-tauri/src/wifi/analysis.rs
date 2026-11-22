@@ -73,9 +73,42 @@ pub struct Analysis {
     pub names: u32,
     pub hidden: u32,
     pub open: u32,
+    /// Access points of the user's own router (connected network, its guest network, other band).
+    pub mine: Vec<String>,
 }
 
 const FLOOR: f32 = -100.0;
+
+/// "Home" and "Home_5G" / "Home-5GHz": one network named per band, not an extra one.
+fn is_band_twin(a: &str, b: &str) -> bool {
+    let strip = |s: &str| {
+        let l = s.to_lowercase();
+        for suffix in ["_5ghz", "-5ghz", " 5ghz", "_5g", "-5g", " 5g", "_2.4ghz", "-2.4ghz", "_2.4g", "-2.4g", "_2g", "-2g", "_6g", "-6g"] {
+            if let Some(x) = l.strip_suffix(suffix) {
+                return x.to_string();
+            }
+        }
+        l
+    };
+    strip(a) == strip(b)
+}
+
+/// Two addresses of one router: routers give their extra networks (guest, other band) addresses
+/// that differ from the main one in a byte or two, often with the "locally administered" bit
+/// set. Different routers — even of one make — differ in at least the last three bytes.
+pub fn same_device(a: &str, b: &str) -> bool {
+    let bytes = |s: &str| -> Option<Vec<u8>> { s.split(':').map(|x| u8::from_str_radix(x, 16).ok()).collect() };
+    let (Some(mut a), Some(mut b)) = (bytes(a), bytes(b)) else { return false };
+    if a.len() != 6 || b.len() != 6 {
+        return false;
+    }
+    a[0] &= !0x02;
+    b[0] &= !0x02;
+    let differ = a.iter().zip(&b).filter(|(x, y)| x != y).count();
+    // The last byte alone also differs between neighbouring units of a vendor's batch, so ask
+    // that some other byte be the one (or one of two) that changed — or the low nibble only.
+    differ == 0 || (differ <= 2 && (a[..5] != b[..5] || (a[5] ^ b[5]) < 0x10))
+}
 
 fn mw(dbm: i32) -> f64 {
     10f64.powf(dbm as f64 / 10.0)
@@ -164,7 +197,12 @@ fn candidates(band: &'static str, width: u32, others: &[&Bss]) -> Vec<ChannelLoa
 pub fn analyse(all: &[Bss], link: Option<&Link>) -> Analysis {
     let own_bss = all.iter().find(|b| b.connected);
     let own_ssid = own_bss.map(|b| b.ssid.clone()).or(link.map(|l| l.ssid.clone()));
-    let others: Vec<&Bss> = all.iter().filter(|b| own_ssid.as_deref().is_none_or(|s| b.ssid != s || b.hidden)).collect();
+    // The user's router: every radio named like the connected network, plus its other networks
+    // (guest, the other band) — those are the same box and coordinate, they are not neighbours.
+    let mut mine: Vec<&Bss> = all.iter().filter(|b| own_ssid.as_deref().is_some_and(|s| !b.hidden && b.ssid == s)).collect();
+    let more: Vec<&Bss> = all.iter().filter(|b| !mine.iter().any(|m| m.bssid == b.bssid) && mine.iter().any(|m| same_device(&m.bssid, &b.bssid) && (m.channel == b.channel || m.band != b.band))).collect();
+    mine.extend(more);
+    let others: Vec<&Bss> = all.iter().filter(|b| !mine.iter().any(|m| m.bssid == b.bssid)).collect();
 
     let mut bands = Vec::new();
     for band in ["2.4", "5", "6"] {
@@ -220,6 +258,13 @@ pub fn analyse(all: &[Bss], link: Option<&Link>) -> Analysis {
         if b.wps {
             add!("own-wps", "warn", json!({}));
         }
+        // Other networks the same router broadcasts: often a guest network switched on by default.
+        let mut extra: Vec<&str> = mine.iter().filter(|m| m.ssid != o.ssid && !m.hidden && !is_band_twin(&m.ssid, &o.ssid)).map(|m| m.ssid.as_str()).collect();
+        extra.sort_unstable();
+        extra.dedup();
+        if !extra.is_empty() {
+            add!("own-extra", "info", json!({ "names": extra.join(", "), "count": extra.len() }));
+        }
         match o.signal {
             "weak" | "bad" => add!("signal-weak", "warn", json!({ "rssi": o.rssi })),
             "fair" => add!("signal-fair", "info", json!({ "rssi": o.rssi })),
@@ -265,6 +310,7 @@ pub fn analyse(all: &[Bss], link: Option<&Link>) -> Analysis {
         names: names.len() as u32,
         hidden: all.iter().filter(|b| b.hidden).count() as u32,
         open,
+        mine: mine.iter().map(|b| b.bssid.clone()).collect(),
     }
 }
 
@@ -338,6 +384,30 @@ mod tests {
         let a = analyse(&all, None);
         let best = &a.bands.iter().find(|b| b.band == "5").unwrap().candidates[0];
         assert!(!best.dfs, "{best:?}");
+    }
+
+    #[test]
+    fn one_routers_networks_are_recognised() {
+        assert!(same_device("0A:BF:B8:D7:40:70", "0A:BF:B8:E7:40:70")); // ASUS guest
+        assert!(same_device("B0:BE:76:09:28:EE", "B0:BE:76:09:28:ED")); // TP-Link 2.4 / 5 GHz
+        assert!(same_device("50:FF:20:49:D2:45", "50:FF:20:49:D2:47"));
+        assert!(!same_device("70:4F:57:CE:98:1C", "7C:8B:CA:86:2C:74"));
+        assert!(!same_device("B0:BE:76:09:28:EE", "B0:BE:76:09:28:4E")); // another unit
+    }
+
+    #[test]
+    fn guest_network_of_own_router_is_not_interference() {
+        let all = vec![ap("KARID", "0A:BF:B8:D7:40:70", 5500, 20, -60, true), ap("ASUS_Guest", "0A:BF:B8:E7:40:70", 5500, 20, -60, false)];
+        let a = analyse(&all, None);
+        let own = a.own.unwrap();
+        assert_eq!((own.overlapping, own.congestion), (0, "free"));
+        assert_eq!(a.mine.len(), 2);
+        assert!(!a.advice.iter().any(|x| x.id == "change-channel"));
+        assert!(a.advice.iter().any(|x| x.id == "own-extra"));
+        assert!(is_band_twin("TP-Link_28EE", "TP-Link_28EE_5G"));
+        // A look-alike address on another channel of the same band is a neighbour after all.
+        let all = vec![ap("KARID", "0A:BF:B8:D7:40:70", 5500, 20, -60, true), ap("Other", "0A:BF:B8:E7:40:70", 5180, 20, -60, false)];
+        assert_eq!(analyse(&all, None).mine.len(), 1);
     }
 
     #[test]

@@ -377,6 +377,7 @@ function Table() {
                   <div className={`truncate ${n.hidden ? "italic text-muted" : ""}`}>
                     {nameOf(n, t("wifi.hidden"))}
                     {n.connected && <span className="ml-1.5 rounded bg-accent/15 px-1 text-[10px] text-accent">{t("wifi.yours")}</span>}
+                    {!n.connected && snap.analysis?.mine.includes(n.bssid) && <span className="ml-1.5 rounded bg-raised px-1 text-[10px] text-muted">{t("wifi.yourRouter")}</span>}
                     {firstSeen[n.bssid] - sessionStart > 20_000 && Date.now() - firstSeen[n.bssid] < 120_000 && (
                       <span className="ml-1.5 rounded bg-safe/15 px-1 text-[10px] text-safe">{t("wifi.adv.new")}</span>
                     )}

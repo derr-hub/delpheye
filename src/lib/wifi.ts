@@ -70,6 +70,8 @@ export interface Analysis {
   names: number;
   hidden: number;
   open: number;
+  /** Access points of the user's own router: its main network, guest network, other band. */
+  mine: string[];
 }
 
 export interface Snapshot {
