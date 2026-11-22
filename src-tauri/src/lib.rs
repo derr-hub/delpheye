@@ -14,6 +14,7 @@ mod security;
 mod startup;
 mod system;
 mod updates;
+mod wifi;
 
 use tauri::Manager;
 
@@ -116,6 +117,8 @@ pub fn run() {
             errlog::log_error,
             report::report_write,
             privacy::privacy_usage,
+            wifi::wifi_snapshot,
+            wifi::wifi_link,
             updates::updates_list,
             updates::updates_install,
             updates::updates_cancel,

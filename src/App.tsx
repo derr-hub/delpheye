@@ -22,6 +22,7 @@ import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
 import { Updates } from "./pages/Updates";
 import { Privacy } from "./pages/Privacy";
+import { Wifi } from "./pages/Wifi";
 import { startPrivacy } from "./lib/privacy";
 import { Journal } from "./pages/Journal";
 import { Overview } from "./pages/Overview";
@@ -38,6 +39,8 @@ function PageBody({ page }: { page: Page }) {
       return <Updates />;
     case "privacy":
       return <Privacy />;
+    case "wifi":
+      return <Wifi />;
     case "leftovers":
       return <Leftovers />;
     case "disk":

@@ -13,6 +13,7 @@ import {
   PackageX,
   PackageCheck,
   Webcam,
+  Wifi,
   Rocket,
   type LucideIcon,
 } from "lucide-react";
@@ -30,6 +31,7 @@ export const PAGES: { id: Page; icon: LucideIcon }[] = [
   { id: "monitoring", icon: Activity },
   { id: "processes", icon: ListTree },
   { id: "network", icon: Network },
+  { id: "wifi", icon: Wifi },
   { id: "privacy", icon: Webcam },
   { id: "security", icon: ShieldHalf },
   { id: "journal", icon: History },
