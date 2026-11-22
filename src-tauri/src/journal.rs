@@ -37,6 +37,14 @@ const SCHEMA: &str = "
         at   INTEGER NOT NULL,   -- unix seconds
         data TEXT    NOT NULL    -- JSON cooling profile
     );
+    CREATE TABLE IF NOT EXISTS sensor_uses (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind    TEXT    NOT NULL,   -- 'webcam' or 'microphone'
+        name    TEXT    NOT NULL,
+        path    TEXT,
+        started INTEGER NOT NULL,   -- unix ms
+        stopped INTEGER             -- unix ms; NULL while in use (or if DelphEye closed meanwhile)
+    );
     CREATE TABLE IF NOT EXISTS startup_changes (
         id       TEXT    PRIMARY KEY, -- the autostart entry
         original TEXT    NOT NULL,    -- its state before DelphEye first changed it

@@ -8,9 +8,15 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+use rusqlite::params;
 use serde::Serialize;
+use tauri::{AppHandle, Manager};
 use winreg::RegKey;
+
+use crate::journal::Journal;
 use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ};
+
+pub mod live;
 
 const STORE: &str = r"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore";
 const PACKAGES: &str = r"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages";
@@ -124,13 +130,15 @@ fn merge(uses: Vec<Use>) -> Vec<Use> {
     for u in uses {
         match out.iter_mut().find(|o| o.system == u.system && o.name.eq_ignore_ascii_case(&u.name)) {
             Some(o) => {
-                let (active, stale) = (o.active || u.active, (o.stale || u.stale) && !(o.active || u.active));
+                let active = o.active || u.active;
                 let permission = o.permission.clone().or(u.permission.clone());
-                if u.started > o.started {
+                let newer = u.started > o.started;
+                let stale = if newer { u.stale } else { o.stale };
+                if newer {
                     *o = u;
                 }
                 o.active = active;
-                o.stale = stale;
+                o.stale = stale && !active;
                 o.permission = permission;
             }
             None => out.push(u),
@@ -163,7 +171,10 @@ fn identify(key: &str, packaged: bool) -> (String, Option<PathBuf>) {
     found
 }
 
-fn read_uses(store: &RegKey, system: bool, running: &[PathBuf], out: &mut Vec<Use>) {
+/// `trust_open`: take the registry's "not stopped yet" as "in use now". Only for location: the
+/// camera and microphone have live sources (see `live`), and their registry records stopped
+/// being written in the 2026 Windows updates, so an old open mark there means nothing.
+fn read_uses(store: &RegKey, system: bool, running: &[PathBuf], trust_open: bool, out: &mut Vec<Use>) {
     let mut entry = |key: &RegKey, name: &str, packaged: bool| {
         let start: u64 = key.get_value("LastUsedTimeStart").unwrap_or(0);
         let stop: u64 = key.get_value("LastUsedTimeStop").unwrap_or(0);
@@ -191,7 +202,7 @@ fn read_uses(store: &RegKey, system: bool, running: &[PathBuf], out: &mut Vec<Us
             system,
             started: unix_ms(start),
             stopped: if open { None } else { unix_ms(stop) },
-            active: open && is_running,
+            active: trust_open && open && is_running,
             stale: open && !is_running,
             permission,
         });
@@ -214,7 +225,7 @@ fn allowed(hive: &RegKey, path: &str) -> bool {
     hive.open_subkey(path).and_then(|k| k.get_value::<String, _>("Value")).map(|v| v != "Deny").unwrap_or(true)
 }
 
-pub fn snapshot() -> Vec<Capability> {
+pub fn snapshot(journal: Option<&Journal>) -> Vec<Capability> {
     let user = RegKey::predef(HKEY_CURRENT_USER);
     let machine = RegKey::predef(HKEY_LOCAL_MACHINE);
     let running: Vec<PathBuf> = crate::processes::samples().into_iter().filter_map(|s| s.exe).collect();
@@ -224,10 +235,13 @@ pub fn snapshot() -> Vec<Capability> {
             let path = format!(r"{STORE}\{kind}");
             let mut uses = Vec::new();
             if let Ok(store) = user.open_subkey(&path) {
-                read_uses(&store, false, &running, &mut uses);
+                read_uses(&store, false, &running, kind == "location", &mut uses);
             }
             if let Ok(store) = machine.open_subkey(&path) {
-                read_uses(&store, true, &running, &mut uses);
+                read_uses(&store, true, &running, kind == "location", &mut uses);
+            }
+            if let Some(journal) = journal {
+                own_history(journal, kind, &mut uses);
             }
             let mut uses = merge(uses);
             uses.sort_by_key(|u| (!u.active, std::cmp::Reverse(u.started)));
@@ -241,9 +255,107 @@ pub fn snapshot() -> Vec<Capability> {
         .collect()
 }
 
+/// A use DelphEye is watching now: one process on one capability, with its row in the journal.
+struct Live {
+    kind: &'static str,
+    pid: u32,
+    started: i64,
+    row: i64,
+}
+
+static LIVE: Mutex<Vec<Live>> = Mutex::new(Vec::new());
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0)
+}
+
+/// Starts watching the camera and the microphone, recording every use in the journal: Windows
+/// itself no longer keeps a readable history, so this is the history from now on.
+pub fn start(app: AppHandle) {
+    live::start_camera_monitor();
+    std::thread::spawn(move || {
+        loop {
+            tick(&app.state::<Journal>());
+            std::thread::sleep(std::time::Duration::from_secs(2));
+        }
+    });
+}
+
+fn tick(journal: &Journal) {
+    let now = now_ms();
+    let seen: Vec<(&'static str, u32)> = live::camera_pids()
+        .into_iter()
+        .map(|p| ("webcam", p))
+        .chain(live::microphone_pids().into_iter().map(|p| ("microphone", p)))
+        .filter(|&(_, pid)| pid != std::process::id())
+        .collect();
+    let mut live = LIVE.lock().unwrap();
+    // Ended.
+    live.retain(|l| {
+        let still = seen.contains(&(l.kind, l.pid));
+        if !still {
+            let _ = journal.with(|db| db.execute("UPDATE sensor_uses SET stopped = ?1 WHERE id = ?2", params![now, l.row]));
+        }
+        still
+    });
+    // Started.
+    let samples = crate::processes::samples();
+    for (kind, pid) in seen {
+        if live.iter().any(|l| l.kind == kind && l.pid == pid) {
+            continue;
+        }
+        let sample = samples.iter().find(|s| s.pid == pid);
+        let path = sample.and_then(|s| s.exe.clone());
+        let name = match &path {
+            Some(p) => {
+                let facts = crate::startup::fileinfo::inspect(p, false);
+                facts.description.filter(|d| !d.trim().is_empty()).unwrap_or_else(|| p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default())
+            }
+            None => sample.map(|s| s.name.clone()).unwrap_or_else(|| format!("PID {pid}")),
+        };
+        let path = path.map(|p| p.to_string_lossy().into_owned());
+        let row = journal
+            .with(|db| {
+                db.execute("INSERT INTO sensor_uses (kind, name, path, started) VALUES (?1, ?2, ?3, ?4)", params![kind, name, path, now])?;
+                Ok(db.last_insert_rowid())
+            })
+            .unwrap_or(-1);
+        live.push(Live { kind, pid, started: now, row });
+    }
+}
+
+/// The uses DelphEye recorded itself, newest first, as rows like the registry's.
+fn own_history(journal: &Journal, kind: &str, out: &mut Vec<Use>) {
+    let live = LIVE.lock().unwrap();
+    let rows: Vec<(i64, String, Option<String>, i64, Option<i64>)> = journal
+        .with(|db| {
+            let mut stmt = db.prepare("SELECT id, name, path, started, stopped FROM sensor_uses WHERE kind = ?1 ORDER BY started DESC LIMIT 500")?;
+            let rows = stmt.query_map(params![kind], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)))?;
+            Ok(rows.filter_map(|r| r.ok()).collect())
+        })
+        .unwrap_or_default();
+    for (id, name, path, started, stopped) in rows {
+        let active = live.iter().any(|l| l.row == id);
+        out.push(Use {
+            key: path.clone().unwrap_or_else(|| name.clone()),
+            name,
+            path,
+            packaged: false,
+            system: false,
+            started: Some(live.iter().find(|l| l.row == id).map(|l| l.started).unwrap_or(started)),
+            active,
+            // Still open in the journal but not live: DelphEye was closed while it was in use,
+            // so the end is unknown. Shown without a length rather than as a crash.
+            stale: false,
+            stopped: stopped.or(if active { None } else { Some(started) }),
+            permission: None,
+        });
+    }
+}
+
 #[tauri::command]
-pub async fn privacy_usage() -> Result<Vec<Capability>, String> {
-    tauri::async_runtime::spawn_blocking(snapshot).await.map_err(|e| e.to_string())
+pub async fn privacy_usage(app: AppHandle) -> Result<Vec<Capability>, String> {
+    tauri::async_runtime::spawn_blocking(move || snapshot(Some(&app.state::<Journal>()))).await.map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -268,10 +380,10 @@ mod tests {
     #[test]
     fn reads_this_machine() {
         let t = std::time::Instant::now();
-        let all = snapshot();
+        let all = snapshot(None);
         let first = t.elapsed();
         let t = std::time::Instant::now();
-        snapshot();
+        snapshot(None);
         let again = t.elapsed();
         assert_eq!(all.len(), 3);
         for c in &all {

@@ -921,7 +921,7 @@ const uk = {
     error: "Не вдалося оновити: {{message}}",
   },
   privacy: {
-    intro: "Windows сама записує, коли програма вмикає камеру, мікрофон чи визначає, де ти. Тут видно, хто це робив востаннє — і хто робить просто зараз. DelphEye лише читає ці записи.",
+    intro: "Windows сама записує, коли програма вмикає камеру, мікрофон чи визначає, де ти. Тут видно, хто це робив і хто робить просто зараз. DelphEye нічого не вимикає сам — лише показує.",
     kind: { webcam: "Камера", microphone: "Мікрофон", location: "Місцезнаходження" },
     listTitle: { webcam: "Хто користувався камерою", microphone: "Хто користувався мікрофоном", location: "Хто дізнавався, де ти" },
     usedBy: "Зараз: {{names}}",
@@ -950,7 +950,7 @@ const uk = {
     seconds: "{{count}} с",
     minutes: "{{count}} хв",
     hours: "{{count}} год {{minutes}} хв",
-    note: "Windows пам'ятає лише останній раз для кожної програми, не всю історію. Якщо бачиш тут програму, яка не мала б цього робити, — заборони їй доступ кнопкою вище або видали її.",
+    note: "Після оновлення Windows 11 у жовтні 2026 система більше не показує цю історію іншим програмам, тому нові записи DelphEye веде сам — поки він запущений. Старші записи — останній раз для кожної програми, як їх запам'ятала Windows. Якщо бачиш тут програму, яка не мала б цього робити, — заборони їй доступ кнопкою вище або видали її.",
   },
   updates: {
     introTitle: "Оновлення програм",
@@ -2274,7 +2274,7 @@ const en: typeof uk = {
     error: "Could not update: {{message}}",
   },
   privacy: {
-    intro: "Windows itself records when a program turns on the camera, the microphone or looks up where you are. Here you can see who did it last — and who is doing it right now. DelphEye only reads these records.",
+    intro: "Windows itself records when a program turns on the camera, the microphone or looks up where you are. Here you can see who did it and who is doing it right now. DelphEye turns nothing off itself — it only shows.",
     kind: { webcam: "Camera", microphone: "Microphone", location: "Location" },
     listTitle: { webcam: "Who used the camera", microphone: "Who used the microphone", location: "Who looked up your location" },
     usedBy: "Now: {{names}}",
@@ -2303,7 +2303,7 @@ const en: typeof uk = {
     seconds: "{{count}} s",
     minutes: "{{count}} min",
     hours: "{{count}} h {{minutes}} min",
-    note: "Windows only remembers the last time for each program, not the full history. If you see a program here that should not be doing this, deny it access with the button above or uninstall it.",
+    note: "Since the October 2026 Windows 11 update, Windows no longer shares this history with other programs, so DelphEye keeps new records itself — while it is running. Older records are the last time for each program, as Windows remembered it. If you see a program here that should not be doing this, deny it access with the button above or uninstall it.",
   },
   updates: {
     introTitle: "Program updates",

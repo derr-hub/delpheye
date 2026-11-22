@@ -827,6 +827,7 @@ dependencies = [
  "tauri-plugin-updater",
  "ureq",
  "windows",
+ "windows-core",
  "winreg",
 ]
 
