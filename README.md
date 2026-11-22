@@ -6,41 +6,7 @@ DelphEye inspects your system first and changes nothing until you choose. Every 
 
 🌐 **Interface:** Ukrainian & English | 💻 **OS:** Windows 10 / 11 (64-bit)
 
-<<<<<<< HEAD
 [![Download Latest Release](https://img.shields.io/github/v/release/derr-hub/delpheye?label=Download%20DelphEye&style=for-the-badge&color=2ea44f)](https://github.com/derr-hub/delpheye/releases/latest)
-=======
-- **Overview** — a short summary of what is fine and what is not.
-- **Cleanup** — temporary files and caches, with a report before anything is deleted.
-- **App leftovers** — folders and registry keys left behind by uninstalled programs; moved to a
-  quarantine for 7 days, so anything can be put back.
-- **Startup** — programs, scheduled tasks and services that start with Windows, how much each
-  slows the boot, and whether it is safe to turn off. Every change can be undone.
-- **Disk** — instant search through the NTFS file table, "time layers" (which data has not been
-  touched for years), duplicates, Recycle Bin.
-- **Monitoring** — sensors, throttling measured without drivers, a stress test for the processor,
-  memory and graphics card with error checking, a cooling profile compared run to run, and the
-  crash record explained incident by incident.
-- **Processes** — a process tree with what each one is and what ending it would do.
-- **Network** — who talks to which servers, traffic per program, open ports, suspicious
-  connections and a connection check (router, internet, DNS).
-- **Wi-Fi** — three levels:
-  - *Simple*: how good the connection is, how crowded the channel is, and plain advice.
-  - *Advanced*: channel spectrum, signal over time, link quality (Wi-Fi vs. provider), air
-    history over days, a 3D echolocator (with a home view: floor plan, walls, heat map, router),
-    a hunt mode with a sonar, direction finding, and a home map that estimates where the router is.
-  - *Professional*: connects to an ASUS router (read-only by default) — every device on the
-    network and how loud it is, a connection log, traffic, open ports, security checks, and
-    confirmed one-click fixes (channel, WPS, guest network, UPnP, blocking a device).
-- **Updates** — newer versions of installed programs through winget, one or all.
-- **Camera & mic** — which programs used the camera, microphone and location, and which use them now.
-- **Protection** — places malware hides, signs of tampering, a Windows security score and
-  optional online file reputation (only file hashes are sent).
-- **Watcher** — runs from the tray and notifies about new devices on the network, a copy of the
-  Wi-Fi network, overheating, a nearly full disk, new startup entries and crashes.
-- **Journal** — everything DelphEye changed, with the means to restore it.
-- **Why is it slow?** and **Help a relative** — a quick diagnosis of the moment, and a report file
-  a relative can send for a look from afar.
->>>>>>> 352064c (Version 0.3.0; README lists the new sections)
 
 ---
 
@@ -67,8 +33,16 @@ DelphEye inspects your system first and changes nothing until you choose. Every 
 * **Monitoring** — Hardware sensors, throttling detection without extra drivers, CPU/RAM/GPU stress tests with error checking, run-to-run cooling profiles, and crash records explained incident by incident.
 * **Processes** — Detailed process tree explaining what each process actually does and what happens if you terminate it.
 * **Network** — Shows which apps talk to which servers, per-program traffic, open ports, suspicious connections, and a network health check (router, internet, DNS).
+* **Wi-Fi** — Three levels in one place:
+  * *Simple* — how good your connection is, how crowded your channel is, and plain advice.
+  * *Advanced* — channel spectrum, signal over time, link quality (Wi-Fi vs. your provider), air history over days, a **3D echolocator** with a home view (floor plan, walls, heat map, router), a hunt mode with sonar, direction finding, and a **home map** that estimates where the router stands.
+  * *Professional* — connects to an ASUS router (read-only by default): every device on the network and how loud it is, a connection log, traffic, open ports, security checks, and confirmed one-click fixes (channel, WPS, guest network, UPnP, blocking a device).
+* **Updates** — Finds newer versions of installed programs through winget and updates one or all of them.
+* **Camera & Mic** — Shows which programs used the camera, microphone and location — and which are using them right now.
 * **Protection** — Scans common malware hiding spots, checks for signs of system tampering, calculates a Windows security score, and offers optional hash-based file reputation checks.
 * **Journal** — A complete log of every change made by DelphEye with one-click restoration.
+* **Watcher** — Runs from the tray and notifies you about new devices on your network, a copy of your Wi-Fi network ("evil twin"), overheating, a nearly full disk, new startup entries and crashes.
+* **Why is it slow?** & **Help a relative** — A quick diagnosis of the moment, and a report file a relative can send you for a look from afar.
 
 ---
 
