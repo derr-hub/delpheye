@@ -11,6 +11,7 @@ pub(crate) mod fileinfo;
 mod sources;
 
 pub use sources::{decode, expand};
+pub(crate) use sources::resolve_text;
 pub(crate) use sources::service_states;
 
 use std::collections::HashMap;

@@ -431,7 +431,7 @@ fn services(found: &mut Vec<Raw>) {
 }
 
 /// Turns `@%SystemRoot%\system32\foo.dll,-101` style references into the text they point to.
-fn resolve_text(text: &str) -> Option<String> {
+pub(crate) fn resolve_text(text: &str) -> Option<String> {
     if text.is_empty() {
         return None;
     }

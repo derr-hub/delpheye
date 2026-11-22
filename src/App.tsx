@@ -21,6 +21,8 @@ import { SlowdownPanel } from "./components/Slowdown";
 import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
 import { Updates } from "./pages/Updates";
+import { Privacy } from "./pages/Privacy";
+import { startPrivacy } from "./lib/privacy";
 import { Journal } from "./pages/Journal";
 import { Overview } from "./pages/Overview";
 
@@ -34,6 +36,8 @@ function PageBody({ page }: { page: Page }) {
       return <Startup />;
     case "updates":
       return <Updates />;
+    case "privacy":
+      return <Privacy />;
     case "leftovers":
       return <Leftovers />;
     case "disk":
@@ -107,6 +111,7 @@ function App() {
     startDiskEvents();
     startLeftoversEvents();
     startMonitor();
+    startPrivacy();
     loadDrives();
     // A quiet look for a newer release, at most once a day.
     window.setTimeout(() => checkForUpdate(true), 8000);

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Activity, ArrowDown, ArrowUp, ListTree, Loader2 } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, Camera, ListTree, Loader2, MapPin, Mic } from "lucide-react";
+
+const SENSOR_ICONS: Record<Kind, typeof Camera> = { webcam: Camera, microphone: Mic, location: MapPin };
 import { go } from "../lib/app";
 import { useCleanup } from "../lib/cleanup";
 import { useDisk } from "../lib/disk";
@@ -11,6 +13,7 @@ import { useMetrics } from "../lib/metrics";
 import { useMonitor } from "../lib/monitor";
 import { useSecurity } from "../lib/security";
 import { useUpdates } from "../lib/updates";
+import { useActiveUses, type Kind } from "../lib/privacy";
 import { Sparkline } from "./ui";
 import { checkSlowdown } from "./Slowdown";
 
@@ -48,6 +51,8 @@ export function Island() {
   const history = useMetrics((s) => s.history);
   const throttle = useMonitor((s) => s.frame?.throttle);
   const activity = useActivity();
+  const sensors = useActiveUses();
+  const sensorKinds = [...new Set(sensors.map((s) => s.kind))];
 
   useEffect(() => {
     if (!open) return;
@@ -89,6 +94,14 @@ export function Island() {
             </motion.span>
           ) : (
             <motion.span key="rest" layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="num flex items-center gap-2 whitespace-nowrap">
+              {sensorKinds.length > 0 && (
+                <span className="flex items-center gap-1 text-risk" data-testid="island-sensors">
+                  {sensorKinds.map((k) => {
+                    const Icon = SENSOR_ICONS[k];
+                    return <Icon key={k} size={12} />;
+                  })}
+                </span>
+              )}
               <span className="relative flex h-1.5 w-1.5">
                 <motion.span className={`absolute inset-0 rounded-full ${tone}`} animate={{ scale: [1, 2.4], opacity: [0.6, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }} />
                 <span className={`relative h-1.5 w-1.5 rounded-full ${tone}`} />
@@ -133,6 +146,26 @@ export function Island() {
                 >
                   <Loader2 size={13} className="animate-spin" />
                   {activity.label}
+                  <span className="ml-auto">{t("island.open")}</span>
+                </button>
+              )}
+              {sensors.length > 0 && (
+                <button
+                  onClick={() => {
+                    go("privacy");
+                    setOpen(false);
+                  }}
+                  className="mb-3 flex w-full items-center gap-2 rounded-xl bg-risk/10 px-3 py-2 text-left text-[12px] text-risk hover:bg-risk/15"
+                >
+                  {sensors.map(({ kind, use }) => {
+                    const Icon = SENSOR_ICONS[kind];
+                    return (
+                      <span key={kind + use.key} className="flex items-center gap-1">
+                        <Icon size={13} />
+                        {use.name}
+                      </span>
+                    );
+                  })}
                   <span className="ml-auto">{t("island.open")}</span>
                 </button>
               )}

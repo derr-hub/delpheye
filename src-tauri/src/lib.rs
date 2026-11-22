@@ -7,6 +7,7 @@ mod leftovers;
 mod metrics;
 mod monitor;
 mod network;
+mod privacy;
 mod processes;
 mod report;
 mod security;
@@ -113,6 +114,7 @@ pub fn run() {
             network::network_check,
             errlog::log_error,
             report::report_write,
+            privacy::privacy_usage,
             updates::updates_list,
             updates::updates_install,
             updates::updates_cancel,
