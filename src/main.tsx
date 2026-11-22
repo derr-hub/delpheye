@@ -18,6 +18,15 @@ async function boot() {
   if (import.meta.env.DEV && !("__TAURI_INTERNALS__" in window)) {
     (await import("./lib/devMock")).installDevMock();
   }
+  // The overlay window loads the same page and draws only the island.
+  if ("__TAURI_INTERNALS__" in window) {
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    if (getCurrentWindow().label === "overlay") {
+      const { Overlay } = await import("./overlay/Overlay");
+      ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<Overlay />);
+      return;
+    }
+  }
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
       <App />

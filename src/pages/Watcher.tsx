@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { BellRing, Check, CircleAlert, Cpu, HardDrive, Rocket, ShieldAlert, Smartphone, Wifi, Zap, type LucideIcon } from "lucide-react";
+import { BellRing, Check, Sparkles, CircleAlert, Cpu, HardDrive, Rocket, ShieldAlert, Smartphone, Wifi, Zap, type LucideIcon } from "lucide-react";
 import { Button, Switch } from "../components/ui";
 import { go, type Page } from "../lib/app";
+import { OPEN_KEY, TOGGLE_KEY, loadOverlay, saveOverlay, testOverlay, useOverlay } from "../lib/overlay";
 import { KINDS, readAll, saveWatcher, setAutostart, testNotification, unread, useWatcher, type Alert, type Kind } from "../lib/watcher";
 
 const ICON: Record<Kind, LucideIcon> = { device: Smartphone, twin: Wifi, heat: Cpu, disk: HardDrive, autostart: Rocket, crash: Zap };
@@ -41,6 +42,10 @@ export function Watcher() {
   const { t } = useTranslation();
   const { settings, alerts, autostart } = useWatcher();
   const count = unread(alerts);
+  const overlay = useOverlay((s) => s.settings);
+  useEffect(() => {
+    loadOverlay().catch(() => {});
+  }, []);
 
   // Seen once opened.
   useEffect(() => {
@@ -97,6 +102,36 @@ export function Watcher() {
       </div>
 
       <div className="grid content-start gap-4">
+        {overlay && (
+          <div className="rounded-card border border-line bg-surface p-4" data-testid="overlay-card">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-[64px] shrink-0 items-center justify-center rounded-full bg-black text-[10px] font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
+                <Sparkles size={12} className="mr-1 text-[#4ade80]" />
+                144
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[13px] font-medium">{t("overlay.title")}</h3>
+                <p className="text-[11px] leading-relaxed text-muted">{t("overlay.lead")}</p>
+              </div>
+              <Switch on={overlay.enabled} onChange={() => saveOverlay({ enabled: !overlay.enabled })} label={t("overlay.title")} />
+            </div>
+            <ul className="mt-3 grid gap-2.5 text-[13px]">
+              {(["pc", "fps", "net", "alerts"] as const).map((k) => (
+                <li key={k} className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div>{t(`overlay.part.${k}.title`)}</div>
+                    <div className="text-[11px] leading-relaxed text-muted">{t(`overlay.part.${k}.text`)}</div>
+                  </div>
+                  <Switch on={overlay[k]} onChange={() => saveOverlay({ [k]: !overlay[k] })} label={t(`overlay.part.${k}.title`)} />
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 rounded-lg bg-raised/60 px-3 py-2 text-[11px] leading-relaxed text-muted">{t("overlay.hotkeys", { toggle: TOGGLE_KEY, open: OPEN_KEY })}</p>
+            <Button className="mt-3 w-full" icon={<Sparkles size={14} />} onClick={testOverlay} data-testid="overlay-test">
+              {t("overlay.test")}
+            </Button>
+          </div>
+        )}
         <div className="rounded-card border border-line bg-surface p-4">
           <h3 className="mb-2 text-[13px] font-medium">{t("watcher.what")}</h3>
           <ul className="grid gap-1">

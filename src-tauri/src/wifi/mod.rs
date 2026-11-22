@@ -354,6 +354,13 @@ pub async fn wifi_quality() -> Result<Quality, String> {
     .map_err(|e| e.to_string())
 }
 
+/// The current Wi-Fi connection, if any (blocking; cheap enough for once a second).
+pub fn link_now() -> Option<Link> {
+    let wlan = Wlan::open()?;
+    let (guid, name) = wlan.interfaces().into_iter().next()?;
+    wlan.link(&guid, &name)
+}
+
 /// Just the current connection and its live signal: cheap, for once-a-second updates.
 #[tauri::command]
 pub async fn wifi_link() -> Result<Option<Link>, String> {

@@ -77,7 +77,7 @@ pub const SCHEMA: &str = "
     );
 ";
 
-fn kv_get(j: &Journal, key: &str) -> Option<String> {
+pub(crate) fn kv_get(j: &Journal, key: &str) -> Option<String> {
     j.with(|db| {
         db.execute_batch(SCHEMA)?;
         db.query_row("SELECT value FROM watcher_kv WHERE key = ?1", params![key], |r| r.get(0)).optional()
@@ -86,7 +86,7 @@ fn kv_get(j: &Journal, key: &str) -> Option<String> {
     .flatten()
 }
 
-fn kv_set(j: &Journal, key: &str, value: &str) {
+pub(crate) fn kv_set(j: &Journal, key: &str, value: &str) {
     let _ = j.with(|db| {
         db.execute_batch(SCHEMA)?;
         db.execute("INSERT INTO watcher_kv (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value", params![key, value])
@@ -122,7 +122,10 @@ fn raise(app: &AppHandle, kind: &str, level: &str, values: Value) {
         })
         .unwrap_or(-1);
     let (title, body) = text::render(&settings.lang, kind, &values);
-    let _ = app.notification().builder().title(&title).body(&body).show();
+    // With the overlay on screen the alert unfolds from it; otherwise a Windows notification.
+    if !crate::overlay::alert(app, kind, level, &title, &body) {
+        let _ = app.notification().builder().title(&title).body(&body).show();
+    }
     crate::errlog::write("watcher", &format!("alert {kind}"));
     let _ = app.emit("watcher:alert", id);
 }

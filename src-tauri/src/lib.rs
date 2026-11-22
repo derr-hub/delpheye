@@ -8,6 +8,7 @@ mod leftovers;
 mod metrics;
 mod monitor;
 mod network;
+mod overlay;
 mod privacy;
 mod processes;
 mod report;
@@ -60,6 +61,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(|app, shortcut, event| overlay::on_shortcut(app, shortcut, event.state())).build())
         .manage(cleanup::CleanupState::default())
         .manage(disk::DiskState::default())
         .manage(leftovers::LeftoversState::default())
@@ -70,6 +72,7 @@ pub fn run() {
         .manage(router::RouterState::default())
         .manage(watcher::WatcherState::default())
         .manage(companion::CompanionState::default())
+        .manage(overlay::OverlayState::default())
         .manage(std::sync::Arc::new(network::NetworkState::default()))
         .setup(|app| {
             open_main_window(app)?;
@@ -89,12 +92,18 @@ pub fn run() {
             std::thread::spawn(move || leftovers::purge_expired(&handle.state::<journal::Journal>()));
             metrics::spawn(app.handle().clone());
             monitor::spawn(app.handle().clone(), &app.state::<monitor::MonitorState>());
+            overlay::start(app);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             metrics::system_info,
             system::app_status,
             system::relaunch_elevated,
+            overlay::overlay_settings,
+            overlay::overlay_save,
+            overlay::overlay_interactive,
+            overlay::overlay_test,
+            overlay::overlay_open_main,
             cleanup::cleanup_scan,
             cleanup::cleanup_cancel,
             cleanup::cleanup_run,

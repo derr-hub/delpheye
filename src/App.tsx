@@ -25,6 +25,7 @@ import { Privacy } from "./pages/Privacy";
 import { Wifi } from "./pages/Wifi";
 import { Watcher } from "./pages/Watcher";
 import { saveWatcher, startWatcher } from "./lib/watcher";
+import { listen } from "@tauri-apps/api/event";
 import i18n from "./i18n";
 import { startPrivacy } from "./lib/privacy";
 import { Journal } from "./pages/Journal";
@@ -123,6 +124,8 @@ function App() {
     startWatcher(i18n.language.startsWith("en") ? "en" : "uk");
     i18n.on("languageChanged", (lng) => saveWatcher({ lang: lng.startsWith("en") ? "en" : "uk" }));
     loadDrives();
+    // The overlay's "open DelphEye" can ask for a page.
+    if ("__TAURI_INTERNALS__" in window) listen<Page>("navigate", ({ payload }) => go(payload));
     // A quiet look for a newer release, at most once a day.
     window.setTimeout(() => checkForUpdate(true), 8000);
   }, []);
