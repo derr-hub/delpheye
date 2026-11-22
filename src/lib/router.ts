@@ -56,6 +56,16 @@ export interface Overview {
   guests: { id: string; band: string; ssid: string }[];
   clients: Client[];
   checks: { id: string; level: "ok" | "info" | "warn" | "risk"; values: Record<string, unknown> }[];
+  traffic: { internetRx: number; internetTx: number; wiredRx: number; wiredTx: number; wirelessRx: number; wirelessTx: number };
+  ports: { name: string; external: string; ip: string; internal: string; protocol: string; upnp: boolean }[];
+  blocked: string[];
+  allowList: boolean;
+}
+
+export interface RouterEvent {
+  at: string;
+  mac: string;
+  kind: "join" | "leave";
 }
 
 interface RouterStore {
@@ -71,6 +81,12 @@ interface RouterStore {
   fresh: string[];
   /** A change being applied now. */
   applying: string | null;
+  /** Each device's signal at the router over this session, by MAC. */
+  signal: Record<string, { t: number; rssi: number }[]>;
+  /** Internet speed from the router's counters, bytes per second. */
+  rate: { down: number; up: number } | null;
+  last: { t: number; rx: number; tx: number } | null;
+  events: RouterEvent[];
   /** Changes made in this session, newest first, each with its way back. */
   done: Done[];
 }
@@ -91,6 +107,8 @@ const REVERSE: Record<string, string> = { "wps-off": "wps-on", "guest-off": "gue
 
 /** Whether the router's settings show the action took effect. */
 function took(o: Overview, action: string, guest: string | null): boolean {
+  if (action.startsWith("block:")) return o.blocked.includes(action.slice(6).toUpperCase());
+  if (action.startsWith("unblock:")) return !o.blocked.includes(action.slice(8).toUpperCase());
   if (action.startsWith("channel:")) {
     const [, unit, spec] = action.split(":");
     return o.radios.some((r) => String(r.unit) === unit && r.spec === spec);
@@ -157,7 +175,19 @@ export const useRouter = create<RouterStore>(() => ({
   fresh: [],
   applying: null,
   done: [],
+  signal: {},
+  rate: null,
+  last: null,
+  events: [],
 }));
+
+export async function loadLog() {
+  try {
+    useRouter.setState({ events: await invoke<RouterEvent[]>("router_log") });
+  } catch {
+    /* the log is a nice-to-have */
+  }
+}
 
 function absorb(o: Overview) {
   useRouter.setState((s) => {
@@ -167,7 +197,13 @@ function absorb(o: Overview) {
     const fresh = before ? [...new Set([...s.fresh, ...macs.filter((m) => !before.includes(m))])] : s.fresh;
     const seen = { ...s.seen, [o.host]: [...new Set([...(before ?? []), ...macs])] };
     save("router.seen", seen);
-    return { overview: o, seen, fresh, error: null };
+    const t = Date.now();
+    const signal = { ...s.signal };
+    for (const c of o.clients) if (c.rssi !== null && c.online) signal[c.mac] = [...(signal[c.mac] ?? []).filter((x) => t - x.t < 30 * 60_000), { t, rssi: c.rssi }];
+    const now = { t, rx: o.traffic.internetRx, tx: o.traffic.internetTx };
+    const dt = s.last ? (t - s.last.t) / 1000 : 0;
+    const rate = s.last && dt > 1 && now.rx >= s.last.rx && now.tx >= s.last.tx ? { down: (now.rx - s.last.rx) / dt, up: (now.tx - s.last.tx) / dt } : s.rate;
+    return { overview: o, seen, fresh, error: null, signal, rate, last: now };
   });
 }
 

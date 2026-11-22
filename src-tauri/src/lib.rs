@@ -136,6 +136,7 @@ pub fn run() {
             router::router_read,
             router::router_disconnect,
             router::router_apply,
+            router::router_log,
             watcher::watcher_settings,
             watcher::watcher_save,
             watcher::watcher_alerts,

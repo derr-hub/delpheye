@@ -23,9 +23,13 @@ import {
 } from "lucide-react";
 import { Button, Checkbox, Modal } from "../../components/ui";
 import { formatUptime } from "../../lib/format";
-import { applyRouter, connectRouter, disconnectRouter, findRouter, refreshRouter, toggleKnown, useRouter, type Client, type Radio } from "../../lib/router";
+import { applyRouter, connectRouter, disconnectRouter, findRouter, loadLog, refreshRouter, toggleKnown, useRouter, type Client, type Radio } from "../../lib/router";
+import { RouterExtras } from "./ProExtras";
 import { BAND_COLORS, useWifi } from "../../lib/wifi";
 import { Bars } from "./Simple";
+
+/** "block:AA:…" → "block"; the switches keep their own names. */
+const fixKey = (action: string) => (action.startsWith("block:") ? "block" : action.startsWith("unblock:") ? "unblock" : action);
 
 const TONE = { ok: "text-safe", info: "text-accent", warn: "text-warn", risk: "text-risk" } as const;
 const ICON = { ok: CircleCheck, info: Info, warn: CircleAlert, risk: ShieldAlert } as const;
@@ -153,7 +157,22 @@ function duration(secs: number | null, t: (k: string) => string) {
   return secs === null ? "—" : formatUptime(secs, { d: t("units.d"), h: t("units.h"), m: t("units.m") });
 }
 
-function ClientRow({ c, host }: { c: Client; host: string }) {
+function Trend({ mac }: { mac: string }) {
+  const pts = useRouter((s) => s.signal[mac]);
+  if (!pts || pts.length < 2) return <span className="hidden w-20 md:block" />;
+  const w = 80;
+  const h = 22;
+  const lo = -90;
+  const hi = -35;
+  const d = pts.map((p, i) => `${i ? "L" : "M"} ${((i / (pts.length - 1)) * w).toFixed(1)} ${(h - ((Math.max(lo, Math.min(hi, p.rssi)) - lo) / (hi - lo)) * h).toFixed(1)}`).join(" ");
+  return (
+    <svg width={w} height={h} className="hidden shrink-0 md:block" aria-hidden>
+      <path d={d} fill="none" stroke="var(--color-accent)" strokeWidth={1.5} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: (c: Client) => void }) {
   const { t } = useTranslation();
   const known = useRouter((s) => (s.known[host] ?? []).includes(c.mac));
   const fresh = useRouter((s) => s.fresh.includes(c.mac));
@@ -191,6 +210,16 @@ function ClientRow({ c, host }: { c: Client; host: string }) {
         )}
         <div className="num text-muted">{c.online ? duration(c.connectedSecs, t) : t("router.offline")}</div>
       </div>
+      <Trend mac={c.mac} />
+      {c.link !== "wired" && (
+        <button
+          onClick={() => onBlock(c)}
+          className="flex h-7 shrink-0 items-center rounded-md border border-line px-2 text-[11px] text-muted hover:border-risk/50 hover:text-risk"
+          data-testid="router-block"
+        >
+          {t("router.block.button")}
+        </button>
+      )}
       <button
         onClick={() => toggleKnown(host, c.mac)}
         className={`flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] transition-colors ${known ? "bg-safe/15 text-safe" : "border border-line text-muted hover:text-fg"}`}
@@ -304,8 +333,13 @@ function Dashboard() {
           : [];
 
   useEffect(() => {
+    loadLog();
     const id = window.setInterval(refreshRouter, 10_000);
-    return () => window.clearInterval(id);
+    const log = window.setInterval(loadLog, 60_000);
+    return () => {
+      window.clearInterval(id);
+      window.clearInterval(log);
+    };
   }, []);
 
   return (
@@ -397,7 +431,7 @@ function Dashboard() {
                   : d.confirmed
                     ? d.action.startsWith("channel:")
                       ? t("router.channel.done", { name: d.label })
-                      : t(`router.fix.${d.action}.done`, { name: d.label })
+                      : t(`router.fix.${fixKey(d.action)}.done`, { name: d.label })
                     : t("router.fix.notConfirmed")}
               </span>
               {!d.undone && (
@@ -445,6 +479,7 @@ function Dashboard() {
               );
             })}
         </div>
+        <RouterExtras onUnblock={(mac, label) => applyRouter(`unblock:${mac}`, null, label, false, { action: `block:${mac}`, guest: null })} />
         <div className="overflow-clip rounded-card border border-line bg-surface">
           <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
             <h3 className="text-[13px] font-medium">{t("router.devices", { online: online.length, total: o.clients.length })}</h3>
@@ -455,7 +490,7 @@ function Dashboard() {
           <p className="border-b border-line/60 px-4 py-2 text-[11px] leading-relaxed text-muted">{t("router.devicesHint")}</p>
           <ul>
             {o.clients.map((c) => (
-              <ClientRow key={c.mac} c={c} host={o.host} />
+              <ClientRow key={c.mac} c={c} host={o.host} onBlock={(x) => setAsk({ action: `block:${x.mac}`, guest: null, label: x.name || x.vendor || x.mac })} />
             ))}
           </ul>
         </div>
@@ -466,9 +501,9 @@ function Dashboard() {
       <Modal open={ask !== null} onClose={() => setAsk(null)}>
         {ask && (
           <div data-testid="router-confirm">
-            <h2 className="font-display text-[18px] font-semibold">{t(`router.fix.${ask.action}.title`, { name: ask.label })}</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(`router.fix.${ask.action}.text`, { name: ask.label })}</p>
-            <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[12px] leading-relaxed text-muted">{t(`router.fix.${ask.action}.effect`)}</p>
+            <h2 className="font-display text-[18px] font-semibold">{t(`router.fix.${fixKey(ask.action)}.title`, { name: ask.label })}</h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(`router.fix.${fixKey(ask.action)}.text`, { name: ask.label })}</p>
+            <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[12px] leading-relaxed text-muted">{t(`router.fix.${fixKey(ask.action)}.effect`)}</p>
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="quiet" onClick={() => setAsk(null)}>
                 {t("router.fix.cancel")}
@@ -482,7 +517,7 @@ function Dashboard() {
                   applyRouter(a.action, a.guest, a.label);
                 }}
               >
-                {t(`router.fix.${ask.action}.button`, { name: ask.label })}
+                {t(`router.fix.${fixKey(ask.action)}.button`, { name: ask.label })}
               </Button>
             </div>
           </div>

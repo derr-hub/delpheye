@@ -113,7 +113,10 @@ fn read(host: &str, token: &str) -> Result<Overview, String> {
     let nv = serde_json::Value::Object(nv);
     let clients = asus::hook(host, token, "get_clientlist()")?;
     let uptime = asus::hook(host, token, "uptime()").unwrap_or_default();
-    Ok(asus::overview(host, &nv, &clients, &uptime))
+    let mut o = asus::overview(host, &nv, &clients, &uptime);
+    o.traffic = asus::hook(host, token, "netdev(appobj)").map(|v| asus::traffic(&v)).unwrap_or_default();
+    o.ports.extend(asus::hook(host, token, "get_upnp_array()").map(|v| asus::upnp(&v)).unwrap_or_default());
+    Ok(o)
 }
 
 /// A fresh look at the router, renewing the session once if it expired.
@@ -149,12 +152,33 @@ pub async fn router_read(state: State<'_, RouterState>) -> Result<Overview, Stri
     }
 }
 
+/// Who joined and left the network, from the router's own system log.
+#[tauri::command]
+pub async fn router_log(state: State<'_, RouterState>) -> Result<Vec<asus::Event>, String> {
+    let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let text = asus::hook_text(&host, &token, "nvram_dump(syslog.log,syslog.sh)")?;
+        Ok(asus::events(&text))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// One of the few changes DelphEye offers (see `asus::change`), after the user confirmed it.
 /// Reads the router again afterwards, so the answer shows whether the change took.
 #[tauri::command]
 pub async fn router_apply(state: State<'_, RouterState>, action: String, guest: Option<String>) -> Result<Overview, String> {
-    let (values, service) = asus::change(&action, guest.as_deref()).ok_or("unknown-action")?;
     let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    // Blocking needs the current filter list, so it is worked out from the router's settings.
+    let (values, service) = if let Some(rest) = action.strip_prefix("block:").map(|m| (m, true)).or(action.strip_prefix("unblock:").map(|m| (m, false))) {
+        let (mac, block) = rest;
+        let (h, tk) = (host.clone(), token.clone());
+        let keys: String = (0..3).flat_map(|u| [format!("nvram_get(wl{u}_ssid)"), format!("nvram_get(wl{u}_macmode)"), format!("nvram_get(wl{u}_maclist_x)")]).collect::<Vec<_>>().join(";");
+        let nv = tauri::async_runtime::spawn_blocking(move || asus::hook(&h, &tk, &keys)).await.map_err(|e| e.to_string())??;
+        (asus::mac_filter(&nv, mac, block).ok_or("filter-unsafe")?, "restart_wireless")
+    } else {
+        asus::change(&action, guest.as_deref()).ok_or("unknown-action")?
+    };
     let log = format!("{action}{}", guest.as_deref().map(|g| format!(" {g}")).unwrap_or_default());
     let slow = service == "restart_wireless";
     tauri::async_runtime::spawn_blocking(move || asus::apply(&host, &token, &values, service)).await.map_err(|e| e.to_string())??;

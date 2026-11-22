@@ -143,6 +143,29 @@ pub fn hook(host: &str, token: &str, hooks: &str) -> Result<Value, String> {
     parse_loose(&body).ok_or_else(|| "unreadable".to_string())
 }
 
+/// A hook whose answer is one long text (the system log): its lines are kept as they are, which
+/// the JSON reading would not do.
+pub fn hook_text(host: &str, token: &str, hooks: &str) -> Result<String, String> {
+    let mut r = agent()
+        .get(&format!("http://{host}/appGet.cgi?hook={}", encode(hooks)))
+        .header("cookie", &format!("asus_token={token}"))
+        .header("referer", &format!("http://{host}/index.asp"))
+        .call()
+        .map_err(|e| e.to_string())?;
+    let body = r.body_mut().read_to_string().map_err(|e| e.to_string())?;
+    if body.contains("Main_Login.asp") {
+        return Err("expired".into());
+    }
+    // {"name":…text…} — the text is not quoted and has quotes of its own, so it is cut from after
+    // the key to the closing brace, not between quotes.
+    let start = body.find("\":").map(|i| i + 2).unwrap_or(0);
+    let mut text = body[start..].trim_start_matches(['"', ' ']);
+    if let Some(e) = text.rfind('}') {
+        text = &text[..e];
+    }
+    Ok(text.trim_end().trim_end_matches('"').to_string())
+}
+
 #[cfg(debug_assertions)]
 pub fn raw(host: &str, token: &str, hooks: &str) -> Result<String, String> {
     let mut r = agent()
@@ -263,6 +286,7 @@ pub const NVRAM: &[&str] = &[
     "wl0.1_bss_enabled", "wl0.1_ssid", "wl0.2_bss_enabled", "wl0.2_ssid", "wl0.3_bss_enabled", "wl0.3_ssid",
     "wl1.1_bss_enabled", "wl1.1_ssid", "wl1.2_bss_enabled", "wl1.2_ssid", "wl1.3_bss_enabled", "wl1.3_ssid",
     "wl2.1_bss_enabled", "wl2.1_ssid",
+    "vts_enable_x", "vts_rulelist", "wl0_macmode", "wl0_maclist_x", "wl1_macmode", "wl1_maclist_x", "wl2_macmode", "wl2_maclist_x",
 ];
 
 #[derive(Serialize, Clone, Debug)]
@@ -322,6 +346,40 @@ pub struct Check {
     pub values: Value,
 }
 
+#[derive(Serialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Traffic {
+    /// Byte counters since the router started (they wrap around on some firmware).
+    pub internet_rx: u64,
+    pub internet_tx: u64,
+    pub wired_rx: u64,
+    pub wired_tx: u64,
+    pub wireless_rx: u64,
+    pub wireless_tx: u64,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Port {
+    pub name: String,
+    pub external: String,
+    pub ip: String,
+    pub internal: String,
+    pub protocol: String,
+    /// Opened by a program through UPnP rather than set by hand.
+    pub upnp: bool,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Event {
+    /// As the router writes it, e.g. "Nov 22 17:48:24".
+    pub at: String,
+    pub mac: String,
+    /// "join" or "leave".
+    pub kind: &'static str,
+}
+
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Overview {
@@ -334,6 +392,12 @@ pub struct Overview {
     pub guests: Vec<Guest>,
     pub clients: Vec<Client>,
     pub checks: Vec<Check>,
+    pub traffic: Traffic,
+    pub ports: Vec<Port>,
+    /// Addresses the Wi-Fi MAC filter keeps out.
+    pub blocked: Vec<String>,
+    /// The filter only lets listed devices in: blocking one more is not offered then.
+    pub allow_list: bool,
 }
 
 fn s(v: &Value, k: &str) -> String {
@@ -426,6 +490,127 @@ pub fn clients(list: &Value) -> Vec<Client> {
     out
 }
 
+fn hex(v: &Value, k: &str) -> u64 {
+    v[k].as_str().and_then(|x| u64::from_str_radix(x.trim_start_matches("0x"), 16).ok()).unwrap_or(0)
+}
+
+pub fn traffic(netdev: &Value) -> Traffic {
+    let n = &netdev["netdev"];
+    Traffic {
+        internet_rx: hex(n, "INTERNET_rx"),
+        internet_tx: hex(n, "INTERNET_tx"),
+        wired_rx: hex(n, "WIRED_rx"),
+        wired_tx: hex(n, "WIRED_tx"),
+        wireless_rx: (0..4).map(|k| hex(n, &format!("WIRELESS{k}_rx"))).sum(),
+        wireless_tx: (0..4).map(|k| hex(n, &format!("WIRELESS{k}_tx"))).sum(),
+    }
+}
+
+/// `vts_rulelist`: "<name>ext>ip>int>proto>src<name>…" (fields after `<`, split by `>`).
+pub fn port_forwards(list: &str) -> Vec<Port> {
+    list.split('<')
+        .filter(|r| !r.is_empty())
+        .filter_map(|r| {
+            let f: Vec<&str> = r.split('>').collect();
+            (f.len() >= 5).then(|| Port { name: f[0].into(), external: f[1].into(), ip: f[2].into(), internal: f[3].into(), protocol: f[4].into(), upnp: false })
+        })
+        .collect()
+}
+
+/// get_upnp_array(): [[proto, ext port, ip, int port, description], …] when anything is open.
+pub fn upnp(v: &Value) -> Vec<Port> {
+    let arr = v.as_array().or_else(|| v["get_upnp_array"].as_array()).cloned().unwrap_or_default();
+    arr.iter()
+        .filter_map(|r| {
+            let f: Vec<String> = r.as_array()?.iter().map(|x| x.as_str().map(str::to_string).unwrap_or_else(|| x.to_string())).collect();
+            (f.len() >= 4).then(|| Port { name: f.get(4).cloned().unwrap_or_default(), external: f[1].clone(), ip: f[2].clone(), internal: f[3].clone(), protocol: f[0].clone(), upnp: true })
+        })
+        .collect()
+}
+
+/// Join and leave lines from the router's system log, newest last. Understands MediaTek
+/// ("New Sta:… associated", "Del Sta:…", "Recv Disassoc/Deauth") and Broadcom (wlceventd) wording.
+pub fn events(log: &str) -> Vec<Event> {
+    let mac_after = |line: &str, marker: &str| -> Option<String> {
+        let at = line.find(marker)? + marker.len();
+        let rest = line[at..].trim_start_matches([' ', ':', '-']);
+        let mac: String = rest.chars().take(17).collect();
+        (mac.len() == 17 && mac.chars().filter(|c| *c == ':').count() == 5).then(|| mac.to_uppercase())
+    };
+    let mut out: Vec<Event> = Vec::new();
+    for line in log.lines() {
+        let at: String = line.chars().take(15).collect();
+        let lower = line.to_lowercase();
+        let found = if let Some(m) = mac_after(line, "New Sta:") {
+            Some((m, "join"))
+        } else if let Some(m) = mac_after(line, "Del Sta:") {
+            Some((m, "leave"))
+        } else if lower.contains("wlceventd") && (lower.contains(": assoc ") || lower.contains(": reassoc ")) {
+            line.split_whitespace().find(|w| w.len() >= 17 && w.chars().filter(|c| *c == ':').count() == 5).map(|w| (w[..17].to_uppercase(), "join"))
+        } else if lower.contains("wlceventd") && (lower.contains("disassoc") || lower.contains("deauth")) {
+            line.split_whitespace().find(|w| w.len() >= 17 && w.chars().filter(|c| *c == ':').count() == 5).map(|w| (w[..17].to_uppercase(), "leave"))
+        } else {
+            None
+        };
+        if let Some((mac, kind)) = found {
+            // One connection is logged in several lines: keep it once.
+            if !out.last().is_some_and(|e| e.mac == mac && e.kind == kind && e.at == at) {
+                out.push(Event { at, mac, kind });
+            }
+        }
+    }
+    // The log holds older rotated files too, not always in order: sort by the timestamp.
+    out.sort_by_key(|e| sortable(&e.at));
+    let keep = out.len().saturating_sub(300);
+    out.split_off(keep)
+}
+
+/// "Nov 22 17:48:24" → "11-22 17:48:24" (the year is not in the log).
+pub fn sortable(at: &str) -> String {
+    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let mut parts = at.split_whitespace();
+    let (m, d, t) = (parts.next().unwrap_or(""), parts.next().unwrap_or("0"), parts.next().unwrap_or(""));
+    let month = MONTHS.iter().position(|x| *x == m).map(|i| i + 1).unwrap_or(0);
+    format!("{month:02}-{:0>2} {t}", d)
+}
+
+fn mac_list(list: &str) -> Vec<String> {
+    list.split('<').map(|m| m.trim().to_uppercase()).filter(|m| m.len() == 17).collect()
+}
+
+/// A MAC address as the router writes it.
+pub fn valid_mac(m: &str) -> bool {
+    m.len() == 17 && m.split(':').count() == 6 && m.split(':').all(|p| p.len() == 2 && p.chars().all(|c| c.is_ascii_hexdigit()))
+}
+
+/// The settings that add (block) or remove (unblock) one address from each radio's MAC filter.
+/// None when a radio's filter is an allow-list: adding to it would change who may join at all.
+pub fn mac_filter(nv: &Value, mac: &str, block: bool) -> Option<Vec<(String, String)>> {
+    if !valid_mac(mac) {
+        return None;
+    }
+    let mac = mac.to_uppercase();
+    let mut values = Vec::new();
+    for unit in 0..3 {
+        if s(nv, &format!("wl{unit}_ssid")).is_empty() {
+            continue;
+        }
+        let mode = s(nv, &format!("wl{unit}_macmode"));
+        if mode == "allow" {
+            return None;
+        }
+        let mut list = mac_list(&s(nv, &format!("wl{unit}_maclist_x")));
+        list.retain(|m| *m != mac);
+        if block {
+            list.push(mac.clone());
+        }
+        let joined: String = list.iter().map(|m| format!("<{m}")).collect();
+        values.push((format!("wl{unit}_maclist_x"), joined));
+        values.push((format!("wl{unit}_macmode"), if list.is_empty() { "disabled".to_string() } else { "deny".to_string() }));
+    }
+    (!values.is_empty()).then_some(values)
+}
+
 pub fn overview(host: &str, nv: &Value, client_list: &Value, uptime: &Value) -> Overview {
     let mut radios = Vec::new();
     let mut guests = Vec::new();
@@ -464,7 +649,34 @@ pub fn overview(host: &str, nv: &Value, client_list: &Value, uptime: &Value) -> 
     let firmware = [s(nv, "firmver"), s(nv, "buildno"), s(nv, "extendno")].iter().filter(|x| !x.is_empty()).cloned().collect::<Vec<_>>().join(".");
     let clients = clients(client_list);
     let checks = checks(nv, &radios, &guests, &clients);
-    Overview { vendor: "asus", model: s(nv, "productid"), firmware, host: host.to_string(), uptime_secs, radios, guests, clients, checks }
+    let mut ports = if s(nv, "vts_enable_x") == "1" { port_forwards(&s(nv, "vts_rulelist")) } else { Vec::new() };
+    ports.retain(|p| !p.external.is_empty());
+    let mut blocked: Vec<String> = Vec::new();
+    for unit in 0..3 {
+        if s(nv, &format!("wl{unit}_macmode")) == "deny" {
+            for m in mac_list(&s(nv, &format!("wl{unit}_maclist_x"))) {
+                if !blocked.contains(&m) {
+                    blocked.push(m);
+                }
+            }
+        }
+    }
+    let allow_list = (0..3).any(|u| s(nv, &format!("wl{u}_macmode")) == "allow");
+    Overview {
+        vendor: "asus",
+        model: s(nv, "productid"),
+        firmware,
+        host: host.to_string(),
+        uptime_secs,
+        radios,
+        guests,
+        clients,
+        checks,
+        traffic: Traffic::default(),
+        ports,
+        blocked,
+        allow_list,
+    }
 }
 
 pub fn checks(nv: &Value, radios: &[Radio], guests: &[Guest], clients: &[Client]) -> Vec<Check> {
@@ -571,6 +783,37 @@ mod tests {
         assert!(change("guest-off", Some("wl1.1_ssid=x&a")).is_none());
         assert!(change("guest-off", None).is_none());
         assert!(change("reboot", None).is_none());
+    }
+
+    #[test]
+    fn router_log_and_counters() {
+        let log = "Nov 22 17:48:24 kernel: 7981@C13L2rax0,MacTableInsertEntry() 1586: New Sta:d0:65:78:35:ea:e9 associated at aid 3\n\
+Nov 22 17:48:24 kernel: 7981@C08L3rax0,ap_cmm_peer_assoc_req_action() 1714:  Recv Assoc from STA - d0:65:78:35:ea:e9\n\
+Nov 22 18:02:10 kernel: 7981@C13L2rax0,MacTableDeleteEntry() 1900: Del Sta:d0:65:78:35:ea:e9\n\
+Nov 22 18:05:01 wlceventd: wlceventd_proc_event(530): eth6: Assoc AA:BB:CC:DD:EE:FF, status: Successful (0), rssi:-60\n\
+Nov 22 18:06:01 wlceventd: wlceventd_proc_event(494): eth6: Disassoc AA:BB:CC:DD:EE:FF, status: 0, reason: Disassociated due to inactivity (4)";
+        let e = events(log);
+        assert_eq!(e.len(), 4, "{e:?}");
+        assert_eq!(sortable("Nov  5 08:07:33"), "11-05 08:07:33");
+        assert_eq!((e[0].kind, e[0].mac.as_str(), e[0].at.as_str()), ("join", "D0:65:78:35:EA:E9", "Nov 22 17:48:24"));
+        assert_eq!(e[1].kind, "leave");
+        assert_eq!((e[2].kind, e[3].kind), ("join", "leave"));
+        let t = traffic(&json!({ "netdev": { "INTERNET_rx": "0x10", "INTERNET_tx": "0x20", "WIRELESS0_rx": "0x1", "WIRELESS1_rx": "0x2" } }));
+        assert_eq!((t.internet_rx, t.internet_tx, t.wireless_rx), (16, 32, 3));
+        assert_eq!(port_forwards("<web>8080>192.168.50.10>80>TCP><ssh>2222>192.168.50.11>22>TCP>")[1].internal, "22");
+        assert!(upnp(&json!({})).is_empty());
+    }
+
+    #[test]
+    fn mac_filter_adds_and_removes_safely() {
+        let nv = json!({ "wl1_ssid": "KARID", "wl1_macmode": "disabled", "wl1_maclist_x": "" });
+        let v = mac_filter(&nv, "aa:bb:cc:dd:ee:ff", true).unwrap();
+        assert!(v.contains(&("wl1_maclist_x".into(), "<AA:BB:CC:DD:EE:FF".into())) && v.contains(&("wl1_macmode".into(), "deny".into())));
+        let nv = json!({ "wl1_ssid": "KARID", "wl1_macmode": "deny", "wl1_maclist_x": "<AA:BB:CC:DD:EE:FF<11:22:33:44:55:66" });
+        let v = mac_filter(&nv, "AA:BB:CC:DD:EE:FF", false).unwrap();
+        assert!(v.contains(&("wl1_maclist_x".into(), "<11:22:33:44:55:66".into())) && v.contains(&("wl1_macmode".into(), "deny".into())));
+        assert!(mac_filter(&json!({ "wl1_ssid": "X", "wl1_macmode": "allow" }), "AA:BB:CC:DD:EE:FF", true).is_none());
+        assert!(mac_filter(&nv, "AA:BB:CC:DD:EE:FF&x=1", true).is_none());
     }
 
     #[test]
