@@ -51,7 +51,7 @@ export interface Overview {
   host: string;
   uptimeSecs: number | null;
   radios: Radio[];
-  guests: { band: string; ssid: string }[];
+  guests: { id: string; band: string; ssid: string }[];
   clients: Client[];
   checks: { id: string; level: "ok" | "info" | "warn" | "risk"; values: Record<string, unknown> }[];
 }
@@ -67,7 +67,61 @@ interface RouterStore {
   seen: Record<string, string[]>;
   /** Devices first seen in this session. */
   fresh: string[];
+  /** A change being applied now. */
+  applying: string | null;
+  /** Changes made in this session, newest first, each with its way back. */
+  done: Done[];
 }
+
+export interface Done {
+  action: string;
+  guest: string | null;
+  /** What it was about, for the message (e.g. the guest network's name). */
+  label: string;
+  /** The router shows the change took effect. */
+  confirmed: boolean;
+  undone: boolean;
+}
+
+const REVERSE: Record<string, string> = { "wps-off": "wps-on", "guest-off": "guest-on", "upnp-off": "upnp-on" };
+
+/** Whether the router's settings show the action took effect. */
+function took(o: Overview, action: string, guest: string | null): boolean {
+  switch (action) {
+    case "wps-off":
+      return !o.checks.some((c) => c.id === "wps-on");
+    case "upnp-off":
+      return !o.checks.some((c) => c.id === "upnp-on");
+    case "guest-off":
+      return !o.guests.some((g) => g.id === guest);
+    case "wps-on":
+      return o.checks.some((c) => c.id === "wps-on");
+    case "upnp-on":
+      return o.checks.some((c) => c.id === "upnp-on");
+    case "guest-on":
+      return o.guests.some((g) => g.id === guest);
+  }
+  return false;
+}
+
+/** Applies one change the user confirmed; `undo` turns an earlier change back. */
+export async function applyRouter(action: string, guest: string | null, label: string, undo = false) {
+  useRouter.setState({ applying: action + (guest ?? ""), error: null });
+  try {
+    const o = await invoke<Overview>("router_apply", { action, guest });
+    absorb(o);
+    useRouter.setState((s) => ({
+      done: undo
+        ? s.done.map((d) => (REVERSE[d.action] === action && d.guest === guest && !d.undone ? { ...d, undone: took(o, action, guest) } : d))
+        : [{ action, guest, label, confirmed: took(o, action, guest), undone: false }, ...s.done],
+    }));
+  } catch (e) {
+    useRouter.setState({ error: String(e) });
+  }
+  useRouter.setState({ applying: null });
+}
+
+export const reverseOf = (action: string) => REVERSE[action];
 
 const load = (key: string) => {
   try {
@@ -92,6 +146,8 @@ export const useRouter = create<RouterStore>(() => ({
   known: load("router.known"),
   seen: load("router.seen"),
   fresh: [],
+  applying: null,
+  done: [],
 }));
 
 function absorb(o: Overview) {

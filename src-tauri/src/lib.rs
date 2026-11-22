@@ -123,6 +123,7 @@ pub fn run() {
             router::router_connect,
             router::router_read,
             router::router_disconnect,
+            router::router_apply,
             router::router_debug_hook,
             wifi::wifi_snapshot,
             wifi::wifi_link,

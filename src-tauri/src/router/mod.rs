@@ -149,6 +149,24 @@ pub async fn router_read(state: State<'_, RouterState>) -> Result<Overview, Stri
     }
 }
 
+/// One of the few changes DelphEye offers (see `asus::change`), after the user confirmed it.
+/// Reads the router again afterwards, so the answer shows whether the change took.
+#[tauri::command]
+pub async fn router_apply(state: State<'_, RouterState>, action: String, guest: Option<String>) -> Result<Overview, String> {
+    let (values, service) = asus::change(&action, guest.as_deref()).ok_or("unknown-action")?;
+    let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    let log = format!("{action}{}", guest.as_deref().map(|g| format!(" {g}")).unwrap_or_default());
+    tauri::async_runtime::spawn_blocking(move || asus::apply(&host, &token, &values, service)).await.map_err(|e| e.to_string())??;
+    crate::errlog::write("router", &format!("applied {log}"));
+    // The router restarts the service in the background; give it a moment before reading.
+    tokio_sleep(if service == "restart_wireless" { 4000 } else { 1500 }).await;
+    router_read(state).await
+}
+
+async fn tokio_sleep(ms: u64) {
+    let _ = tauri::async_runtime::spawn_blocking(move || std::thread::sleep(std::time::Duration::from_millis(ms))).await;
+}
+
 /// Logs out of the router; `forget` also removes the saved login.
 #[tauri::command]
 pub async fn router_disconnect(state: State<'_, RouterState>, forget: bool) -> Result<(), String> {

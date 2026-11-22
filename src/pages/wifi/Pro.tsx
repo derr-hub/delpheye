@@ -21,9 +21,9 @@ import {
   UserCheck,
   Wifi,
 } from "lucide-react";
-import { Button, Checkbox } from "../../components/ui";
+import { Button, Checkbox, Modal } from "../../components/ui";
 import { formatUptime } from "../../lib/format";
-import { connectRouter, disconnectRouter, findRouter, refreshRouter, toggleKnown, useRouter, type Client } from "../../lib/router";
+import { applyRouter, connectRouter, disconnectRouter, findRouter, refreshRouter, reverseOf, toggleKnown, useRouter, type Client } from "../../lib/router";
 import { BAND_COLORS, useWifi } from "../../lib/wifi";
 import { Bars } from "./Simple";
 
@@ -216,6 +216,19 @@ function Dashboard() {
   const online = o.clients.filter((c) => c.online);
   const unmarked = online.filter((c) => !known.includes(c.mac));
   const order = { risk: 0, warn: 1, info: 2, ok: 3 };
+  const applying = useRouter((s) => s.applying);
+  const done = useRouter((s) => s.done);
+  const error = useRouter((s) => s.error);
+  const [ask, setAsk] = useState<{ action: string; guest: string | null; label: string } | null>(null);
+  // The fixes each check offers: one per guest network for "guest-on".
+  const fixes = (id: string): { action: string; guest: string | null; label: string }[] =>
+    id === "wps-on"
+      ? [{ action: "wps-off", guest: null, label: "WPS" }]
+      : id === "upnp-on"
+        ? [{ action: "upnp-off", guest: null, label: "UPnP" }]
+        : id === "guest-on"
+          ? o.guests.map((g) => ({ action: "guest-off", guest: g.id, label: g.ssid }))
+          : [];
 
   useEffect(() => {
     const id = window.setInterval(refreshRouter, 10_000);
@@ -285,6 +298,37 @@ function Dashboard() {
       <div className="grid gap-4">
         <div className="grid content-start gap-2 md:grid-cols-2">
           <h3 className="text-[13px] font-medium md:col-span-2">{t("router.checksTitle")}</h3>
+          {error && !applying && error !== "expired" && (
+            <p className="rounded-lg border border-risk/30 bg-risk/[0.06] px-3 py-2 text-[12px] text-risk md:col-span-2" role="alert">
+              {t("router.fix.failed", { error })}
+            </p>
+          )}
+          {done.map((d, i) => (
+            <div
+              key={i}
+              className={`flex flex-wrap items-center gap-3 rounded-card border px-4 py-2.5 text-[12px] md:col-span-2 ${
+                d.undone ? "border-line bg-surface text-muted" : d.confirmed ? "border-safe/30 bg-safe/[0.06]" : "border-warn/30 bg-warn/[0.06]"
+              }`}
+              data-testid="router-done"
+            >
+              {d.undone ? <RefreshCw size={15} /> : d.confirmed ? <CircleCheck size={15} className="text-safe" /> : <CircleAlert size={15} className="text-warn" />}
+              <span className="min-w-0 flex-1">
+                {d.undone ? t("router.fix.undone", { name: d.label }) : d.confirmed ? t(`router.fix.${d.action}.done`, { name: d.label }) : t("router.fix.notConfirmed")}
+              </span>
+              {!d.undone && (
+                <Button
+                  variant="quiet"
+                  className="!h-7 text-[12px]"
+                  disabled={!!applying}
+                  onClick={() => applyRouter(reverseOf(d.action), d.guest, d.label, true)}
+                  data-testid="router-undo"
+                >
+                  {applying === reverseOf(d.action) + (d.guest ?? "") && <Loader2 size={13} className="animate-spin" />}
+                  {t("router.fix.undo")}
+                </Button>
+              )}
+            </div>
+          ))}
           {[...o.checks]
             .sort((a, b) => order[a.level] - order[b.level])
             .map((c) => {
@@ -295,6 +339,22 @@ function Dashboard() {
                   <div className="min-w-0">
                     <div className="text-[13px] font-medium">{t(`router.check.${c.id}.title`, c.values)}</div>
                     <div className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`router.check.${c.id}.text`, c.values)}</div>
+                    {fixes(c.id).length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {fixes(c.id).map((f) => (
+                          <Button
+                            key={f.action + (f.guest ?? "")}
+                            className="!h-8 text-[12px]"
+                            disabled={!!applying}
+                            onClick={() => setAsk(f)}
+                            data-testid={`router-fix-${f.action}`}
+                          >
+                            {applying === f.action + (f.guest ?? "") && <Loader2 size={13} className="animate-spin" />}
+                            {t(`router.fix.${f.action}.button`, { name: f.label })}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -315,6 +375,32 @@ function Dashboard() {
           </ul>
         </div>
       </div>
+
+      <Modal open={ask !== null} onClose={() => setAsk(null)}>
+        {ask && (
+          <div data-testid="router-confirm">
+            <h2 className="font-display text-[18px] font-semibold">{t(`router.fix.${ask.action}.title`, { name: ask.label })}</h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(`router.fix.${ask.action}.text`, { name: ask.label })}</p>
+            <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[12px] leading-relaxed text-muted">{t(`router.fix.${ask.action}.effect`)}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="quiet" onClick={() => setAsk(null)}>
+                {t("router.fix.cancel")}
+              </Button>
+              <Button
+                variant="primary"
+                data-testid="router-confirm-yes"
+                onClick={() => {
+                  const a = ask;
+                  setAsk(null);
+                  applyRouter(a.action, a.guest, a.label);
+                }}
+              >
+                {t(`router.fix.${ask.action}.button`, { name: ask.label })}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

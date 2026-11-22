@@ -156,6 +156,49 @@ pub fn raw(host: &str, token: &str, hooks: &str) -> Result<String, String> {
 {}", r.body_mut().read_to_string().map_err(|e| e.to_string())?))
 }
 
+/// The only changes DelphEye makes on a router, each with its exact settings and the service
+/// the router restarts to apply them. `guest` names the guest network, e.g. "wl1.1".
+pub fn change(action: &str, guest: Option<&str>) -> Option<(Vec<(String, String)>, &'static str)> {
+    let set = |k: &str, v: &str| vec![(k.to_string(), v.to_string())];
+    Some(match action {
+        "wps-off" => (set("wps_enable", "0"), "restart_wireless"),
+        "wps-on" => (set("wps_enable", "1"), "restart_wireless"),
+        "upnp-off" => (set("wan0_upnp_enable", "0"), "restart_upnp"),
+        "upnp-on" => (set("wan0_upnp_enable", "1"), "restart_upnp"),
+        "guest-off" | "guest-on" => {
+            let id = guest?;
+            // Only names of the form wlN.M — nothing else ever reaches the router.
+            let valid = id.len() == 5 && id.starts_with("wl") && id.as_bytes()[2].is_ascii_digit() && id.as_bytes()[3] == b'.' && id.as_bytes()[4].is_ascii_digit();
+            if !valid {
+                return None;
+            }
+            (set(&format!("{id}_bss_enabled"), if action == "guest-off" { "0" } else { "1" }), "restart_wireless")
+        }
+        _ => return None,
+    })
+}
+
+/// Applies settings through applyapp.cgi, the endpoint the ASUS app uses.
+pub fn apply(host: &str, token: &str, values: &[(String, String)], service: &str) -> Result<(), String> {
+    let mut form: Vec<(&str, &str)> = vec![("action_mode", "apply"), ("rc_service", service)];
+    form.extend(values.iter().map(|(k, v)| (k.as_str(), v.as_str())));
+    let mut r = agent()
+        .post(&format!("http://{host}/applyapp.cgi"))
+        .header("cookie", &format!("asus_token={token}"))
+        .header("referer", &format!("http://{host}/index.asp"))
+        .send_form(form)
+        .map_err(|e| e.to_string())?;
+    let status = r.status().as_u16();
+    let body = r.body_mut().read_to_string().unwrap_or_default();
+    if status == 302 || status == 401 || body.contains("Main_Login.asp") {
+        return Err("expired".into());
+    }
+    if status != 200 {
+        return Err(format!("status {status}"));
+    }
+    Ok(())
+}
+
 /// appGet answers are almost JSON: trailing commas and raw newlines inside strings happen.
 pub fn parse_loose(body: &str) -> Option<Value> {
     if let Ok(v) = serde_json::from_str(body) {
@@ -217,6 +260,8 @@ pub struct Radio {
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Guest {
+    /// The router's name for it, e.g. "wl1.1".
+    pub id: String,
     pub band: &'static str,
     pub ssid: String,
 }
@@ -381,7 +426,7 @@ pub fn overview(host: &str, nv: &Value, client_list: &Value, uptime: &Value) -> 
         });
         for sub in 1..=3 {
             if s(nv, &format!("wl{unit}.{sub}_bss_enabled")) == "1" {
-                guests.push(Guest { band, ssid: s(nv, &format!("wl{unit}.{sub}_ssid")) });
+                guests.push(Guest { id: format!("wl{unit}.{sub}"), band, ssid: s(nv, &format!("wl{unit}.{sub}_ssid")) });
             }
         }
     }
@@ -479,6 +524,15 @@ mod tests {
         assert_eq!(security("psk2sae", "aes"), ("wpa2-wpa3", false));
         assert_eq!(security("pskpsk2", "tkip+aes"), ("wpa", true));
         assert_eq!(hms("123:04:05"), Some(123 * 3600 + 245));
+    }
+
+    #[test]
+    fn only_known_changes_reach_the_router() {
+        assert_eq!(change("wps-off", None).unwrap(), (vec![("wps_enable".into(), "0".into())], "restart_wireless"));
+        assert_eq!(change("guest-off", Some("wl1.1")).unwrap().0, vec![("wl1.1_bss_enabled".to_string(), "0".to_string())]);
+        assert!(change("guest-off", Some("wl1.1_ssid=x&a")).is_none());
+        assert!(change("guest-off", None).is_none());
+        assert!(change("reboot", None).is_none());
     }
 
     #[test]
