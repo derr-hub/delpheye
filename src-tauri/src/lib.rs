@@ -1,4 +1,5 @@
 mod cleanup;
+mod companion;
 mod cpu;
 mod disk;
 mod errlog;
@@ -68,6 +69,7 @@ pub fn run() {
         .manage(updates::UpdatesState::default())
         .manage(router::RouterState::default())
         .manage(watcher::WatcherState::default())
+        .manage(companion::CompanionState::default())
         .manage(std::sync::Arc::new(network::NetworkState::default()))
         .setup(|app| {
             open_main_window(app)?;
@@ -137,6 +139,9 @@ pub fn run() {
             router::router_disconnect,
             router::router_apply,
             router::router_log,
+            companion::companion_start,
+            companion::companion_state,
+            companion::companion_stop,
             watcher::watcher_settings,
             watcher::watcher_save,
             watcher::watcher_alerts,

@@ -333,6 +333,16 @@ pub fn verdict(gateway: Option<&Probe>, internet: &[Probe], dns_ms: Option<u32>)
 }
 
 /// Pings the router and two public resolvers and times a DNS look-up: where is it slow?
+/// The computer's IPv4 addresses on adapters that are up (no VPNs, no loopback).
+pub fn lan_ipv4() -> Vec<Ipv4Addr> {
+    win::adapters()
+        .into_iter()
+        .filter(|a| a.up && (a.kind == "wifi" || a.kind == "ethernet"))
+        .flat_map(|a| a.ipv4)
+        .filter_map(|x| x.split('/').next()?.parse::<Ipv4Addr>().ok())
+        .collect()
+}
+
 /// The Wi-Fi adapter's IPv4 address and gateway, when it is connected.
 pub fn wifi_route() -> Option<(Ipv4Addr, Ipv4Addr)> {
     let a = win::adapters().into_iter().find(|a| a.up && a.kind == "wifi")?;

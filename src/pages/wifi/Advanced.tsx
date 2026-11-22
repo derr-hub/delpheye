@@ -1,17 +1,18 @@
 import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Activity, ArrowDown, ArrowUp, Box, CalendarClock, Crosshair, Loader2, LineChart as LineIcon, Map as MapIcon, Rows3, Waves } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, Box, CalendarClock, Crosshair, Loader2, LineChart as LineIcon, Map as MapIcon, Rows3, Smartphone, Waves } from "lucide-react";
 import { BAND_COLORS, nameOf, useWifi, type Band, type Bss } from "../../lib/wifi";
 import { AdviceList, Bars } from "./Simple";
 import { Hunt } from "./Hunt";
 import { Quality } from "./Quality";
 import { History } from "./History";
 import { Plan } from "./Plan";
+import { Phone } from "./Phone";
 
 const Echo3D = lazy(() => import("./Echo3D"));
 
-type Tab = "spectrum" | "timeline" | "quality" | "history" | "table" | "echo" | "hunt" | "plan";
+type Tab = "spectrum" | "timeline" | "quality" | "history" | "table" | "echo" | "hunt" | "plan" | "phone";
 const TABS: [Tab, typeof Waves][] = [
   ["spectrum", Waves],
   ["timeline", LineIcon],
@@ -21,6 +22,7 @@ const TABS: [Tab, typeof Waves][] = [
   ["echo", Box],
   ["hunt", Crosshair],
   ["plan", MapIcon],
+  ["phone", Smartphone],
 ];
 
 /** Stable colours per access point for the time chart: the colour follows the network. */
@@ -477,6 +479,7 @@ export function Advanced() {
       {tab === "quality" && <Quality />}
       {tab === "history" && <History />}
       {tab === "plan" && <Plan />}
+      {tab === "phone" && <Phone />}
     </div>
   );
 }

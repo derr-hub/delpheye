@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "default",
+  "description": "The companion's single window",
+  "windows": ["main"],
+  "permissions": ["core:default", "barcode-scanner:default"]
+}

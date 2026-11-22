@@ -36,3 +36,7 @@ sensors/obj
 
 # Machine-specific build settings (local paths)
 src-tauri/.cargo/config.toml
+
+# Companion (Android) build output
+companion/src-tauri/target/
+companion/dist/
