@@ -35,12 +35,15 @@ function parseLink(text: string): { hosts: string[]; port: number; code: string 
   return hosts.length && code ? { hosts, port, code } : null;
 }
 
+/** The phone's name for DelphEye's screen, from Android (filled by the first Wi-Fi scan). */
+let deviceName = "Android";
+
 async function pair(hosts: string[], port: number, code: string): Promise<Link> {
   let last = "unreachable";
   for (const host of hosts) {
     try {
       await invoke("call", { url: `http://${host}:${port}/hello` });
-      const r = await invoke<{ token: string }>("call", { url: `http://${host}:${port}/pair`, body: { code, device: navigator.userAgent.match(/\(([^)]+)\)/)?.[1]?.split(";").slice(-1)[0]?.trim() ?? "Android" } });
+      const r = await invoke<{ token: string }>("call", { url: `http://${host}:${port}/pair`, body: { code, device: deviceName } });
       return { host, port, token: r.token };
     } catch (e) {
       last = String(e);
@@ -96,7 +99,8 @@ export function App() {
   useEffect(() => {
     const tick = async () => {
       try {
-        const r = await invoke<{ results: (Heard & { age?: number })[]; linkBssid?: string; linkRssi?: number }>("wifi_scan");
+        const r = await invoke<{ results: (Heard & { age?: number })[]; linkBssid?: string; linkRssi?: number; device?: string }>("wifi_scan");
+        if (r.device) deviceName = r.device.slice(0, 60);
         const scan = (r.results ?? []).map((x) => ({ bssid: (x.bssid ?? "").toUpperCase(), ssid: x.ssid ?? "", rssi: x.rssi, freq: x.freq ?? 0 }));
         const newest = Math.min(...(r.results ?? []).map((x) => x.age ?? 0));
         scanAt.current = Number.isFinite(newest) ? Date.now() - newest : Date.now();
@@ -157,7 +161,7 @@ export function App() {
       setStatus("live");
     } catch (e) {
       setStatus("idle");
-      setError(String(e).includes("wrong-code") ? "Неправильний код. Подивись код на екрані комп'ютера." : "Не вдалося знайти комп'ютер. Телефон і комп'ютер мають бути в одній домашній мережі, а DelphEye — з відкритим під'єднанням телефона.");
+      setError(String(e).includes("wrong-code") ? "Неправильний код. Подивись код на екрані комп'ютера." : `Не вдалося знайти комп'ютер. Телефон і комп'ютер мають бути в одній домашній мережі, а DelphEye — з відкритим під'єднанням телефона. (${String(e).replace(/^Error: /, "")})`);
     }
   };
 

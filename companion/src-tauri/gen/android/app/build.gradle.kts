@@ -18,7 +18,7 @@ android {
     compileSdk = 37
     namespace = "com.delpheye.companion"
     defaultConfig {
-        manifestPlaceholders["usesCleartextTraffic"] = "false"
+        manifestPlaceholders["usesCleartextTraffic"] = "true" // plain HTTP to DelphEye on the home network
         applicationId = "com.delpheye.companion"
         minSdk = 24
         targetSdk = 37

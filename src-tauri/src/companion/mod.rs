@@ -150,14 +150,19 @@ fn read_request(stream: &mut TcpStream) -> Option<(String, String, Value)> {
 }
 
 fn handle(app: &AppHandle, shared: &Arc<Mutex<Shared>>, mut stream: TcpStream, peer: SocketAddr) {
+    crate::errlog::write("companion", &format!("connection from {peer}"));
     if !private(peer.ip()) {
         respond(&mut stream, 403, &json!({ "error": "not-home-network" }));
         return;
     }
     let Some((method, path, body)) = read_request(&mut stream) else {
+        crate::errlog::write("companion", &format!("unreadable request from {peer}"));
         respond(&mut stream, 400, &json!({ "error": "bad-request" }));
         return;
     };
+    if path != "/frame" {
+        crate::errlog::write("companion", &format!("{method} {path} from {peer}"));
+    }
     match (method.as_str(), path.as_str()) {
         ("GET", "/hello") => respond(&mut stream, 200, &json!({ "app": "delpheye", "version": env!("CARGO_PKG_VERSION") })),
         ("POST", "/pair") => {
