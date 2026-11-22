@@ -6,6 +6,7 @@ import { Button, Modal } from "../../components/ui";
 import { isLive, measure, nameOf, useWifi } from "../../lib/wifi";
 import { useRouter } from "../../lib/router";
 import { Whereami } from "./Whereami";
+import { calibrate, forgetPhonePlaces, live, measurePhone, rememberPhonePlace, trackPhone, usePhone, usePhoneMap } from "../../lib/phone";
 
 export interface Point {
   x: number;
@@ -148,6 +149,19 @@ export function Plan() {
   const file = useRef<HTMLInputElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const routerOverview = useRouter((s) => s.overview);
+  const phoneLive = usePhone(live);
+  const [source, setSource] = useState<"laptop" | "phone">("laptop");
+  const phonePos = usePhoneMap((s) => s.pos[key]);
+  const phonePlaces = usePhoneMap((s) => s.places[key]) ?? [];
+  const calibrated = usePhoneMap((s) => s.offset[key] !== undefined);
+  const [phoneBusy, setPhoneBusy] = useState(false);
+  // Every frame from the phone moves its point on this map.
+  useEffect(() => {
+    if (!key) return;
+    return usePhone.subscribe((s, prev) => {
+      if (s.frame !== prev.frame) trackPhone(key, plan.w, plan.d);
+    });
+  }, [key, plan.w, plan.d]);
 
   const update = (next: Saved) => {
     const merged = { ...all, [key]: next };
@@ -187,7 +201,7 @@ export function Plan() {
   const take = async () => {
     if (!cursor || !target) return;
     setBusy(true);
-    const v = await measure(target, isLive(target) ? 5000 : 9500);
+    const v = phoneLive && source === "phone" && net ? await measurePhone(target, net.ssid, 5000) : await measure(target, isLive(target) ? 5000 : 9500);
     setBusy(false);
     if (v === null) return;
     update({ ...plan, points: [...plan.points, { x: cursor.x, y: cursor.y, rssi: v }] });
@@ -427,6 +441,20 @@ export function Plan() {
               </g>
             ))}
             <Whereami.Marker scale={scale} planKey={key} />
+            {phoneLive && phonePos && (
+              <g pointerEvents="none" data-testid="plan-phone">
+                <circle cx={phonePos.x * scale} cy={phonePos.y * scale} r={14} fill="#5ed6d0" opacity={0.2} />
+                {phonePos.heading !== null && (
+                  <path
+                    d={`M ${phonePos.x * scale} ${phonePos.y * scale} l ${Math.sin((phonePos.heading * Math.PI) / 180) * 26} ${-Math.cos((phonePos.heading * Math.PI) / 180) * 26}`}
+                    stroke="#5ed6d0"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                  />
+                )}
+                <circle cx={phonePos.x * scale} cy={phonePos.y * scale} r={7} fill="#5ed6d0" stroke="var(--color-bg)" strokeWidth={2} />
+              </g>
+            )}
             {cursor && (
               <g>
                 <circle cx={cursor.x * scale} cy={cursor.y * scale} r={busy ? 16 : 12} fill="none" stroke="var(--color-fg)" strokeWidth={2} strokeDasharray={busy ? "4 4" : undefined} />
@@ -436,6 +464,15 @@ export function Plan() {
           </svg>
           {tool === "measure" && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
+              {phoneLive && (
+                <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+                  {(["laptop", "phone"] as const).map((s) => (
+                    <button key={s} onClick={() => setSource(s)} className={`rounded-md px-2.5 py-1 ${source === s ? "bg-raised text-fg" : "text-muted"}`}>
+                      {t(`wifi.plan.source.${s}`)}
+                    </button>
+                  ))}
+                </div>
+              )}
               <Button variant="primary" icon={<LocateFixed size={15} />} disabled={!cursor || busy || !target} onClick={take} data-testid="plan-measure">
                 {busy ? t("wifi.plan.measuring") : t("wifi.plan.measure")}
               </Button>
@@ -485,6 +522,38 @@ export function Plan() {
               −48 dBm
             </div>
           </div>
+          {phoneLive && (
+            <div className="rounded-card border border-[#5ed6d0]/40 bg-surface p-4" data-testid="plan-phone-panel">
+              <div className="text-[13px] font-medium text-[#5ed6d0]">{t("wifi.plan.phone.title")}</div>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("wifi.plan.phone.text")}</p>
+              <div className="mt-3 grid gap-2">
+                <Button onClick={() => calibrate(key)} data-testid="plan-phone-calibrate">
+                  {calibrated ? t("wifi.plan.phone.recalibrate") : t("wifi.plan.phone.calibrate")}
+                </Button>
+                <Button
+                  disabled={!cursor || phoneBusy}
+                  onClick={async () => {
+                    if (!cursor) return;
+                    setPhoneBusy(true);
+                    await rememberPhonePlace(key, cursor.x, cursor.y);
+                    setPhoneBusy(false);
+                    setCursor(null);
+                  }}
+                  data-testid="plan-phone-remember"
+                >
+                  {phoneBusy ? t("wifi.plan.phone.listening") : t("wifi.plan.phone.remember", { count: phonePlaces.length })}
+                </Button>
+                {phonePlaces.length > 0 && (
+                  <button className="text-left text-[11px] text-muted hover:text-risk" onClick={() => forgetPhonePlaces(key)}>
+                    {t("wifi.plan.phone.forget")}
+                  </button>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                {!calibrated ? t("wifi.plan.phone.needCalibrate") : phonePlaces.length < 3 ? t("wifi.plan.phone.needPlaces", { count: 3 - phonePlaces.length }) : t("wifi.plan.phone.tracking")}
+              </p>
+            </div>
+          )}
           <Whereami planKey={key} cursor={cursor} />
           <p className="text-[11px] leading-relaxed text-muted">{t("wifi.plan.honest")}</p>
         </div>

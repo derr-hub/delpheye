@@ -11,6 +11,7 @@ import { BAND_COLORS, nameOf, useWifi, type Band, type Bss } from "../../lib/wif
 import { useRouter } from "../../lib/router";
 import { idw, loadPlans, locate, type Saved } from "./Plan";
 import { guessNow } from "./Whereami";
+import { live as phoneLive, usePhone, usePhoneMap } from "../../lib/phone";
 
 /** Distance in metres → radius in the scene: logarithmic, so 1 m and 50 m both fit. */
 const radius = (m: number) => 6 * Math.log(1 + m);
@@ -376,7 +377,15 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
     const unsubRouter = useRouter.subscribe((s, prev) => s.overview !== prev.overview && syncDevices());
 
     // ── the apartment view: the home map as a floor with walls, the router, the user ──
-    let apt: { group: THREE.Group; dispose: () => void; labels: { el: HTMLDivElement; pos: THREE.Vector3 }[]; router: THREE.Vector3 | null; you: THREE.Object3D | null; wave: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | null } | null = null;
+    let apt: {
+      group: THREE.Group;
+      dispose: () => void;
+      labels: { el: HTMLDivElement; pos: THREE.Vector3 }[];
+      router: THREE.Vector3 | null;
+      you: THREE.Object3D | null;
+      wave: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> | null;
+      phone: { obj: THREE.Group; key: string; X: (x: number) => number; Z: (y: number) => number; s: number };
+    } | null = null;
     const buildApartment = (plan: Saved, key: string) => {
       const group = new THREE.Group();
       const own: { dispose: () => void }[] = [];
@@ -517,6 +526,20 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
         label(`${t("wifi.echo.you")} · ${me.place.name}`, new THREE.Vector3(X(me.place.x), 1.4 * s, Z(me.place.y)), "#F5A35C");
       }
 
+      // The phone (DelphEye Companion), moved each frame from its tracked position.
+      const phoneObj = new THREE.Group();
+      const pBody = new THREE.Mesh(k(new THREE.BoxGeometry(0.16 * s, 0.32 * s, 0.03 * s)), k(new THREE.MeshBasicMaterial({ color: "#5ed6d0" })));
+      pBody.position.y = 1.1 * s;
+      const pRing = new THREE.Mesh(k(new THREE.RingGeometry(0.3 * s, 0.38 * s, 48)), k(new THREE.MeshBasicMaterial({ color: "#5ed6d0", transparent: true, opacity: 0.8, side: THREE.DoubleSide })));
+      pRing.rotation.x = -Math.PI / 2;
+      pRing.position.y = 0.04;
+      const pDir = new THREE.Mesh(k(new THREE.ConeGeometry(0.12 * s, 0.4 * s, 16)), k(new THREE.MeshBasicMaterial({ color: "#5ed6d0" })));
+      pDir.rotation.x = -Math.PI / 2;
+      pDir.position.set(0, 0.06, -0.55 * s);
+      phoneObj.add(pBody, pRing, pDir);
+      phoneObj.visible = false;
+      group.add(phoneObj);
+
       scene.add(group);
       return {
         group,
@@ -524,6 +547,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
         router: routerPos,
         you: youObj,
         wave,
+        phone: { obj: phoneObj, key, X, Z, s },
         dispose: () => {
           scene.remove(group);
           own.forEach((o) => o.dispose());
@@ -640,6 +664,13 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
           apt.wave.material.opacity = (1 - k) * 0.18;
         }
         if (apt.you) apt.you.scale.setScalar(1 + Math.sin(time * 3) * 0.12);
+        const pp = usePhoneMap.getState().pos[apt.phone.key];
+        const on = !!pp && phoneLive(usePhone.getState());
+        apt.phone.obj.visible = on;
+        if (on && pp) {
+          apt.phone.obj.position.lerp(new THREE.Vector3(apt.phone.X(pp.x), 0, apt.phone.Z(pp.y)), 1 - Math.exp(-dt * 6));
+          if (pp.heading !== null) apt.phone.obj.rotation.y = (-pp.heading * Math.PI) / 180;
+        }
         for (const l of apt.labels) {
           const p = toScreen(l.pos, w, h);
           l.el.style.opacity = p.front ? "1" : "0";
