@@ -98,8 +98,19 @@ pub async fn router_connect(state: State<'_, RouterState>, user: Option<String>,
 }
 
 fn read(host: &str, token: &str) -> Result<Overview, String> {
-    let nvram = asus::NVRAM.iter().map(|k| format!("nvram_get({k})")).collect::<Vec<_>>().join(";");
-    let nv = asus::hook(host, token, &nvram)?;
+    // In batches, to keep each address short.
+    let mut nv = serde_json::Map::new();
+    for chunk in asus::NVRAM.chunks(16) {
+        let hooks = chunk.iter().map(|k| format!("nvram_get({k})")).collect::<Vec<_>>().join(";");
+        match asus::hook(host, token, &hooks)? {
+            serde_json::Value::Object(m) => nv.extend(m),
+            _ => {}
+        }
+    }
+    if nv.is_empty() {
+        crate::errlog::write("router", "the router returned no settings");
+    }
+    let nv = serde_json::Value::Object(nv);
     let clients = asus::hook(host, token, "get_clientlist()")?;
     let uptime = asus::hook(host, token, "uptime()").unwrap_or_default();
     Ok(asus::overview(host, &nv, &clients, &uptime))
@@ -154,4 +165,20 @@ pub async fn router_disconnect(state: State<'_, RouterState>, forget: bool) -> R
     })
     .await
     .map_err(|e| e.to_string())
+}
+
+/// Development only: the router's raw answer to one appGet hook, to see what a firmware sends.
+/// Release builds refuse it.
+#[tauri::command]
+pub async fn router_debug_hook(state: State<'_, RouterState>, hooks: String) -> Result<String, String> {
+    #[cfg(debug_assertions)]
+    {
+        let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+        tauri::async_runtime::spawn_blocking(move || asus::raw(&host, &token, &hooks)).await.map_err(|e| e.to_string())?
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = (state, hooks);
+        Err("unavailable".into())
+    }
 }

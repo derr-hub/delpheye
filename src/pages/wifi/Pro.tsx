@@ -24,7 +24,7 @@ import {
 import { Button, Checkbox } from "../../components/ui";
 import { formatUptime } from "../../lib/format";
 import { connectRouter, disconnectRouter, findRouter, refreshRouter, toggleKnown, useRouter, type Client } from "../../lib/router";
-import { BAND_COLORS } from "../../lib/wifi";
+import { BAND_COLORS, useWifi } from "../../lib/wifi";
 import { Bars } from "./Simple";
 
 const TONE = { ok: "text-safe", info: "text-accent", warn: "text-warn", risk: "text-risk" } as const;
@@ -206,8 +206,13 @@ function ClientRow({ c, host }: { c: Client; host: string }) {
 function Dashboard() {
   const { t } = useTranslation();
   const o = useRouter((s) => s.overview)!;
-  const known = useRouter((s) => s.known[o.host] ?? []);
+  // Select the stored array itself: a fresh `[]` on every call would re-render forever.
+  const knownList = useRouter((s) => s.known[o.host]);
+  const known = knownList ?? [];
   const [refreshing, setRefreshing] = useState(false);
+  // On "auto" the router does not say which channel it picked; the Wi-Fi scan hears it.
+  const heard = useWifi((s) => s.snap?.networks);
+  const liveChannel = (ssid: string, band: string) => heard?.find((n) => n.ssid === ssid && n.band === band)?.channel;
   const online = o.clients.filter((c) => c.online);
   const unmarked = online.filter((c) => !known.includes(c.mac));
   const order = { risk: 0, warn: 1, info: 2, ok: 3 };
@@ -261,7 +266,11 @@ function Dashboard() {
             </div>
             <div className="mt-1 truncate text-[15px] font-medium">{r.ssid}</div>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-              <span className="rounded bg-raised px-1.5 py-0.5">{r.auto ? t("router.autoChannel") : t("wifi.channelN", { n: r.channel })}</span>
+              <span className="rounded bg-raised px-1.5 py-0.5">{r.auto
+                  ? liveChannel(r.ssid, r.band) && r.enabled
+                    ? t("router.autoNow", { n: liveChannel(r.ssid, r.band) })
+                    : t("router.autoChannel")
+                  : t("wifi.channelN", { n: r.channel })}</span>
               {r.width && <span className="num rounded bg-raised px-1.5 py-0.5">{r.width} {t("wifi.mhz")}</span>}
               <span className={`rounded px-1.5 py-0.5 ${["open", "wep", "wpa"].includes(r.security) || r.tkip ? "bg-warn/15 text-warn" : "bg-raised"}`}>
                 {t(`wifi.security.${r.security}`, { defaultValue: r.security })}
@@ -273,9 +282,9 @@ function Dashboard() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-        <div className="grid content-start gap-2">
-          <h3 className="text-[13px] font-medium">{t("router.checksTitle")}</h3>
+      <div className="grid gap-4">
+        <div className="grid content-start gap-2 md:grid-cols-2">
+          <h3 className="text-[13px] font-medium md:col-span-2">{t("router.checksTitle")}</h3>
           {[...o.checks]
             .sort((a, b) => order[a.level] - order[b.level])
             .map((c) => {
@@ -313,7 +322,11 @@ function Dashboard() {
 export function Pro() {
   const overview = useRouter((s) => s.overview);
   useEffect(() => {
-    if (!overview) findRouter();
+    // A session DelphEye already has (e.g. after the page reloaded) is reused, not logged into again.
+    if (!overview)
+      findRouter().then(() => {
+        if (useRouter.getState().found?.connected) refreshRouter();
+      });
   }, [overview]);
   return overview ? <Dashboard /> : <Connect />;
 }

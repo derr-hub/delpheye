@@ -121,9 +121,14 @@ pub fn logout(host: &str, token: &str) {
     let _ = agent().get(&format!("http://{host}/Logout.asp")).header("cookie", &format!("asus_token={token}")).call();
 }
 
+/// Hooks in a query: the router reads only the first hook unless the separator is encoded.
+fn encode(hooks: &str) -> String {
+    hooks.replace(' ', "%20").replace(';', "%3B")
+}
+
 /// One appGet.cgi call. Err("expired") when the router no longer knows the token.
 pub fn hook(host: &str, token: &str, hooks: &str) -> Result<Value, String> {
-    let url = format!("http://{host}/appGet.cgi?hook={}", hooks.replace(' ', "%20"));
+    let url = format!("http://{host}/appGet.cgi?hook={}", encode(hooks));
     let mut r = agent()
         .get(&url)
         .header("cookie", &format!("asus_token={token}"))
@@ -136,6 +141,19 @@ pub fn hook(host: &str, token: &str, hooks: &str) -> Result<Value, String> {
         return Err("expired".into());
     }
     parse_loose(&body).ok_or_else(|| "unreadable".to_string())
+}
+
+#[cfg(debug_assertions)]
+pub fn raw(host: &str, token: &str, hooks: &str) -> Result<String, String> {
+    let mut r = agent()
+        .get(&format!("http://{host}/appGet.cgi?hook={}", encode(hooks)))
+        .header("cookie", &format!("asus_token={token}"))
+        .header("referer", &format!("http://{host}/index.asp"))
+        .call()
+        .map_err(|e| e.to_string())?;
+    let status = r.status().as_u16();
+    Ok(format!("{status}
+{}", r.body_mut().read_to_string().map_err(|e| e.to_string())?))
 }
 
 /// appGet answers are almost JSON: trailing commas and raw newlines inside strings happen.
