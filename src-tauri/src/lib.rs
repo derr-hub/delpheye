@@ -10,6 +10,7 @@ mod network;
 mod privacy;
 mod processes;
 mod report;
+mod router;
 mod security;
 mod startup;
 mod system;
@@ -63,6 +64,7 @@ pub fn run() {
         .manage(monitor::MonitorState::default())
         .manage(security::SecurityState::default())
         .manage(updates::UpdatesState::default())
+        .manage(router::RouterState::default())
         .manage(std::sync::Arc::new(network::NetworkState::default()))
         .setup(|app| {
             open_main_window(app)?;
@@ -117,6 +119,10 @@ pub fn run() {
             errlog::log_error,
             report::report_write,
             privacy::privacy_usage,
+            router::router_find,
+            router::router_connect,
+            router::router_read,
+            router::router_disconnect,
             wifi::wifi_snapshot,
             wifi::wifi_link,
             updates::updates_list,

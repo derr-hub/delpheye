@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Loader2, MapPin, Radar, Sparkles, WifiOff } from "lucide-react";
+import { Loader2, MapPin, Radar, Router, Sparkles, WifiOff } from "lucide-react";
 import { Button } from "../components/ui";
 import { setMode, startWifi, stopWifi, useWifi } from "../lib/wifi";
 import { Simple } from "./wifi/Simple";
 import { Advanced } from "./wifi/Advanced";
+import { Pro } from "./wifi/Pro";
 
 function Blocked({ state }: { state: "off" | "none" | "denied" | "error" }) {
   const { t } = useTranslation();
@@ -43,14 +44,23 @@ export function Wifi() {
     return stopWifi;
   }, []);
 
-  if (!snap)
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-muted">
+  const body =
+    mode === "pro" ? (
+      <Pro />
+    ) : !snap ? (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-muted">
         <Loader2 className="animate-spin text-accent" />
         {t("wifi.first")}
       </div>
+    ) : snap.state !== "ok" ? (
+      <div className="h-[70vh]">
+        <Blocked state={snap.state} />
+      </div>
+    ) : mode === "simple" ? (
+      <Simple />
+    ) : (
+      <Advanced />
     );
-  if (snap.state !== "ok") return <Blocked state={snap.state} />;
 
   return (
     <div className="mx-auto max-w-[1100px] pb-6">
@@ -60,6 +70,7 @@ export function Wifi() {
             [
               ["simple", Sparkles],
               ["advanced", Radar],
+              ["pro", Router],
             ] as const
           ).map(([m, Icon]) => (
             <button
@@ -76,18 +87,18 @@ export function Wifi() {
             </button>
           ))}
         </div>
-        <span className="ml-auto flex items-center gap-2 text-[11px] text-muted">
+        <span className={`ml-auto items-center gap-2 text-[11px] text-muted ${mode === "pro" ? "hidden" : "flex"}`}>
           <span className="relative flex h-2 w-2">
             {scanning && <motion.span className="absolute inset-0 rounded-full bg-accent" animate={{ scale: [1, 2.4], opacity: [0.7, 0] }} transition={{ duration: 1.2, repeat: Infinity }} />}
             <span className={`relative h-2 w-2 rounded-full ${scanning ? "bg-accent" : "bg-line"}`} />
           </span>
-          {scanning ? t("wifi.scanning") : t("wifi.live", { count: snap.networks.length })}
-          {snap.interface && <span className="hidden text-muted/60 lg:inline">· {snap.interface}</span>}
+          {snap?.state === "ok" && mode !== "pro" && (scanning ? t("wifi.scanning") : t("wifi.live", { count: snap.networks.length }))}
+          {snap?.interface && mode !== "pro" && <span className="hidden text-muted/60 lg:inline">· {snap.interface}</span>}
         </span>
       </div>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={mode} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-          {mode === "simple" ? <Simple /> : <Advanced />}
+          {body}
         </motion.div>
       </AnimatePresence>
     </div>

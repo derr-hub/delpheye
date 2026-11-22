@@ -93,14 +93,15 @@ interface WifiState {
   history: Record<string, Sample[]>;
   /** The connection's own signal, once a second, last 5 minutes. */
   linkHistory: Sample[];
-  mode: "simple" | "advanced";
+  mode: "simple" | "advanced" | "pro";
   /** First time each access point was heard in this session. */
   firstSeen: Record<string, number>;
 }
 
 const savedMode = (() => {
   try {
-    return localStorage.getItem("wifi.mode") === "advanced" ? "advanced" : "simple";
+    const m = localStorage.getItem("wifi.mode");
+    return m === "advanced" || m === "pro" ? m : "simple";
   } catch {
     return "simple";
   }
@@ -116,7 +117,7 @@ export const useWifi = create<WifiState>(() => ({
   firstSeen: {},
 }));
 
-export function setMode(mode: "simple" | "advanced") {
+export function setMode(mode: "simple" | "advanced" | "pro") {
   useWifi.setState({ mode });
   try {
     localStorage.setItem("wifi.mode", mode);

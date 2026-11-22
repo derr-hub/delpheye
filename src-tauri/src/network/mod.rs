@@ -333,6 +333,11 @@ pub fn verdict(gateway: Option<&Probe>, internet: &[Probe], dns_ms: Option<u32>)
 }
 
 /// Pings the router and two public resolvers and times a DNS look-up: where is it slow?
+/// The default gateway of the first connected adapter (not a VPN): usually the home router.
+pub fn gateway() -> Option<Ipv4Addr> {
+    win::adapters().into_iter().filter(|a| a.up && a.kind != "vpn").flat_map(|a| a.gateways).find_map(|g| g.parse::<Ipv4Addr>().ok())
+}
+
 #[tauri::command]
 pub async fn network_check() -> Result<Check, String> {
     tauri::async_runtime::spawn_blocking(|| {
