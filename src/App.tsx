@@ -16,6 +16,7 @@ import { Leftovers } from "./pages/Leftovers";
 import { Monitoring } from "./pages/Monitoring";
 import { Processes } from "./pages/Processes";
 import { Network } from "./pages/Network";
+import { Report } from "./pages/Report";
 import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
 import { Journal } from "./pages/Journal";
@@ -41,6 +42,8 @@ function PageBody({ page }: { page: Page }) {
       return <Processes />;
     case "network":
       return <Network />;
+    case "report":
+      return <Report />;
     case "security":
       return <Security />;
   }
@@ -125,7 +128,7 @@ function App() {
               />
               <motion.h1 style={{ fontSize: headingSize }} className="relative font-display font-semibold leading-none">
                 <motion.span key={page} layoutId={`page-title-${page}`} className="inline-block" transition={{ type: "spring", stiffness: 300, damping: 32 }}>
-                  {page === "overview" ? t("overview.title") : t(`nav.${page}`)}
+                  {page === "overview" ? t("overview.title") : page === "report" ? t("report.title") : t(`nav.${page}`)}
                 </motion.span>
               </motion.h1>
             </div>

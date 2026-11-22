@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 
-export type Page = "overview" | "cleanup" | "leftovers" | "startup" | "disk" | "monitoring" | "processes" | "network" | "security" | "journal";
+export type Page = "overview" | "cleanup" | "leftovers" | "startup" | "disk" | "monitoring" | "processes" | "network" | "security" | "journal" | "report";
 
 export interface AppStatus {
   elevated: boolean;

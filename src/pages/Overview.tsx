@@ -8,6 +8,7 @@ import { isVisible, useCleanup } from "../lib/cleanup";
 import { formatUptime, useFmt } from "../lib/format";
 import { healthScore, useMetrics, type HealthLevel } from "../lib/metrics";
 import { runQuick, useMonitor } from "../lib/monitor";
+import { HelpCard } from "../components/HelpCard";
 import { useSecurity } from "../lib/security";
 
 const LEVEL_COLOR: Record<HealthLevel, string> = {
@@ -325,6 +326,7 @@ export function Overview() {
           ))}
         </ul>
       </Card>
+      <HelpCard />
     </motion.div>
   );
 }

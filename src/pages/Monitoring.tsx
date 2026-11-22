@@ -558,7 +558,7 @@ const GROUPS: { key: string; ids: string[] }[] = [
   { key: "cooling", ids: ["fan", "fans"] },
 ];
 
-function CheckList({ checks }: { checks: Check[] }) {
+export function CheckList({ checks }: { checks: Check[] }) {
   return (
     <ul className="overflow-hidden rounded-card border border-line bg-surface">
       {checks.map((check, i) => (

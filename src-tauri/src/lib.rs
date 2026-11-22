@@ -8,6 +8,7 @@ mod metrics;
 mod monitor;
 mod network;
 mod processes;
+mod report;
 mod security;
 mod startup;
 mod system;
@@ -51,6 +52,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(cleanup::CleanupState::default())
         .manage(disk::DiskState::default())
         .manage(leftovers::LeftoversState::default())
@@ -107,6 +109,8 @@ pub fn run() {
             network::network_snapshot,
             network::network_check,
             errlog::log_error,
+            report::report_write,
+            report::report_read,
             errlog::open_log_folder,
             processes::process_details,
             processes::process_icons,

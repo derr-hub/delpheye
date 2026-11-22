@@ -46,7 +46,7 @@ const SEVERITY_TONE: Record<Severity, string> = {
 const OUTCOME_ICON: Record<HardeningTest["outcome"], LucideIcon> = { pass: CheckCircle2, fail: XCircle, unknown: HelpCircle };
 const OUTCOME_TONE: Record<HardeningTest["outcome"], string> = { pass: "text-safe", fail: "text-risk", unknown: "text-muted" };
 
-function SeverityBadge({ severity }: { severity: Severity }) {
+export function SeverityBadge({ severity }: { severity: Severity }) {
   const { t } = useTranslation();
   return <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] ${SEVERITY_TONE[severity]}`}>{t(`security.severity.${severity}`)}</span>;
 }
