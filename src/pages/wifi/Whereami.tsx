@@ -39,13 +39,19 @@ const setPlaces = (planKey: string, list: Place[]) => {
 };
 
 const FLOOR = -95;
+/** What one side missing an access point costs: far ones come and go between scans. */
+const MISSING = 6;
 
-/** Mean difference in dB over the access points heard well at either end. */
+/**
+ * Mean difference in dB over the access points heard clearly at either end. Access points heard
+ * only on one side cost a fixed amount rather than the full gap to silence: weak, far ones blink in
+ * and out of scans and would otherwise swamp the comparison.
+ */
 export function distance(a: Record<string, number>, b: Record<string, number>) {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)].filter((k) => (a[k] ?? FLOOR) > -85 || (b[k] ?? FLOOR) > -85));
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)].filter((k) => (a[k] ?? FLOOR) > -80 || (b[k] ?? FLOOR) > -80));
   if (!keys.size) return Infinity;
   let sum = 0;
-  for (const k of keys) sum += Math.abs((a[k] ?? FLOOR) - (b[k] ?? FLOOR));
+  for (const k of keys) sum += a[k] !== undefined && b[k] !== undefined ? Math.abs(a[k] - b[k]) : MISSING;
   return sum / keys.size;
 }
 
@@ -53,12 +59,21 @@ export function distance(a: Record<string, number>, b: Record<string, number>) {
 function useGuess(planKey: string) {
   const places = usePlaces((s) => s.all[planKey]) ?? [];
   const snap = useWifi((s) => s.snap);
+  return guessFrom(places, snap);
+}
+
+/** The same, outside React (the 3D scene asks once per scan). */
+export function guessNow(planKey: string) {
+  return guessFrom(usePlaces.getState().all[planKey] ?? [], useWifi.getState().snap);
+}
+
+function guessFrom(places: Place[], snap: ReturnType<typeof useWifi.getState>["snap"]) {
   if (!snap || places.length === 0) return null;
   const now = Object.fromEntries(snap.networks.map((n) => [n.bssid, n.rssi]));
   const ranked = places.map((p) => ({ p, d: distance(now, p.vec) })).sort((a, b) => a.d - b.d);
   // With one place there is nothing to tell it from: at best "roughly".
   const confidence =
-    ranked.length > 1 ? (ranked[1].d - ranked[0].d >= 4 ? "good" : ranked[1].d - ranked[0].d >= 2 ? "rough" : "unsure") : ranked[0].d <= 4 ? "rough" : "unsure";
+    ranked.length > 1 ? (ranked[1].d - ranked[0].d >= 4 ? "good" : ranked[1].d - ranked[0].d >= 2 ? "rough" : "unsure") : ranked[0].d <= 6 ? "rough" : "unsure";
   return { place: ranked[0].p, d: ranked[0].d, confidence } as const;
 }
 

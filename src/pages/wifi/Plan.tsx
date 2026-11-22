@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { BrickWall, Crosshair, ImagePlus, LocateFixed, MapPinned, MousePointer2, Router as RouterIcon, Square, Trash2, Undo2 } from "lucide-react";
-import { Button } from "../../components/ui";
+import { Button, Modal } from "../../components/ui";
 import { isLive, measure, nameOf, useWifi } from "../../lib/wifi";
 import { useRouter } from "../../lib/router";
 import { Whereami } from "./Whereami";
@@ -137,6 +137,14 @@ export function Plan() {
   const [busy, setBusy] = useState(false);
   const [tool, setTool] = useState<Tool>("measure");
   const [drag, setDrag] = useState<{ x: number; y: number; x2: number; y2: number } | null>(null);
+  const [askClear, setAskClear] = useState(false);
+  // What "Clear" removed, kept for a while so it can be put back.
+  const [cleared, setCleared] = useState<Saved | null>(null);
+  useEffect(() => {
+    if (!cleared) return;
+    const id = window.setTimeout(() => setCleared(null), 20_000);
+    return () => window.clearTimeout(id);
+  }, [cleared]);
   const file = useRef<HTMLInputElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const routerOverview = useRouter((s) => s.overview);
@@ -215,6 +223,31 @@ export function Plan() {
 
   return (
     <div className="grid gap-4" data-testid="wifi-plan">
+      <Modal open={askClear} onClose={() => setAskClear(false)}>
+        <div data-testid="plan-clear-confirm">
+          <h2 className="font-display text-[18px] font-semibold">{t("wifi.plan.clearTitle")}</h2>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted">
+            {t("wifi.plan.clearText", { points: plan.points.length, walls: walls.length })}
+            {plan.image ? ` ${t("wifi.plan.clearImage")}` : ""}
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="quiet" onClick={() => setAskClear(false)}>
+              {t("router.fix.cancel")}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setCleared(plan);
+                update({ w: plan.w, d: plan.d, points: [] });
+                setAskClear(false);
+              }}
+              data-testid="plan-clear-yes"
+            >
+              {t("wifi.plan.clear")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
       <div className="rounded-card border border-line bg-surface p-4">
         <div className="flex flex-wrap items-end gap-3">
           <label className="grid min-w-[200px] flex-1 gap-1 text-[11px] text-muted">
@@ -289,9 +322,23 @@ export function Plan() {
           <Button variant="quiet" icon={<Undo2 size={14} />} disabled={tool === "measure" ? !plan.points.length : !walls.length} onClick={() => update(tool === "measure" ? { ...plan, points: plan.points.slice(0, -1) } : { ...plan, walls: walls.slice(0, -1) })}>
             {t("wifi.plan.undo")}
           </Button>
-          <Button variant="quiet" icon={<Trash2 size={14} />} disabled={!plan.points.length && !walls.length && !plan.image} onClick={() => update({ w: plan.w, d: plan.d, points: [] })}>
-            {t("wifi.plan.clear")}
-          </Button>
+          {cleared ? (
+            <Button
+              variant="primary"
+              icon={<Undo2 size={14} />}
+              onClick={() => {
+                update(cleared);
+                setCleared(null);
+              }}
+              data-testid="plan-restore"
+            >
+              {t("wifi.plan.restore")}
+            </Button>
+          ) : (
+            <Button variant="quiet" icon={<Trash2 size={14} />} disabled={!plan.points.length && !walls.length && !plan.image} onClick={() => setAskClear(true)} data-testid="plan-clear">
+              {t("wifi.plan.clear")}
+            </Button>
+          )}
           <span className="text-[12px] text-muted">{t(`wifi.plan.toolHint.${tool}`)}</span>
         </div>
       </div>

@@ -77,6 +77,15 @@ export function Direction({ target }: { target: string | null }) {
     }
     setPhase(stop.current ? "idle" : "done");
     setStep(-1);
+    // A confident answer is kept for the 3D view, which then places the router that way.
+    const r = !stop.current ? combine(got) : null;
+    if (r && r.confidence !== "weak") {
+      try {
+        localStorage.setItem("wifi.direction", JSON.stringify({ bssid: target, angle: r.angle, at: Date.now() }));
+      } catch {
+        /* optional */
+      }
+    }
   };
 
   const result = phase === "done" ? combine(rounds) : null;
