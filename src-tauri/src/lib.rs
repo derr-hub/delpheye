@@ -105,6 +105,7 @@ pub fn run() {
             monitor::stability_cancel,
             monitor::cooling_history,
             monitor::gpu_adapters,
+            monitor::slowdown_check,
             processes::processes_list,
             network::network_snapshot,
             network::network_check,

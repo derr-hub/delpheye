@@ -9,6 +9,8 @@ import { formatUptime, useFmt } from "../lib/format";
 import { healthScore, useMetrics, type HealthLevel } from "../lib/metrics";
 import { runQuick, useMonitor } from "../lib/monitor";
 import { HelpCard } from "../components/HelpCard";
+import { checkSlowdown } from "../components/Slowdown";
+import { Snail } from "lucide-react";
 import { useSecurity } from "../lib/security";
 
 const LEVEL_COLOR: Record<HealthLevel, string> = {
@@ -170,6 +172,14 @@ export function Overview() {
             {t(LEVEL_KEY[level])}
           </div>
           <StatusNotes {...status} />
+          <button
+            onClick={checkSlowdown}
+            data-testid="slowdown-open"
+            className="reveal mt-3 inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-[12px] text-fg transition-colors hover:bg-raised"
+          >
+            <Snail size={14} className="text-accent" />
+            {t("slowdown.button")}
+          </button>
         </div>
         <dl className="grid shrink-0 grid-cols-[auto_auto] gap-x-6 gap-y-2 text-[13px]">
           <dt className="text-muted">{info?.hostName || "—"}</dt>

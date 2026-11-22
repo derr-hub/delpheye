@@ -71,6 +71,16 @@ fn table() -> Vec<Sample> {
     TABLE.lock().unwrap().clone()
 }
 
+/// The latest process samples, for other modules.
+pub fn samples() -> Vec<Sample> {
+    table()
+}
+
+/// The explanation id DelphEye has for a process name, if any.
+pub fn known_id(name: &str) -> Option<&'static str> {
+    known::lookup(name).map(|k| k.id)
+}
+
 /// The parent only counts if it started before the child: Windows reuses process ids, so a
 /// "parent" that started later is an unrelated process that inherited the number.
 fn real_parents(samples: &[Sample]) -> HashMap<u32, u32> {

@@ -17,6 +17,7 @@ import { Monitoring } from "./pages/Monitoring";
 import { Processes } from "./pages/Processes";
 import { Network } from "./pages/Network";
 import { Report } from "./pages/Report";
+import { SlowdownPanel } from "./components/Slowdown";
 import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
 import { Journal } from "./pages/Journal";
@@ -147,6 +148,7 @@ function App() {
           </main>
         </div>
       </div>
+      <SlowdownPanel />
     </MotionConfig>
   );
 }

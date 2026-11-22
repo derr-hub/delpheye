@@ -4,6 +4,7 @@ pub mod cooling;
 pub mod fans;
 pub mod gpu;
 pub mod ram;
+pub mod slowdown;
 pub mod health;
 pub mod sidecar;
 pub mod stress;
@@ -140,6 +141,20 @@ pub async fn stability_run(app: AppHandle, state: State<'_, MonitorState>, journ
     }
     report.history = cooling::history(&journal);
     Ok(report)
+}
+
+/// Watches the machine for a few seconds and says what slows it down, reporting progress as
+/// `slowdown:progress`.
+#[tauri::command]
+pub async fn slowdown_check(app: AppHandle, state: State<'_, MonitorState>) -> Result<slowdown::Diagnosis, String> {
+    let sensors = state.sensors.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        slowdown::run(&sensors, &|second| {
+            let _ = app.emit("slowdown:progress", second);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 /// The graphics adapters the stress test can load, discrete cards first.

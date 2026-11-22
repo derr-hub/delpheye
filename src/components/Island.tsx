@@ -11,6 +11,7 @@ import { useMetrics } from "../lib/metrics";
 import { useMonitor } from "../lib/monitor";
 import { useSecurity } from "../lib/security";
 import { Sparkline } from "./ui";
+import { checkSlowdown } from "./Slowdown";
 
 /** Whatever long job is running anywhere in the app, so it stays visible from every page. */
 function useActivity(): { label: string; progress: number | null; page: Parameters<typeof go>[0] } | null {
@@ -165,7 +166,16 @@ export function Island() {
                 <dt className="text-muted">{t("island.processes")}</dt>
                 <dd className="num">{current?.processCount ?? "—"}</dd>
               </dl>
-              <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  checkSlowdown();
+                }}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent/10 py-1.5 text-[12px] text-accent hover:bg-accent/15"
+              >
+                {t("slowdown.button")}
+              </button>
+              <div className="mt-2 flex gap-2">
                 {(
                   [
                     ["processes", ListTree],
