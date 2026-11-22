@@ -337,7 +337,8 @@ pub fn verdict(gateway: Option<&Probe>, internet: &[Probe], dns_ms: Option<u32>)
 pub fn lan_ipv4() -> Vec<Ipv4Addr> {
     win::adapters()
         .into_iter()
-        .filter(|a| a.up && (a.kind == "wifi" || a.kind == "ethernet"))
+        // A gateway marks a real network: virtual adapters (VirtualBox, Hyper-V) have none.
+        .filter(|a| a.up && (a.kind == "wifi" || a.kind == "ethernet") && !a.gateways.is_empty())
         .flat_map(|a| a.ipv4)
         .filter_map(|x| x.split('/').next()?.parse::<Ipv4Addr>().ok())
         .collect()

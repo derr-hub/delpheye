@@ -40,3 +40,4 @@ src-tauri/.cargo/config.toml
 # Companion (Android) build output
 companion/src-tauri/target/
 companion/dist/
+companion/src-tauri/gen/android/app/src/main/jniLibs/
