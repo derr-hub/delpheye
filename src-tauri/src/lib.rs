@@ -70,6 +70,7 @@ pub fn run() {
             open_main_window(app)?;
             app.manage(journal::Journal::open_for(app.handle()));
             privacy::start(app.handle().clone());
+            wifi::start_history(app.handle().clone());
             // Whatever has sat in quarantine for its full week is deleted for good.
             let handle = app.handle().clone();
             std::thread::spawn(move || leftovers::purge_expired(&handle.state::<journal::Journal>()));
@@ -127,6 +128,8 @@ pub fn run() {
             router::router_debug_hook,
             wifi::wifi_snapshot,
             wifi::wifi_link,
+            wifi::wifi_quality,
+            wifi::history::wifi_history,
             updates::updates_list,
             updates::updates_install,
             updates::updates_cancel,

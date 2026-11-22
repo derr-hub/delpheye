@@ -37,6 +37,10 @@ const SCHEMA: &str = "
         at   INTEGER NOT NULL,   -- unix seconds
         data TEXT    NOT NULL    -- JSON cooling profile
     );
+    CREATE TABLE IF NOT EXISTS wifi_history (
+        at   INTEGER NOT NULL,   -- unix seconds
+        data TEXT    NOT NULL    -- JSON: the air at that moment, see wifi::history
+    );
     CREATE TABLE IF NOT EXISTS sensor_uses (
         id      INTEGER PRIMARY KEY AUTOINCREMENT,
         kind    TEXT    NOT NULL,   -- 'webcam' or 'microphone'

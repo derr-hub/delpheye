@@ -327,6 +327,37 @@ pub fn ping(to: Ipv4Addr, timeout_ms: u32) -> Option<u32> {
     }
 }
 
+/// Like `ping`, but sent from `from` — so it leaves through that adapter (e.g. Wi-Fi while a cable
+/// is also plugged in).
+pub fn ping_from(from: Ipv4Addr, to: Ipv4Addr, timeout_ms: u32) -> Option<u32> {
+    // SAFETY: as in `ping`; no event or callback, so the call waits for the reply itself.
+    unsafe {
+        let handle = IcmpCreateFile().ok()?;
+        let payload = [0x44u8; 32];
+        let mut reply = vec![0u8; size_of::<ICMP_ECHO_REPLY>() + payload.len() + 8];
+        let count = windows::Win32::NetworkManagement::IpHelper::IcmpSendEcho2Ex(
+            handle,
+            None,
+            None,
+            None,
+            u32::from_ne_bytes(from.octets()),
+            u32::from_ne_bytes(to.octets()),
+            payload.as_ptr().cast(),
+            payload.len() as u16,
+            None,
+            reply.as_mut_ptr().cast(),
+            reply.len() as u32,
+            timeout_ms,
+        );
+        let _ = IcmpCloseHandle(handle);
+        if count == 0 {
+            return None;
+        }
+        let r = std::ptr::read_unaligned(reply.as_ptr() as *const ICMP_ECHO_REPLY);
+        (r.Status == 0).then_some(r.RoundTripTime.max(1))
+    }
+}
+
 fn reverse_name(ip: IpAddr) -> String {
     match ip {
         IpAddr::V4(v4) => {

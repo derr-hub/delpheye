@@ -333,6 +333,18 @@ pub fn verdict(gateway: Option<&Probe>, internet: &[Probe], dns_ms: Option<u32>)
 }
 
 /// Pings the router and two public resolvers and times a DNS look-up: where is it slow?
+/// The Wi-Fi adapter's IPv4 address and gateway, when it is connected.
+pub fn wifi_route() -> Option<(Ipv4Addr, Ipv4Addr)> {
+    let a = win::adapters().into_iter().find(|a| a.up && a.kind == "wifi")?;
+    let ip = a.ipv4.iter().find_map(|x| x.split('/').next()?.parse::<Ipv4Addr>().ok())?;
+    let gw = a.gateways.iter().find_map(|g| g.parse::<Ipv4Addr>().ok())?;
+    Some((ip, gw))
+}
+
+pub fn ping_from(from: Ipv4Addr, to: Ipv4Addr, timeout_ms: u32) -> Option<u32> {
+    win::ping_from(from, to, timeout_ms)
+}
+
 /// The default gateway of the first connected adapter (not a VPN): usually the home router.
 pub fn gateway() -> Option<Ipv4Addr> {
     win::adapters().into_iter().filter(|a| a.up && a.kind != "vpn").flat_map(|a| a.gateways).find_map(|g| g.parse::<Ipv4Addr>().ok())

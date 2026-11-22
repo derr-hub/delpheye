@@ -158,7 +158,31 @@ pub fn raw(host: &str, token: &str, hooks: &str) -> Result<String, String> {
 
 /// The only changes DelphEye makes on a router, each with its exact settings and the service
 /// the router restarts to apply them. `guest` names the guest network, e.g. "wl1.1".
+/// A channel setting as the router writes it: "0" (auto), "149", "6l", "100/80".
+pub fn valid_spec(spec: &str) -> bool {
+    if spec == "0" {
+        return true;
+    }
+    let (ch, rest) = match spec.split_once('/') {
+        Some((c, w)) => (c, Some(w)),
+        None => (spec.trim_end_matches(['l', 'u']), None),
+    };
+    let ch_ok = !ch.is_empty() && ch.len() <= 3 && ch.bytes().all(|b| b.is_ascii_digit()) && ch.parse::<u32>().is_ok_and(|c| (1..=233).contains(&c));
+    let width_ok = rest.is_none_or(|w| ["20", "40", "80", "160"].contains(&w));
+    let suffix_ok = spec.split_once('/').is_some() || spec.trim_end_matches(['l', 'u']).len() + 1 >= spec.len();
+    ch_ok && width_ok && suffix_ok
+}
+
 pub fn change(action: &str, guest: Option<&str>) -> Option<(Vec<(String, String)>, &'static str)> {
+    if let Some(rest) = action.strip_prefix("channel:") {
+        // "channel:<unit>:<spec>", e.g. "channel:1:149/80".
+        let (unit, spec) = rest.split_once(':')?;
+        let unit: u8 = unit.parse().ok().filter(|u| *u <= 2)?;
+        if !valid_spec(spec) {
+            return None;
+        }
+        return Some((vec![(format!("wl{unit}_chanspec"), spec.to_string())], "restart_wireless"));
+    }
     let set = |k: &str, v: &str| vec![(k.to_string(), v.to_string())];
     Some(match action {
         "wps-off" => (set("wps_enable", "0"), "restart_wireless"),
@@ -255,6 +279,8 @@ pub struct Radio {
     pub security: &'static str,
     pub tkip: bool,
     pub hidden: bool,
+    /// The router's own channel setting, kept to put it back after a change.
+    pub spec: String,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -423,6 +449,7 @@ pub fn overview(host: &str, nv: &Value, client_list: &Value, uptime: &Value) -> 
             security,
             tkip,
             hidden: s(nv, &format!("wl{unit}_closed")) == "1",
+            spec: spec.clone(),
         });
         for sub in 1..=3 {
             if s(nv, &format!("wl{unit}.{sub}_bss_enabled")) == "1" {
@@ -524,6 +551,17 @@ mod tests {
         assert_eq!(security("psk2sae", "aes"), ("wpa2-wpa3", false));
         assert_eq!(security("pskpsk2", "tkip+aes"), ("wpa", true));
         assert_eq!(hms("123:04:05"), Some(123 * 3600 + 245));
+    }
+
+    #[test]
+    fn channel_changes_are_checked() {
+        assert_eq!(change("channel:1:149/80", None).unwrap().0, vec![("wl1_chanspec".to_string(), "149/80".to_string())]);
+        assert!(change("channel:1:0", None).is_some());
+        assert!(change("channel:0:6l", None).is_some());
+        assert!(change("channel:3:36", None).is_none());
+        assert!(change("channel:1:36/81", None).is_none());
+        assert!(change("channel:1:36&wps_enable=1", None).is_none());
+        assert!(change("channel:1:999", None).is_none());
     }
 
     #[test]

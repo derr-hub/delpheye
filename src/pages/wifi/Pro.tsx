@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Button, Checkbox, Modal } from "../../components/ui";
 import { formatUptime } from "../../lib/format";
-import { applyRouter, connectRouter, disconnectRouter, findRouter, refreshRouter, reverseOf, toggleKnown, useRouter, type Client } from "../../lib/router";
+import { applyRouter, connectRouter, disconnectRouter, findRouter, refreshRouter, toggleKnown, useRouter, type Client, type Radio } from "../../lib/router";
 import { BAND_COLORS, useWifi } from "../../lib/wifi";
 import { Bars } from "./Simple";
 
@@ -203,6 +203,78 @@ function ClientRow({ c, host }: { c: Client; host: string }) {
   );
 }
 
+/** The channels the Wi-Fi scan rates for this band, quietest first, plus Auto. */
+function ChannelPicker({ radio, onClose }: { radio: Radio | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  const bands = useWifi((s) => s.snap?.analysis?.bands);
+  const [choice, setChoice] = useState<string | null>(null);
+  useEffect(() => setChoice(null), [radio]);
+  if (!radio) return <Modal open={false} onClose={onClose}>{null}</Modal>;
+  const width = radio.band === "2.4" ? 20 : Math.min(radio.width ?? 80, 80);
+  const specOf = (ch: number) => (radio.band === "2.4" || width === 20 ? String(ch) : `${ch}/${width}`);
+  const candidates = (bands?.find((b) => b.band === radio.band)?.candidates ?? []).slice(0, 6);
+  const current = radio.spec;
+  const label = (spec: string) => (spec === "0" ? t("router.channel.auto") : t("wifi.channelN", { n: spec.split("/")[0].replace(/[lu]$/, "") }));
+  return (
+    <Modal open onClose={onClose}>
+      <div data-testid="router-channel-picker">
+        <h2 className="font-display text-[18px] font-semibold">{t("router.channel.title", { band: radio.band, ssid: radio.ssid })}</h2>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("router.channel.text")}</p>
+        <div className="mt-3 grid gap-1.5">
+          {candidates.length === 0 && <p className="text-[12px] text-warn">{t("router.channel.noScan")}</p>}
+          {candidates.map((c, i) => {
+            const spec = specOf(c.channel);
+            return (
+              <button
+                key={c.channel}
+                onClick={() => setChoice(spec)}
+                className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-[12px] transition-colors ${choice === spec ? "border-accent/70 bg-accent/10" : "border-line hover:bg-raised"}`}
+              >
+                <span className="w-24 font-medium">{t("wifi.channelN", { n: c.channel })}</span>
+                <span className="flex-1 text-muted">
+                  {c.networks === 0 ? t("router.channel.empty") : t("router.channel.busy", { count: c.networks })}
+                  {c.dfs && ` · ${t("router.channel.dfs")}`}
+                </span>
+                {i === 0 && <span className="rounded bg-safe/15 px-1.5 text-[10px] text-safe">{t("router.channel.best")}</span>}
+                {spec === current && <span className="rounded bg-raised px-1.5 text-[10px] text-muted">{t("router.channel.now")}</span>}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setChoice("0")}
+            className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-[12px] transition-colors ${choice === "0" ? "border-accent/70 bg-accent/10" : "border-line hover:bg-raised"}`}
+          >
+            <span className="w-24 font-medium">{t("router.channel.auto")}</span>
+            <span className="flex-1 text-muted">{t("router.channel.autoText")}</span>
+            {current === "0" && <span className="rounded bg-raised px-1.5 text-[10px] text-muted">{t("router.channel.now")}</span>}
+          </button>
+        </div>
+        <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[12px] leading-relaxed text-muted">{t("router.fix.wps-off.effect")}</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="quiet" onClick={onClose}>
+            {t("router.fix.cancel")}
+          </Button>
+          <Button
+            variant="primary"
+            disabled={!choice || choice === current}
+            data-testid="router-channel-apply"
+            onClick={() => {
+              const spec = choice!;
+              onClose();
+              applyRouter(`channel:${radio.unit}:${spec}`, null, `${radio.band} ${t("wifi.ghz")}: ${label(spec)}`, false, {
+                action: `channel:${radio.unit}:${current || "0"}`,
+                guest: null,
+              });
+            }}
+          >
+            {choice ? t("router.channel.apply", { name: label(choice) }) : t("router.channel.choose")}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function Dashboard() {
   const { t } = useTranslation();
   const o = useRouter((s) => s.overview)!;
@@ -220,6 +292,7 @@ function Dashboard() {
   const done = useRouter((s) => s.done);
   const error = useRouter((s) => s.error);
   const [ask, setAsk] = useState<{ action: string; guest: string | null; label: string } | null>(null);
+  const [pick, setPick] = useState<Radio | null>(null);
   // The fixes each check offers: one per guest network for "guest-on".
   const fixes = (id: string): { action: string; guest: string | null; label: string }[] =>
     id === "wps-on"
@@ -291,6 +364,12 @@ function Dashboard() {
               </span>
               {r.hidden && <span className="rounded bg-raised px-1.5 py-0.5">{t("router.hidden")}</span>}
             </div>
+            {r.enabled && (
+              <Button className="mt-3 !h-8 text-[12px]" disabled={!!applying} onClick={() => setPick(r)} data-testid={`router-channel-${r.unit}`}>
+                {applying?.startsWith(`channel:${r.unit}:`) && <Loader2 size={13} className="animate-spin" />}
+                {t("router.channel.button")}
+              </Button>
+            )}
           </div>
         ))}
       </div>
@@ -313,17 +392,23 @@ function Dashboard() {
             >
               {d.undone ? <RefreshCw size={15} /> : d.confirmed ? <CircleCheck size={15} className="text-safe" /> : <CircleAlert size={15} className="text-warn" />}
               <span className="min-w-0 flex-1">
-                {d.undone ? t("router.fix.undone", { name: d.label }) : d.confirmed ? t(`router.fix.${d.action}.done`, { name: d.label }) : t("router.fix.notConfirmed")}
+                {d.undone
+                  ? t(d.action.startsWith("channel:") ? "router.channel.undone" : "router.fix.undone", { name: d.label })
+                  : d.confirmed
+                    ? d.action.startsWith("channel:")
+                      ? t("router.channel.done", { name: d.label })
+                      : t(`router.fix.${d.action}.done`, { name: d.label })
+                    : t("router.fix.notConfirmed")}
               </span>
               {!d.undone && (
                 <Button
                   variant="quiet"
                   className="!h-7 text-[12px]"
                   disabled={!!applying}
-                  onClick={() => applyRouter(reverseOf(d.action), d.guest, d.label, true)}
+                  onClick={() => applyRouter(d.back.action, d.back.guest, d.label, true)}
                   data-testid="router-undo"
                 >
-                  {applying === reverseOf(d.action) + (d.guest ?? "") && <Loader2 size={13} className="animate-spin" />}
+                  {applying === d.back.action + (d.back.guest ?? "") && <Loader2 size={13} className="animate-spin" />}
                   {t("router.fix.undo")}
                 </Button>
               )}
@@ -375,6 +460,8 @@ function Dashboard() {
           </ul>
         </div>
       </div>
+
+      <ChannelPicker radio={pick} onClose={() => setPick(null)} />
 
       <Modal open={ask !== null} onClose={() => setAsk(null)}>
         {ask && (

@@ -27,6 +27,8 @@ export interface Radio {
   security: string;
   tkip: boolean;
   hidden: boolean;
+  /** The router's own channel setting ("0" = auto). */
+  spec: string;
 }
 
 export interface Client {
@@ -76,6 +78,8 @@ interface RouterStore {
 export interface Done {
   action: string;
   guest: string | null;
+  /** The change that puts it back. */
+  back: { action: string; guest: string | null };
   /** What it was about, for the message (e.g. the guest network's name). */
   label: string;
   /** The router shows the change took effect. */
@@ -87,6 +91,10 @@ const REVERSE: Record<string, string> = { "wps-off": "wps-on", "guest-off": "gue
 
 /** Whether the router's settings show the action took effect. */
 function took(o: Overview, action: string, guest: string | null): boolean {
+  if (action.startsWith("channel:")) {
+    const [, unit, spec] = action.split(":");
+    return o.radios.some((r) => String(r.unit) === unit && r.spec === spec);
+  }
   switch (action) {
     case "wps-off":
       return !o.checks.some((c) => c.id === "wps-on");
@@ -104,16 +112,17 @@ function took(o: Overview, action: string, guest: string | null): boolean {
   return false;
 }
 
-/** Applies one change the user confirmed; `undo` turns an earlier change back. */
-export async function applyRouter(action: string, guest: string | null, label: string, undo = false) {
+/** Applies one change the user confirmed; `undo` turns an earlier change back. `back` is the change
+ * that would undo this one (the opposite switch, or the previous channel). */
+export async function applyRouter(action: string, guest: string | null, label: string, undo = false, back?: { action: string; guest: string | null }) {
   useRouter.setState({ applying: action + (guest ?? ""), error: null });
   try {
     const o = await invoke<Overview>("router_apply", { action, guest });
     absorb(o);
     useRouter.setState((s) => ({
       done: undo
-        ? s.done.map((d) => (REVERSE[d.action] === action && d.guest === guest && !d.undone ? { ...d, undone: took(o, action, guest) } : d))
-        : [{ action, guest, label, confirmed: took(o, action, guest), undone: false }, ...s.done],
+        ? s.done.map((d) => (d.back.action === action && d.back.guest === guest && !d.undone ? { ...d, undone: took(o, action, guest) } : d))
+        : [{ action, guest, label, back: back ?? { action: REVERSE[action], guest }, confirmed: took(o, action, guest), undone: false }, ...s.done],
     }));
   } catch (e) {
     useRouter.setState({ error: String(e) });

@@ -294,6 +294,22 @@ pub fn analyse(all: &[Bss], link: Option<&Link>) -> Analysis {
     if crowded >= 15 {
         add!("crowded-24", "info", json!({ "count": crowded }));
     }
+    // Someone else broadcasting the user's network name: a copy of the network ("evil twin")
+    // lures devices that join by name, then sees their traffic.
+    if let Some(ssid) = own_ssid.as_deref() {
+        let own_security = own_bss.map(|b| b.security);
+        // Only the connected router's own radios are trusted here; a mesh node or repeater is
+        // reported as "same-name" so the user can say whether it is theirs.
+        let device: Vec<&Bss> = all.iter().filter(|b| own_bss.is_some_and(|o| o.bssid == b.bssid || same_device(&o.bssid, &b.bssid))).collect();
+        for twin in all.iter().filter(|b| !b.hidden && b.ssid == ssid && !device.iter().any(|m| m.bssid == b.bssid)) {
+            let different = own_security.is_some_and(|s| s != twin.security) || twin.security == "open";
+            add!(
+                if different { "evil-twin" } else { "same-name" },
+                if different { "risk" } else { "warn" },
+                json!({ "ssid": ssid, "bssid": twin.bssid, "security": twin.security, "rssi": twin.rssi })
+            );
+        }
+    }
     let open = all.iter().filter(|b| b.security == "open" && !b.connected).count() as u32;
     if open > 0 {
         add!("neighbors-open", "info", json!({ "count": open }));
@@ -408,6 +424,18 @@ mod tests {
         // A look-alike address on another channel of the same band is a neighbour after all.
         let all = vec![ap("KARID", "0A:BF:B8:D7:40:70", 5500, 20, -60, true), ap("Other", "0A:BF:B8:E7:40:70", 5180, 20, -60, false)];
         assert_eq!(analyse(&all, None).mine.len(), 1);
+    }
+
+    #[test]
+    fn a_copy_of_the_network_is_flagged() {
+        let mut twin = ap("Home", "66:66:66:00:00:01", 2437, 20, -70, false);
+        twin.security = "open";
+        let all = vec![ap("Home", "0A:BF:B8:D7:40:70", 5500, 20, -60, true), twin];
+        let a = analyse(&all, None);
+        assert!(a.advice.iter().any(|x| x.id == "evil-twin"), "{:?}", a.advice);
+        // The router's own other band with the same name is not a twin.
+        let all = vec![ap("Home", "0A:BF:B8:D7:40:70", 5500, 20, -60, true), ap("Home", "0A:BF:B8:D7:40:71", 2437, 20, -60, false)];
+        assert!(!analyse(&all, None).advice.iter().any(|x| x.id == "evil-twin" || x.id == "same-name"));
     }
 
     #[test]

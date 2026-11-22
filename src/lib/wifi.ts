@@ -204,3 +204,19 @@ export const LEVEL_COLOR = {
 
 /** Display name, with hidden networks named by their address. */
 export const nameOf = (b: Bss, hidden: string) => (b.hidden ? `${hidden} · ${b.bssid.slice(-5)}` : b.ssid);
+
+/**
+ * The average signal of one access point over the next `ms` milliseconds: once-a-second readings
+ * for the connected network, scan results for any other (one reading jumps by several dB).
+ */
+export async function measure(bssid: string, ms: number): Promise<number | null> {
+  const start = Date.now();
+  await new Promise((r) => setTimeout(r, ms));
+  const st = useWifi.getState();
+  const live = st.link?.bssid === bssid;
+  const pool = (live ? st.linkHistory : (st.history[bssid] ?? [])).filter((s) => s.t >= start - (live ? 0 : 1500));
+  if (pool.length) return Math.round((pool.reduce((a, b) => a + b.rssi, 0) / pool.length) * 10) / 10;
+  return st.snap?.networks.find((n) => n.bssid === bssid)?.rssi ?? null;
+}
+
+export const isLive = (bssid: string | null) => !!bssid && useWifi.getState().link?.bssid === bssid;

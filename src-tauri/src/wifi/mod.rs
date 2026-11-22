@@ -6,7 +6,10 @@
 //! 24H2 the list of networks around also needs the location permission for desktop apps.
 
 mod analysis;
+pub mod history;
 mod ies;
+
+pub use history::start as start_history;
 
 use serde::Serialize;
 use windows::Win32::Foundation::HANDLE;
@@ -324,6 +327,31 @@ pub fn snapshot(scan: bool) -> Snapshot {
 #[tauri::command]
 pub async fn wifi_snapshot(scan: bool) -> Result<Snapshot, String> {
     tauri::async_runtime::spawn_blocking(move || snapshot(scan)).await.map_err(|e| e.to_string())
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Quality {
+    /// Round trip to the router over Wi-Fi, ms (None: no answer).
+    pub router_ms: Option<u32>,
+    /// Round trip to the internet (1.1.1.1) over Wi-Fi, ms.
+    pub internet_ms: Option<u32>,
+    /// False when Wi-Fi is not connected: nothing was measured.
+    pub connected: bool,
+}
+
+/// One measurement of the link: a ping to the router and one to the internet, both sent from the
+/// Wi-Fi address — so they travel over Wi-Fi even when a cable is plugged in too.
+#[tauri::command]
+pub async fn wifi_quality() -> Result<Quality, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let Some((ip, gateway)) = crate::network::wifi_route() else { return Quality { router_ms: None, internet_ms: None, connected: false } };
+        let router_ms = crate::network::ping_from(ip, gateway, 1000);
+        let internet_ms = crate::network::ping_from(ip, std::net::Ipv4Addr::new(1, 1, 1, 1), 1500);
+        Quality { router_ms, internet_ms, connected: true }
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 /// Just the current connection and its live signal: cheap, for once-a-second updates.

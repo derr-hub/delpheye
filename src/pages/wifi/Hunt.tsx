@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Footprints, Minus, Trash2, TrendingDown, TrendingUp, Volume2, VolumeX } from "lucide-react";
 import { Button, Sparkline } from "../../components/ui";
 import { LEVEL_COLOR, nameOf, percent, signalLevel, useWifi, type Sample } from "../../lib/wifi";
+import { Direction } from "./Direction";
 
 interface Room {
   room: string;
@@ -292,6 +293,9 @@ export function Hunt({ initial }: { initial?: string | null }) {
               : t("wifi.hunt.allCovered")}
           </p>
         )}
+      </div>
+      <div className="lg:col-span-2">
+        <Direction key={target ?? ""} target={target} />
       </div>
     </div>
   );

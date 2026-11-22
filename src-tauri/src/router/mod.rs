@@ -156,10 +156,11 @@ pub async fn router_apply(state: State<'_, RouterState>, action: String, guest: 
     let (values, service) = asus::change(&action, guest.as_deref()).ok_or("unknown-action")?;
     let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
     let log = format!("{action}{}", guest.as_deref().map(|g| format!(" {g}")).unwrap_or_default());
+    let slow = service == "restart_wireless";
     tauri::async_runtime::spawn_blocking(move || asus::apply(&host, &token, &values, service)).await.map_err(|e| e.to_string())??;
     crate::errlog::write("router", &format!("applied {log}"));
     // The router restarts the service in the background; give it a moment before reading.
-    tokio_sleep(if service == "restart_wireless" { 4000 } else { 1500 }).await;
+    tokio_sleep(if slow { 4000 } else { 1500 }).await;
     router_read(state).await
 }
 
