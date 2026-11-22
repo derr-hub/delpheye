@@ -327,12 +327,13 @@ function Report({ report }: { report: ScanReport }) {
   );
 }
 
-function HeldRow({ entry, onPurge }: { entry: Held; onPurge: (entry: Held) => void }) {
+function HeldRow({ entry, picked, onPick, onPurge }: { entry: Held; picked: boolean; onPick: () => void; onPurge: (entries: Held[]) => void }) {
   const { t } = useTranslation();
   const fmt = useFmt();
   const days = Math.max(0, Math.ceil((entry.expires - Date.now() / 1000) / 86_400));
   return (
-    <li className="flex items-center gap-3.5 border-b border-line px-5 py-3 last:border-b-0" data-testid="held-entry">
+    <li className={`flex items-center gap-3.5 border-b border-line px-5 py-3 transition-colors last:border-b-0 ${picked ? "bg-accent/[0.06]" : ""}`} data-testid="held-entry">
+      <Checkbox state={picked} onChange={onPick} label={entry.name} />
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-raised text-muted">
         {entry.kind === "folder" ? <Folder size={17} /> : <KeyRound size={17} />}
       </div>
@@ -352,7 +353,7 @@ function HeldRow({ entry, onPurge }: { entry: Held; onPurge: (entry: Held) => vo
       <Button icon={<Undo2 size={14} />} onClick={() => actOnHeld([entry.id], true)} data-testid="held-restore">
         {t("leftovers.restore")}
       </Button>
-      <Button variant="quiet" icon={<Trash2 size={14} />} onClick={() => onPurge(entry)} title={t("leftovers.purgeNow")} aria-label={t("leftovers.purgeNow")} />
+      <Button variant="quiet" icon={<Trash2 size={14} />} onClick={() => onPurge([entry])} title={t("leftovers.purgeNow")} aria-label={t("leftovers.purgeNow")} />
     </li>
   );
 }
@@ -361,7 +362,14 @@ function Quarantine() {
   const { t } = useTranslation();
   const fmt = useFmt();
   const held = useLeftovers((s) => s.held);
-  const [purging, setPurging] = useState<Held | null>(null);
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [purging, setPurging] = useState<Held[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Forget picks for entries that are gone (restored, deleted, expired).
+  useEffect(() => {
+    setPicked((old) => new Set([...old].filter((id) => held.some((h) => h.id === id))));
+  }, [held]);
 
   if (!held.length) {
     return (
@@ -374,31 +382,82 @@ function Quarantine() {
       </div>
     );
   }
+
+  const chosen = held.filter((h) => picked.has(h.id));
+  const chosenBytes = chosen.reduce((sum, h) => sum + h.bytes, 0);
+  const all = chosen.length === held.length;
+  const toggle = (id: number) =>
+    setPicked((old) => {
+      const next = new Set(old);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const run = async (ids: number[], restore: boolean) => {
+    setBusy(true);
+    await actOnHeld(ids, restore);
+    setBusy(false);
+    setPicked(new Set());
+  };
+  const purgeBytes = (purging ?? []).reduce((sum, h) => sum + h.bytes, 0);
+  const purgeAdmin = (purging ?? []).some((h) => h.admin);
+
   return (
     <div className="space-y-3">
       <p className="px-1 text-[12px] leading-relaxed text-muted">
         {t("leftovers.quarantineSummary", { size: fmt.bytes(held.reduce((sum, h) => sum + h.bytes, 0)) })}
       </p>
+      <div className="sticky top-[52px] z-10 flex items-center gap-3 rounded-card border border-line bg-surface/95 px-5 py-2.5 backdrop-blur" data-testid="held-bar">
+        <Checkbox
+          state={all ? true : chosen.length ? "mixed" : false}
+          onChange={() => setPicked(all ? new Set() : new Set(held.map((h) => h.id)))}
+          label={t("leftovers.selectAll")}
+        />
+        <span className="min-w-0 flex-1 text-[13px]">
+          {chosen.length ? t("leftovers.picked", { count: chosen.length, size: fmt.bytes(chosenBytes) }) : <span className="text-muted">{t("leftovers.selectAll")}</span>}
+        </span>
+        <Button icon={<Undo2 size={14} />} disabled={!chosen.length || busy} onClick={() => run(chosen.map((h) => h.id), true)} data-testid="held-restore-picked">
+          {t("leftovers.restorePicked")}
+        </Button>
+        <Button variant="danger" icon={<Trash2 size={14} />} disabled={!chosen.length || busy} onClick={() => setPurging(chosen)} data-testid="held-purge-picked">
+          {t("leftovers.purgePicked")}
+        </Button>
+      </div>
       <ul className="overflow-hidden rounded-card border border-line bg-surface">
         {held.map((entry) => (
-          <HeldRow key={entry.id} entry={entry} onPurge={setPurging} />
+          <HeldRow key={entry.id} entry={entry} picked={picked.has(entry.id)} onPick={() => toggle(entry.id)} onPurge={setPurging} />
         ))}
       </ul>
       <Modal open={purging !== null} onClose={() => setPurging(null)}>
         <h2 className="font-display text-[18px] font-semibold">{t("leftovers.purgeTitle")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("leftovers.purgeText", { name: purging?.name ?? "" })}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">
+          {purging && purging.length === 1
+            ? t("leftovers.purgeText", { name: purging[0].name })
+            : t("leftovers.purgeManyText", { count: purging?.length ?? 0, size: fmt.bytes(purgeBytes) })}
+        </p>
+        {purging && purging.length > 1 && (
+          <ul className="mt-3 max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3 py-2 text-[12px]">
+            {purging.map((h) => (
+              <li key={h.id} className="truncate">
+                {h.name}
+              </li>
+            ))}
+          </ul>
+        )}
+        {purgeAdmin && <p className="mt-2 text-[12px] text-warn">{t("leftovers.purgeAdminNote")}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <Button autoFocus onClick={() => setPurging(null)}>
             {t("cleanup.cancel")}
           </Button>
           <Button
             variant="danger"
+            data-testid="held-purge-confirm"
             onClick={() => {
-              if (purging) actOnHeld([purging.id], false);
+              if (purging) run(purging.map((h) => h.id), false);
               setPurging(null);
             }}
           >
-            {t("leftovers.purgeNow")}
+            {purging && purging.length > 1 ? t("leftovers.purgeManyButton", { count: purging.length }) : t("leftovers.purgeNow")}
           </Button>
         </div>
       </Modal>

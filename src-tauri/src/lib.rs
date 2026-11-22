@@ -79,6 +79,8 @@ pub fn run() {
             disk::disk_drives,
             disk::disk_index,
             disk::disk_cancel,
+            disk::disk_open,
+            disk::disk_indexed,
             disk::disk_folder,
             disk::disk_largest,
             disk::disk_rings,

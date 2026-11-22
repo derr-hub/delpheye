@@ -30,6 +30,7 @@ import {
   pickSpareCopies,
   search,
   showTab,
+  openDrive,
   startIndex,
   togglePick,
   trashPicked,
@@ -492,9 +493,7 @@ export function Disk() {
                   aria-selected={current}
                   title={current ? undefined : t("disk.indexOther", { drive: d.mount.replace(/\$/, "") })}
                   onClick={() => {
-                    if (current) return;
-                    useDisk.setState({ drive: d.mount });
-                    startIndex();
+                    if (!current) openDrive(d.mount);
                   }}
                   data-testid={`disk-switch-${d.mount.replace(/[^A-Za-z]/g, "")}`}
                   className={`num h-7 rounded-md px-2.5 transition-colors ${current ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}

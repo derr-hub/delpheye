@@ -9,7 +9,7 @@ mod dupes;
 mod mft;
 mod trash;
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
@@ -631,15 +631,25 @@ impl Watcher for Reporter {
 
 #[derive(Default)]
 pub struct DiskState {
-    index: RwLock<Option<DiskIndex>>,
+    /// The last index of every drive indexed this session, by drive root (upper case), so
+    /// switching back to a drive shows it at once instead of indexing it again.
+    indexes: RwLock<HashMap<String, DiskIndex>>,
+    /// The drive the page is showing.
+    current: RwLock<Option<String>>,
     cancel: Arc<AtomicBool>,
     busy: AtomicBool,
     last_id: AtomicU64,
 }
 
+/// The key a drive is kept under: "C:\\" and "c:\\" are the same drive.
+fn drive_key(drive: &str) -> String {
+    drive.to_uppercase()
+}
+
 impl DiskState {
     fn read<T>(&self, ask: impl FnOnce(&DiskIndex) -> T) -> Result<T, String> {
-        self.index.read().unwrap().as_ref().map(ask).ok_or_else(|| "no-index".to_string())
+        let current = self.current.read().unwrap().clone().ok_or("no-index")?;
+        self.indexes.read().unwrap().get(&current).map(ask).ok_or_else(|| "no-index".to_string())
     }
 }
 
@@ -691,8 +701,10 @@ pub async fn disk_index(app: AppHandle, state: State<'_, DiskState>, drive: Stri
     if !(root.is_absolute() && root.parent().is_none()) {
         return Err("bad-drive".into());
     }
-    // Free the old index first: two of them at once would double the memory needed.
-    *state.index.write().unwrap() = None;
+    // Free this drive's old index first: two of them at once would double the memory needed.
+    // Other drives' indexes stay.
+    let key = drive_key(&drive);
+    state.indexes.write().unwrap().remove(&key);
     state.cancel.store(false, Ordering::SeqCst);
     let cancel = state.cancel.clone();
     let id = state.last_id.fetch_add(1, Ordering::SeqCst) + 1;
@@ -717,8 +729,25 @@ pub async fn disk_index(app: AppHandle, state: State<'_, DiskState>, drive: Stri
 
     let index = built.ok_or("cancelled")?;
     let summary = index.summary();
-    *state.index.write().unwrap() = Some(index);
+    state.indexes.write().unwrap().insert(key.clone(), index);
+    *state.current.write().unwrap() = Some(key);
     Ok(summary)
+}
+
+/// Shows a drive indexed earlier this session, without indexing it again.
+/// Errors: "no-index" when the drive has not been indexed yet.
+#[tauri::command]
+pub fn disk_open(state: State<'_, DiskState>, drive: String) -> Result<Summary, String> {
+    let key = drive_key(&drive);
+    let summary = state.indexes.read().unwrap().get(&key).map(DiskIndex::summary).ok_or("no-index")?;
+    *state.current.write().unwrap() = Some(key);
+    Ok(summary)
+}
+
+/// Which drives have an index kept, by root.
+#[tauri::command]
+pub fn disk_indexed(state: State<'_, DiskState>) -> Vec<String> {
+    state.indexes.read().unwrap().keys().cloned().collect()
 }
 
 /// Stops indexing or a duplicate search in progress.
@@ -873,8 +902,9 @@ pub async fn disk_trash(
     .await
     .map_err(|e| e.to_string())?;
 
-    let mut slot = state.index.write().unwrap();
-    let index = slot.as_mut().ok_or("no-index")?;
+    let current = state.current.read().unwrap().clone().ok_or("no-index")?;
+    let mut slot = state.indexes.write().unwrap();
+    let index = slot.get_mut(&current).ok_or("no-index")?;
     let (mut trashed, mut failed, mut recorded, mut freed_bytes) = (Vec::new(), Vec::new(), Vec::new(), 0u64);
     for (item, outcome) in results {
         match outcome {

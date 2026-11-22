@@ -165,6 +165,21 @@ export async function startIndex() {
   }
 }
 
+/** Shows a drive: its index from earlier this session if there is one, otherwise indexes it. */
+export async function openDrive(drive: string) {
+  const { phase } = useDisk.getState();
+  if (phase === "indexing") return;
+  useDisk.setState({ drive });
+  try {
+    const summary = await invoke<Summary>("disk_open", { drive });
+    const fresh = { largest: null, found: null, query: "", dupes: null, picked: new Map<number, Item>(), lastTrash: null };
+    useDisk.setState({ phase: "ready", summary, progress: null, tab: "map", error: null, ...fresh });
+    await openFolder(0);
+  } catch {
+    await startIndex();
+  }
+}
+
 /** Stops indexing or a duplicate search. */
 export const cancelWork = () => invoke("disk_cancel").catch(console.error);
 
