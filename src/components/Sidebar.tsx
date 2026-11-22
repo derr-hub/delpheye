@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ShieldHalf,
   PackageX,
+  PackageCheck,
   Rocket,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export const PAGES: { id: Page; icon: LucideIcon }[] = [
   { id: "cleanup", icon: Brush },
   { id: "leftovers", icon: PackageX },
   { id: "startup", icon: Rocket },
+  { id: "updates", icon: PackageCheck },
   { id: "disk", icon: HardDrive },
   { id: "monitoring", icon: Activity },
   { id: "processes", icon: ListTree },

@@ -12,6 +12,7 @@ mod report;
 mod security;
 mod startup;
 mod system;
+mod updates;
 
 use tauri::Manager;
 
@@ -59,6 +60,7 @@ pub fn run() {
         .manage(startup::StartupState::default())
         .manage(monitor::MonitorState::default())
         .manage(security::SecurityState::default())
+        .manage(updates::UpdatesState::default())
         .manage(std::sync::Arc::new(network::NetworkState::default()))
         .setup(|app| {
             open_main_window(app)?;
@@ -111,6 +113,9 @@ pub fn run() {
             network::network_check,
             errlog::log_error,
             report::report_write,
+            updates::updates_list,
+            updates::updates_install,
+            updates::updates_cancel,
             report::report_read,
             errlog::open_log_folder,
             processes::process_details,

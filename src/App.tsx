@@ -20,6 +20,7 @@ import { Report } from "./pages/Report";
 import { SlowdownPanel } from "./components/Slowdown";
 import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
+import { Updates } from "./pages/Updates";
 import { Journal } from "./pages/Journal";
 import { Overview } from "./pages/Overview";
 
@@ -31,6 +32,8 @@ function PageBody({ page }: { page: Page }) {
       return <Cleanup />;
     case "startup":
       return <Startup />;
+    case "updates":
+      return <Updates />;
     case "leftovers":
       return <Leftovers />;
     case "disk":

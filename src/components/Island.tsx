@@ -10,6 +10,7 @@ import { useLeftovers } from "../lib/leftovers";
 import { useMetrics } from "../lib/metrics";
 import { useMonitor } from "../lib/monitor";
 import { useSecurity } from "../lib/security";
+import { useUpdates } from "../lib/updates";
 import { Sparkline } from "./ui";
 import { checkSlowdown } from "./Slowdown";
 
@@ -21,11 +22,13 @@ function useActivity(): { label: string; progress: number | null; page: Paramete
   const security = useSecurity((s) => s.phase);
   const disk = useDisk((s) => s.phase);
   const stress = useMonitor((s) => s.stress);
+  const updates = useUpdates((s) => s.phase);
   if (stress.running) return { label: t("island.stress"), progress: stress.points.length / Math.max(1, stress.total), page: "monitoring" };
   if (cleanup === "scanning") return { label: t("island.cleanupScan"), progress: null, page: "cleanup" };
   if (cleanup === "cleaning") return { label: t("island.cleaning"), progress: null, page: "cleanup" };
   if (leftovers === "scanning") return { label: t("island.leftovers"), progress: null, page: "leftovers" };
   if (security === "scanning") return { label: t("island.security"), progress: null, page: "security" };
+  if (updates === "installing") return { label: t("island.updates"), progress: null, page: "updates" };
   if (disk === "indexing") return { label: t("island.disk"), progress: null, page: "disk" };
   return null;
 }
