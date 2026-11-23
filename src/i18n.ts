@@ -1100,8 +1100,9 @@ const uk = {
   },
   router: {
     foundAsus: "Знайдено роутер ASUS",
+    found: "Знайдено роутер {{vendor}}",
     unsupported: "Цей роутер поки не підтримується",
-    unsupportedText: "Роутер за адресою {{host}} відповідає, але це не ASUS. Підтримку інших виробників (Keenetic, MikroTik, OpenWrt, TP-Link) додамо далі.",
+    unsupportedText: "Роутер за адресою {{host}} відповідає, але DelphEye поки вміє читати лише ASUS, Keenetic, MikroTik і OpenWrt. TP-Link та роутери провайдерів — далі.",
     noGateway: "Роутер не знайдено",
     noGatewayText: "Комп'ютер не підключений до мережі з роутером.",
     useSaved: "Підключитися збереженим входом",
@@ -1252,6 +1253,7 @@ const uk = {
       "hidden-ssid": { title: "Мережу приховано", text: "Приховування не захищає: мережу видно, а твої пристрої постійно «вигукують» її назву, шукаючи. Сенсу мало, а підключення стають повільнішими." },
       "unnamed-clients": { title: "Пристроїв без назви: {{count}}", text: "Роутер не знає, що це. Часто це розумні лампочки, розетки чи телевізор — але варто впізнати кожен і позначити як «Мій»." },
       "all-good": { title: "Налаштування безпеки в порядку", text: "Небезпечних налаштувань не знайдено." },
+      "read-only-vendor": { title: "Режим лише для читання", text: "Для цього роутера DelphEye показує мережі, пристрої та сигнал. Зміни одним кліком (канал, WPS, блокування) поки є тільки для ASUS — їх додамо, коли перевіримо на справжньому роутері цього виробника." },
     },
   },
   wifi: {
@@ -3031,8 +3033,9 @@ const en: typeof uk = {
   },
   router: {
     foundAsus: "ASUS router found",
+    found: "{{vendor}} router found",
     unsupported: "This router is not supported yet",
-    unsupportedText: "The router at {{host}} answers, but it is not an ASUS. Other makers (Keenetic, MikroTik, OpenWrt, TP-Link) come later.",
+    unsupportedText: "The router at {{host}} answers, but DelphEye reads only ASUS, Keenetic, MikroTik and OpenWrt so far. TP-Link and ISP routers come later.",
     noGateway: "No router found",
     noGatewayText: "This computer is not on a network with a router.",
     useSaved: "Connect with the saved login",
@@ -3183,6 +3186,7 @@ const en: typeof uk = {
       "hidden-ssid": { title: "The network is hidden", text: "Hiding does not protect: the network is still visible, and your devices keep calling out its name. Little gain, slower connecting." },
       "unnamed-clients": { title: "Devices without a name: {{count}}", text: "The router does not know what they are. Often smart bulbs, plugs or a TV — but identify each and mark it as Mine." },
       "all-good": { title: "Security settings are fine", text: "No unsafe settings found." },
+      "read-only-vendor": { title: "Read only", text: "For this router DelphEye shows the networks, devices and signal. One-click changes (channel, WPS, blocking) exist only for ASUS so far — they come once tried on a real router of this make." },
     },
   },
   wifi: {

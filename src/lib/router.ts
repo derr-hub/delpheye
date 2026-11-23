@@ -9,7 +9,7 @@ export interface LoginInfo {
 
 export interface Found {
   host: string | null;
-  vendor: "asus" | "unknown";
+  vendor: "asus" | "keenetic" | "mikrotik" | "openwrt" | "unknown";
   model: string | null;
   login: LoginInfo | null;
   saved: boolean;

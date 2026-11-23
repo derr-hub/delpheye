@@ -2,10 +2,11 @@
 //! every device on it and how loud each one is at the router, the router's own settings, and
 //! what in them weakens the network's protection.
 //!
-//! Only ASUS routers so far. The user types the router's password; it can be kept in Windows
-//! Credential Manager. Everything here only reads.
+//! ASUS routers fully; Keenetic, MikroTik and OpenWrt read only (`others`). The user types the
+//! router's password; it can be kept in Windows Credential Manager.
 
 pub mod asus;
+pub mod others;
 mod vault;
 
 use std::sync::Mutex;
@@ -17,16 +18,17 @@ pub use asus::{LoginInfo, Overview};
 
 #[derive(Default)]
 pub struct RouterState {
-    /// (host, token, user, password) of the current session; the password stays in memory only
-    /// for this run, to renew an expired session with the login that already worked.
-    session: Mutex<Option<(String, String, String, String)>>,
+    /// (host, token, user, password, vendor) of the current session; the password stays in
+    /// memory only for this run, to renew an expired session with the login that already worked.
+    session: Mutex<Option<(String, String, String, String, &'static str)>>,
 }
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Found {
     pub host: Option<String>,
-    /// "asus", or "unknown" when the router answers but is not one DelphEye can read yet.
+    /// "asus", "keenetic", "mikrotik", "openwrt", or "unknown" when the router answers but is
+    /// not one DelphEye can read yet.
     pub vendor: &'static str,
     /// The model the router reports before login, e.g. "RT-AX52".
     pub model: Option<String>,
@@ -40,16 +42,31 @@ fn host() -> Option<String> {
     crate::network::gateway().map(|g| g.to_string())
 }
 
+/// Which kind of router answers at `host`, and its model when it tells before login.
+fn vendor_at(host: &str) -> (&'static str, Option<String>) {
+    if let Some(model) = asus::detect(host) {
+        return ("asus", Some(model));
+    }
+    match others::detect(host) {
+        Some((v, model)) => (v, model),
+        None => ("unknown", None),
+    }
+}
+
+fn login_any(vendor: &str, host: &str, user: &str, password: &str) -> Result<String, asus::LoginError> {
+    if vendor == "asus" { asus::login(host, user, password) } else { others::login(vendor, host, user, password) }
+}
+
 /// Finds the router and what its login page says. Never logs in.
 #[tauri::command]
 pub async fn router_find(state: State<'_, RouterState>) -> Result<Found, String> {
     let connected = state.session.lock().unwrap().is_some();
     tauri::async_runtime::spawn_blocking(move || {
         let Some(host) = host() else { return Found { host: None, vendor: "unknown", model: None, login: None, saved: false, connected: false } };
-        let model = asus::detect(&host);
+        let (vendor, model) = vendor_at(&host);
         Found {
-            vendor: if model.is_some() { "asus" } else { "unknown" },
-            login: if model.is_some() { asus::login_page(&host).ok() } else { None },
+            vendor,
+            login: if vendor == "asus" { asus::login_page(&host).ok() } else { None },
             model: model.filter(|m| !m.is_empty()),
             saved: vault::exists(&host),
             host: Some(host),
@@ -65,21 +82,22 @@ pub async fn router_find(state: State<'_, RouterState>) -> Result<Found, String>
 /// "unreachable", "no-saved", "not-asus".
 #[tauri::command]
 pub async fn router_connect(state: State<'_, RouterState>, user: Option<String>, password: Option<String>, remember: bool) -> Result<Overview, String> {
-    let (host, user, password) = tauri::async_runtime::spawn_blocking(move || -> Result<(String, String, String), String> {
+    let (host, user, password, vendor) = tauri::async_runtime::spawn_blocking(move || -> Result<(String, String, String, &'static str), String> {
         let host = host().ok_or("unreachable")?;
-        if asus::detect(&host).is_none() {
+        let (vendor, _) = vendor_at(&host);
+        if vendor == "unknown" {
             return Err("not-asus".into());
         }
         match (user, password) {
-            (Some(u), Some(p)) if !p.is_empty() => Ok((host, u, p)),
-            _ => vault::load(&host).map(|(u, p)| (host, u, p)).ok_or_else(|| "no-saved".to_string()),
+            (Some(u), Some(p)) if !p.is_empty() => Ok((host, u, p, vendor)),
+            _ => vault::load(&host).map(|(u, p)| (host, u, p, vendor)).ok_or_else(|| "no-saved".to_string()),
         }
     })
     .await
     .map_err(|e| e.to_string())??;
 
     let (h, u, p) = (host.clone(), user.clone(), password.clone());
-    let token = tauri::async_runtime::spawn_blocking(move || asus::login(&h, &u, &p)).await.map_err(|e| e.to_string())?.map_err(|e| match e {
+    let token = tauri::async_runtime::spawn_blocking(move || login_any(vendor, &h, &u, &p)).await.map_err(|e| e.to_string())?.map_err(|e| match e {
         asus::LoginError::Wrong => "wrong".to_string(),
         asus::LoginError::Captcha => "captcha".to_string(),
         asus::LoginError::Locked(secs) => format!("locked:{}", secs.unwrap_or(0)),
@@ -92,12 +110,15 @@ pub async fn router_connect(state: State<'_, RouterState>, user: Option<String>,
     if remember {
         vault::save(&host, &user, &password)?;
     }
-    crate::errlog::write("router", &format!("connected to the router at {host}"));
-    *state.session.lock().unwrap() = Some((host, token, user, password));
+    crate::errlog::write("router", &format!("connected to the {vendor} router at {host}"));
+    *state.session.lock().unwrap() = Some((host, token, user, password, vendor));
     router_read(state).await
 }
 
-fn read(host: &str, token: &str) -> Result<Overview, String> {
+fn read(vendor: &str, host: &str, token: &str) -> Result<Overview, String> {
+    if vendor != "asus" {
+        return others::read(vendor, host, token);
+    }
     // In batches, to keep each address short.
     let mut nv = serde_json::Map::new();
     for chunk in asus::NVRAM.chunks(16) {
@@ -123,12 +144,12 @@ fn read(host: &str, token: &str) -> Result<Overview, String> {
 #[tauri::command]
 pub async fn router_read(state: State<'_, RouterState>) -> Result<Overview, String> {
     let session = state.session.lock().unwrap().clone().ok_or("not-connected")?;
-    let (host, token, user, password) = session;
-    let result = tauri::async_runtime::spawn_blocking(move || match read(&host, &token) {
+    let (host, token, user, password, vendor) = session;
+    let result = tauri::async_runtime::spawn_blocking(move || match read(vendor, &host, &token) {
         Err(e) if e == "expired" => {
             // The login that just worked, once more — not a guess.
-            let token = asus::login(&host, &user, &password).map_err(|_| "expired".to_string())?;
-            read(&host, &token).map(|o| (o, Some(token)))
+            let token = login_any(vendor, &host, &user, &password).map_err(|_| "expired".to_string())?;
+            read(vendor, &host, &token).map(|o| (o, Some(token)))
         }
         other => other.map(|o| (o, None)),
     })
@@ -155,7 +176,10 @@ pub async fn router_read(state: State<'_, RouterState>) -> Result<Overview, Stri
 /// Who joined and left the network, from the router's own system log.
 #[tauri::command]
 pub async fn router_log(state: State<'_, RouterState>) -> Result<Vec<asus::Event>, String> {
-    let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    let (host, token, _, _, vendor) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    if vendor != "asus" {
+        return Err("unsupported".into());
+    }
     tauri::async_runtime::spawn_blocking(move || {
         let text = asus::hook_text(&host, &token, "nvram_dump(syslog.log,syslog.sh)")?;
         Ok(asus::events(&text))
@@ -168,7 +192,11 @@ pub async fn router_log(state: State<'_, RouterState>) -> Result<Vec<asus::Event
 /// Reads the router again afterwards, so the answer shows whether the change took.
 #[tauri::command]
 pub async fn router_apply(state: State<'_, RouterState>, action: String, guest: Option<String>) -> Result<Overview, String> {
-    let (host, token, ..) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    let (host, token, _, _, vendor) = state.session.lock().unwrap().clone().ok_or("not-connected")?;
+    // Changes are offered only where they were tried on a real router.
+    if vendor != "asus" {
+        return Err("unsupported".into());
+    }
     // Blocking needs the current filter list, so it is worked out from the router's settings.
     let (values, service) = if let Some(rest) = action.strip_prefix("block:").map(|m| (m, true)).or(action.strip_prefix("unblock:").map(|m| (m, false))) {
         let (mac, block) = rest;
@@ -196,6 +224,15 @@ async fn tokio_sleep(ms: u64) {
 /// session; a wrong saved password is reported as Err("wrong") and never retried by the caller.
 pub fn watch_clients(session: &mut Option<(String, String)>) -> Result<Vec<asus::Client>, String> {
     let host = host().ok_or("unreachable")?;
+    let (vendor, _) = vendor_at(&host);
+    if vendor != "asus" && vendor != "unknown" {
+        let (user, password) = vault::load(&host).ok_or("no-saved")?;
+        let token = others::login(vendor, &host, &user, &password).map_err(|e| match e {
+            asus::LoginError::Wrong => "wrong".to_string(),
+            _ => "unreachable".to_string(),
+        })?;
+        return others::read(vendor, &host, &token).map(|o| o.clients);
+    }
     let read = |token: &str| asus::hook(&host, token, "get_clientlist()").map(|v| asus::clients(&v));
     if let Some((h, token)) = session.as_ref() {
         if *h == host {
@@ -226,8 +263,10 @@ pub fn has_saved_login() -> bool {
 pub async fn router_disconnect(state: State<'_, RouterState>, forget: bool) -> Result<(), String> {
     let session = state.session.lock().unwrap().take();
     tauri::async_runtime::spawn_blocking(move || {
-        if let Some((host, token, ..)) = &session {
-            asus::logout(host, token);
+        if let Some((host, token, _, _, vendor)) = &session {
+            if *vendor == "asus" {
+                asus::logout(host, token);
+            }
         }
         if forget {
             if let Some(h) = session.map(|s| s.0).or_else(host) {

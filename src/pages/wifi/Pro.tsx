@@ -31,6 +31,8 @@ import { Bars } from "./Simple";
 /** "block:AA:…" → "block"; the switches keep their own names. */
 const fixKey = (action: string) => (action.startsWith("block:") ? "block" : action.startsWith("unblock:") ? "unblock" : action);
 
+const VENDOR_NAMES: Record<string, string> = { asus: "ASUS", keenetic: "Keenetic", mikrotik: "MikroTik", openwrt: "OpenWrt" };
+
 const TONE = { ok: "text-safe", info: "text-accent", warn: "text-warn", risk: "text-risk" } as const;
 const ICON = { ok: CircleCheck, info: Info, warn: CircleAlert, risk: ShieldAlert } as const;
 
@@ -48,7 +50,7 @@ function Connect() {
         <Loader2 className="animate-spin text-accent" />
       </div>
     );
-  if (!found.host || found.vendor !== "asus")
+  if (!found.host || found.vendor === "unknown")
     return (
       <div className="mx-auto max-w-[560px] rounded-card border border-line bg-surface p-6 text-center" data-testid="router-unsupported">
         <Router size={32} className="mx-auto text-muted" />
@@ -69,7 +71,7 @@ function Connect() {
           </span>
           <div>
             <h2 className="font-display text-[17px] font-semibold">
-              {t("router.foundAsus")}
+              {t("router.found", { vendor: VENDOR_NAMES[found.vendor] ?? found.vendor })}
               {found.model && ` ${found.model}`}
             </h2>
             <div className="num text-[12px] text-muted">{found.host}</div>
@@ -172,7 +174,7 @@ function Trend({ mac }: { mac: string }) {
   );
 }
 
-function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: (c: Client) => void }) {
+function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: ((c: Client) => void) | null }) {
   const { t } = useTranslation();
   const known = useRouter((s) => (s.known[host] ?? []).includes(c.mac));
   const fresh = useRouter((s) => s.fresh.includes(c.mac));
@@ -211,7 +213,7 @@ function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: (c:
         <div className="num text-muted">{c.online ? duration(c.connectedSecs, t) : t("router.offline")}</div>
       </div>
       <Trend mac={c.mac} />
-      {c.link !== "wired" && (
+      {c.link !== "wired" && onBlock && (
         <button
           onClick={() => onBlock(c)}
           className="flex h-7 shrink-0 items-center rounded-md border border-line px-2 text-[11px] text-muted hover:border-risk/50 hover:text-risk"
@@ -320,6 +322,8 @@ function Dashboard() {
   const applying = useRouter((s) => s.applying);
   const done = useRouter((s) => s.done);
   const error = useRouter((s) => s.error);
+  // One-click changes, the log and traffic exist only for ASUS so far.
+  const full = o.vendor === "asus";
   const [ask, setAsk] = useState<{ action: string; guest: string | null; label: string } | null>(null);
   const [pick, setPick] = useState<Radio | null>(null);
   // The fixes each check offers: one per guest network for "guest-on".
@@ -398,7 +402,7 @@ function Dashboard() {
               </span>
               {r.hidden && <span className="rounded bg-raised px-1.5 py-0.5">{t("router.hidden")}</span>}
             </div>
-            {r.enabled && (
+            {r.enabled && full && (
               <Button className="mt-3 !h-8 text-[12px]" disabled={!!applying} onClick={() => setPick(r)} data-testid={`router-channel-${r.unit}`}>
                 {applying?.startsWith(`channel:${r.unit}:`) && <Loader2 size={13} className="animate-spin" />}
                 {t("router.channel.button")}
@@ -479,7 +483,7 @@ function Dashboard() {
               );
             })}
         </div>
-        <RouterExtras onUnblock={(mac, label) => applyRouter(`unblock:${mac}`, null, label, false, { action: `block:${mac}`, guest: null })} />
+        {full && <RouterExtras onUnblock={(mac, label) => applyRouter(`unblock:${mac}`, null, label, false, { action: `block:${mac}`, guest: null })} />}
         <div className="overflow-clip rounded-card border border-line bg-surface">
           <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
             <h3 className="text-[13px] font-medium">{t("router.devices", { online: online.length, total: o.clients.length })}</h3>
@@ -490,7 +494,7 @@ function Dashboard() {
           <p className="border-b border-line/60 px-4 py-2 text-[11px] leading-relaxed text-muted">{t("router.devicesHint")}</p>
           <ul>
             {o.clients.map((c) => (
-              <ClientRow key={c.mac} c={c} host={o.host} onBlock={(x) => setAsk({ action: `block:${x.mac}`, guest: null, label: x.name || x.vendor || x.mac })} />
+              <ClientRow key={c.mac} c={c} host={o.host} onBlock={full ? (x) => setAsk({ action: `block:${x.mac}`, guest: null, label: x.name || x.vendor || x.mac }) : null} />
             ))}
           </ul>
         </div>
