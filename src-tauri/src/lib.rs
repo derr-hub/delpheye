@@ -123,6 +123,8 @@ pub fn run() {
             feedback::feedback_files,
             feedback::feedback_send,
             history::health_history,
+            updates::updates_blockers,
+            updates::updates_close_and_retry,
             security::pwned::password_check,
             wifi::share::wifi_share,
             restore::restore_status,

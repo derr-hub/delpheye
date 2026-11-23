@@ -1,12 +1,13 @@
-﻿import { Hero } from "../components/Hero";
+import { Hero } from "../components/Hero";
 import { BadgeCheck } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowRight, Check, CircleAlert, Cpu, Loader2, PackageCheck, RefreshCw, Square } from "lucide-react";
 import { Button, Checkbox, Modal } from "../components/ui";
-import { cancelUpdates, checkUpdates, installUpdates, useUpdates, type Package, type RowState } from "../lib/updates";
+import { cancelUpdates, checkUpdates, closeAndRetry, installUpdates, useUpdates, type Package, type RowState } from "../lib/updates";
 
 function Intro() {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ function Loading() {
   );
 }
 
-function Status({ row }: { row: RowState | undefined }) {
+function Status({ row, id }: { row: RowState | undefined; id: string }) {
   const { t } = useTranslation();
   if (!row) return null;
   if (row.state === "running")
@@ -65,10 +66,49 @@ function Status({ row }: { row: RowState | undefined }) {
         {t("updates.done")}
       </span>
     );
+  return <Failed id={id} reason={row.reason} code={row.code} />;
+}
+
+/** A failed update: if the program is open, offer to close it and try again. */
+function Failed({ id, reason, code }: { id: string; reason: string; code: number }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState<{ pid: number; name: string }[] | null>(null);
+  const [asking, setAsking] = useState(false);
+  useEffect(() => {
+    invoke<{ pid: number; name: string }[]>("updates_blockers", { id })
+      .then(setOpen)
+      .catch(() => setOpen([]));
+  }, [id]);
+  const names = [...new Set((open ?? []).map((b) => b.name.replace(/\.exe$/i, "")))];
   return (
-    <span className="flex items-center gap-1.5 text-[12px] text-warn" title={`0x${(row.code >>> 0).toString(16).toUpperCase()}`}>
-      <CircleAlert size={13} />
-      {t(`updates.reason.${row.reason}`)}
+    <span className="flex flex-wrap items-center justify-end gap-2 text-[12px]">
+      <span className="flex items-center gap-1.5 text-warn" title={`0x${(code >>> 0).toString(16).toUpperCase()}`}>
+        <CircleAlert size={13} />
+        {names.length ? t("updates.isOpen", { names: names.join(", ") }) : t(`updates.reason.${reason}`)}
+      </span>
+      {names.length > 0 && (
+        <Button className="!h-7 !px-2.5 text-[12px]" onClick={() => setAsking(true)} data-testid="close-and-update">
+          {t("updates.closeAndUpdate")}
+        </Button>
+      )}
+      <Modal open={asking} onClose={() => setAsking(false)}>
+        <h2 className="font-display text-[18px] font-semibold">{t("updates.closeTitle", { names: names.join(", ") })}</h2>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("updates.closeText")}</p>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button autoFocus onClick={() => setAsking(false)}>
+            {t("cleanup.cancel")}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setAsking(false);
+              closeAndRetry(id);
+            }}
+          >
+            {t("updates.closeAndUpdate")}
+          </Button>
+        </div>
+      </Modal>
     </span>
   );
 }
@@ -90,7 +130,7 @@ function Row({ pkg, chosen, toggle, busy }: { pkg: Package; chosen: boolean; tog
         </div>
       </div>
       <div className="shrink-0">
-        <Status row={row} />
+        <Status row={row} id={pkg.id} />
       </div>
       {!row && (
         <Button variant="quiet" className="!h-8 !px-3 text-[12px]" disabled={busy} onClick={() => installUpdates([pkg.id])} data-testid="update-one">

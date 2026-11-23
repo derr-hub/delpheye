@@ -1,3 +1,7 @@
+import { lazy, Suspense } from "react";
+import { useMetrics } from "../lib/metrics";
+import { ZONE_COLOURS, zoneOf } from "./disk/DiskBuild3D";
+const DiskBuild3D = lazy(() => import("./disk/DiskBuild3D"));
 import { Hero } from "../components/Hero";
 import { Clock3, FileStack } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -106,22 +110,46 @@ function Indexing() {
   const { t } = useTranslation();
   const fmt = useFmt();
   const progress = useDisk((s) => s.progress);
+  const { drives, drive } = useDisk();
+  const disks = useMetrics((s) => s.current?.disks ?? []);
+  const d = drives.find((x) => x.mount === drive);
+  const used = d ? Math.max(1, d.total - d.available) : 1;
+  const media = disks.find((x) => x.mount === drive)?.kind?.toLowerCase().includes("hdd") ? "hdd" : "ssd";
+  const fill = Math.min(0.98, (progress?.bytes ?? 0) / used);
+  const zone = zoneOf(progress?.path ?? "");
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center">
-      {/* The total is unknown until indexing ends, so this spins instead of filling. */}
-      <motion.div
-        className="h-24 w-24 rounded-full border-[6px] border-raised border-t-accent"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
-      />
-      <div className="mt-6 font-display text-[18px] font-semibold">{t("disk.indexing")}</div>
-      <div className="mt-1 text-[13px] text-muted">
-        {t("disk.filesSoFar", { value: fmt.int(progress?.files ?? 0) })} · <AnimatedBytes value={progress?.bytes ?? 0} />
+    <div className="flex h-full flex-col items-center justify-center gap-6 lg:flex-row lg:gap-10">
+      <div className="relative h-[360px] w-full max-w-[560px]">
+        <div className="pointer-events-none absolute inset-8 rounded-full bg-accent/10 blur-3xl" />
+        <Suspense fallback={null}>
+          <DiskBuild3D kind={media} fill={fill} zone={zone} />
+        </Suspense>
       </div>
-      <div className="num mt-3 h-4 w-[70%] truncate text-[11px] text-muted/70">{progress?.path ?? ""}</div>
-      <Button variant="quiet" className="mt-5" onClick={cancelWork}>
-        {t("cleanup.cancel")}
-      </Button>
+      <div className="w-full max-w-[360px] text-center lg:text-left">
+        <div className="text-[12px] uppercase tracking-wider text-muted">{t(media === "hdd" ? "disk.build.hdd" : "disk.build.ssd")}</div>
+        <div className="mt-1 font-display text-[22px] font-semibold">{t("disk.indexing")}</div>
+        <div className="mt-2 flex items-baseline justify-center gap-2 lg:justify-start">
+          <span className="num font-display text-[34px] font-semibold leading-none text-accent">{Math.round(fill * 100)}%</span>
+          <span className="text-[12px] text-muted">{t("disk.build.ofUsed", { used: fmt.bytes(used) })}</span>
+        </div>
+        <div className="mt-2 text-[13px] text-muted">
+          {t("disk.filesSoFar", { value: fmt.int(progress?.files ?? 0) })} · <AnimatedBytes value={progress?.bytes ?? 0} />
+        </div>
+        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
+          {ZONE_COLOURS.map((c, i) => (
+            <li key={c} className={`flex items-center gap-2 transition-opacity ${zone === i ? "opacity-100" : "opacity-55"}`}>
+              <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: c, boxShadow: zone === i ? `0 0 8px ${c}` : undefined }} />
+              {t(`disk.build.zone.${i}`)}
+            </li>
+          ))}
+        </ul>
+        <div className="num mt-4 h-4 truncate text-[11px] text-muted/70" title={progress?.path}>
+          {progress?.path ?? ""}
+        </div>
+        <Button variant="quiet" className="mt-4" onClick={cancelWork}>
+          {t("cleanup.cancel")}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -172,6 +172,118 @@ pub fn updates_cancel(state: State<'_, UpdatesState>) {
     state.cancel.store(true, Ordering::SeqCst);
 }
 
+// ───────────────────────── a program that is open blocks its update ─────────────────────────
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Blocker {
+    pub pid: u32,
+    pub name: String,
+}
+
+/// Words from a package that its program's files would carry: "Discord.Discord" → "discord".
+pub fn tokens(id: &str, name: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for part in id.split(['.', '-', '_']).chain(name.split([' ', '-', '.', '(', ')'])) {
+        let p = part.trim().to_lowercase();
+        if p.len() >= 4 && !["microsoft", "windows", "inc", "corporation", "software", "x64", "x86", "64-bit", "update", "edition", "desktop", "app"].contains(&p.as_str()) && !out.contains(&p) {
+            out.push(p);
+        }
+    }
+    out
+}
+
+/// Where Windows says the package is installed (its uninstall entry), when it says.
+fn install_dirs(name: &str) -> Vec<String> {
+    use winreg::RegKey;
+    use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+    let mut dirs = Vec::new();
+    for (root, path) in [
+        (HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+    ] {
+        let Ok(k) = RegKey::predef(root).open_subkey(path) else { continue };
+        for sub in k.enum_keys().flatten() {
+            let Ok(e) = k.open_subkey(&sub) else { continue };
+            let display: String = e.get_value("DisplayName").unwrap_or_default();
+            if display.is_empty() || !display.to_lowercase().starts_with(&name.to_lowercase().chars().take(12).collect::<String>()) {
+                continue;
+            }
+            let loc: String = e.get_value("InstallLocation").unwrap_or_default();
+            let loc = loc.trim().trim_matches('"').trim_end_matches('\\').to_lowercase();
+            if loc.len() > 6 && !dirs.contains(&loc) {
+                dirs.push(loc);
+            }
+        }
+    }
+    dirs
+}
+
+/// The open programs that belong to the package: under its install folder, or named after it.
+pub fn blockers_for(id: &str, name: &str) -> Vec<Blocker> {
+    let dirs = install_dirs(name);
+    let words = tokens(id, name);
+    let me = std::process::id();
+    let Ok(mut sys) = sysinfo::System::new() else { return Vec::new() };
+    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    let mut out: Vec<Blocker> = Vec::new();
+    for (pid, p) in sys.processes() {
+        let pid = pid.as_u32();
+        if pid == me || pid <= 4 {
+            continue;
+        }
+        let Some(exe) = p.exe().map(|e| e.to_string_lossy().to_lowercase()) else { continue };
+        if exe.contains(r"\windows\") {
+            continue;
+        }
+        let file = exe.rsplit('\\').next().unwrap_or_default().trim_end_matches(".exe").to_string();
+        let under = dirs.iter().any(|d| exe.starts_with(d.as_str()));
+        let named = words.iter().any(|w| file.contains(w.as_str()) || exe.contains(&format!(r"\{w}\")));
+        if under || named {
+            out.push(Blocker { pid, name: p.name().to_string_lossy().into_owned() });
+        }
+    }
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    out
+}
+
+#[tauri::command]
+pub async fn updates_blockers(state: State<'_, UpdatesState>, id: String) -> Result<Vec<Blocker>, String> {
+    let name = state.last.lock().unwrap().iter().find(|p| p.id == id).map(|p| p.name.clone()).ok_or("unknown")?;
+    tauri::async_runtime::spawn_blocking(move || blockers_for(&id, &name)).await.map_err(|e| e.to_string())
+}
+
+/// Closes the package's open programs — politely first, as when its window is closed, then by
+/// force for the ones that do not answer — and updates it again.
+#[tauri::command]
+pub async fn updates_close_and_retry(app: AppHandle, state: State<'_, UpdatesState>, id: String) -> Result<Vec<Outcome>, String> {
+    let name = state.last.lock().unwrap().iter().find(|p| p.id == id).map(|p| p.name.clone()).ok_or("unknown")?;
+    let (id2, name2) = (id.clone(), name.clone());
+    tauri::async_runtime::spawn_blocking(move || {
+        let windows = crate::system::Dirs::real().map(|d| d.windows).unwrap_or_default();
+        let taskkill = windows.join(r"System32\taskkill.exe");
+        let pids: Vec<u32> = blockers_for(&id2, &name2).iter().map(|b| b.pid).collect();
+        for pid in &pids {
+            let _ = Command::new(&taskkill).args(["/PID", &pid.to_string()]).creation_flags(CREATE_NO_WINDOW).output();
+        }
+        // Give them a few seconds to save and close.
+        for _ in 0..16 {
+            if blockers_for(&id2, &name2).is_empty() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+        }
+        for b in blockers_for(&id2, &name2) {
+            let _ = Command::new(&taskkill).args(["/PID", &b.pid.to_string(), "/T", "/F"]).creation_flags(CREATE_NO_WINDOW).output();
+        }
+        crate::errlog::write("updates", &format!("closed {} process(es) of {id2} to update it", pids.len()));
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    updates_install(app, state, vec![id]).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -204,6 +316,13 @@ Spotify      Spotify.Spotify   1.2.3   1.2.9    winget\r
     #[test]
     fn nothing_to_update_is_an_empty_list() {
         assert!(parse("No installed package found matching input criteria.\r\n").is_empty());
+    }
+
+    #[test]
+    fn package_words() {
+        assert_eq!(tokens("Discord.Discord", "Discord"), vec!["discord".to_string()]);
+        assert!(tokens("Mozilla.Firefox", "Mozilla Firefox (x64 uk)").contains(&"firefox".to_string()));
+        assert!(!tokens("Microsoft.Teams", "Microsoft Teams").contains(&"microsoft".to_string()));
     }
 
     #[test]

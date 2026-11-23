@@ -6,6 +6,7 @@ pub mod gpu;
 pub mod ram;
 pub mod slowdown;
 pub mod health;
+pub mod verdict;
 pub mod sidecar;
 pub mod stress;
 pub mod throttle;

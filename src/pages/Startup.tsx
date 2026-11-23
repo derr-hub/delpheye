@@ -102,12 +102,21 @@ function Control({ entry }: { entry: Entry }) {
   const elevated = useStartup((s) => s.report?.elevated ?? false);
   if (!entry.editable) {
     return (
-      <span className="flex h-[22px] w-[40px] shrink-0 items-center justify-center text-muted/60" title={t("startup.readOnly")}>
-        <Lock size={14} />
+      <span className="flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted" title={t("startup.why.windows")} data-testid="startup-locked">
+        <Lock size={11} />
+        {t("startup.lockedShort")}
       </span>
     );
   }
   const locked = busy || (entry.needsAdmin && !elevated);
+  if (entry.needsAdmin && !elevated && !busy) {
+    return (
+      <span className="flex shrink-0 items-center gap-1 rounded-full border border-warn/30 bg-warn/[0.06] px-2 py-0.5 text-[11px] text-warn" title={t("startup.why.admin")} data-testid="startup-admin">
+        <ShieldAlert size={11} />
+        {t("startup.adminShort")}
+      </span>
+    );
+  }
   if (entry.kind === "service" && entry.start) {
     return (
       <select
@@ -146,12 +155,36 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** Why this entry cannot be switched from here, and what would make it possible. */
+function WhyLocked({ entry }: { entry: Entry }) {
+  const { t } = useTranslation();
+  const elevated = useStartup((s) => s.report?.elevated ?? false);
+  const [declined, setDeclined] = useState(false);
+  const why = !entry.editable ? "windows" : entry.needsAdmin && !elevated ? "admin" : !entry.exists && !entry.removable ? "missing" : null;
+  if (!why) return null;
+  return (
+    <div className={`flex max-w-[90ch] items-start gap-3 rounded-lg border px-3 py-2.5 leading-relaxed ${why === "admin" ? "border-warn/30 bg-warn/[0.06]" : "border-line bg-raised/40"}`} data-testid="startup-why">
+      {why === "admin" ? <ShieldAlert size={15} className="mt-0.5 shrink-0 text-warn" /> : <Lock size={15} className="mt-0.5 shrink-0 text-muted" />}
+      <div className="min-w-0 flex-1">
+        <div className="font-medium">{t(`startup.whyTitle.${why}`)}</div>
+        <div className="text-muted">{declined ? t("cleanup.adminDeclined") : t(`startup.why.${why}`)}</div>
+      </div>
+      {why === "admin" && (
+        <Button className="shrink-0" onClick={async () => setDeclined(!(await relaunchElevated()))}>
+          {t("cleanup.adminAction")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function Details({ entry }: { entry: Entry }) {
   const { t } = useTranslation();
   const fmt = useFmt();
   const fp = entry.footprint;
   return (
     <div className="space-y-3 border-t border-line/60 bg-bg/40 py-4 pl-[76px] pr-5 text-[12px]">
+      <WhyLocked entry={entry} />
       {entry.description && entry.description.toLowerCase() !== entry.name.toLowerCase() && (
         <p className="max-w-[80ch] leading-relaxed text-muted">{entry.description}</p>
       )}

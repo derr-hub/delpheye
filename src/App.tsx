@@ -20,6 +20,7 @@ import { Report } from "./pages/Report";
 import { SlowdownPanel } from "./components/Slowdown";
 import { Feedback } from "./components/Feedback";
 import { Onboarding } from "./components/Onboarding";
+import { WhatsNew } from "./components/WhatsNew";
 import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
 import { Updates } from "./pages/Updates";
@@ -174,6 +175,7 @@ function App() {
       <SlowdownPanel />
       <Feedback />
       <Onboarding />
+      <WhatsNew />
     </MotionConfig>
   );
 }

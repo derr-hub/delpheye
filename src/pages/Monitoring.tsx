@@ -438,6 +438,29 @@ interface Incident {
   cause: string | null;
   code: string | null;
   detail: string | null;
+  verdict?: { cause: string; confidence: "certain" | "likely" | "possible"; facts: [string, string][] } | null;
+}
+
+const CONFIDENCE_TONE = { certain: "bg-risk/10 text-risk", likely: "bg-warn/10 text-warn", possible: "bg-raised text-muted" } as const;
+
+/** The cause DelphEye settled on for one incident, with the facts behind it and what to do. */
+function VerdictBox({ v }: { v: NonNullable<Incident["verdict"]> }) {
+  const { t, i18n } = useTranslation();
+  const time = (unix: string) => new Date(Number(unix) * 1000).toLocaleTimeString(i18n.language.startsWith("uk") ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <span className="mt-1.5 block rounded-lg border border-line bg-bg/40 px-3 py-2" data-testid="crash-verdict">
+      <span className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] font-medium text-fg">{t(`monitor.verdict.cause.${v.cause}.title`)}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[10px] ${CONFIDENCE_TONE[v.confidence]}`}>{t(`monitor.verdict.confidence.${v.confidence}`)}</span>
+      </span>
+      {v.facts.length > 0 && (
+        <span className="mt-1 block text-[11px] text-muted">
+          {v.facts.map(([k, val]) => t(`monitor.verdict.fact.${k}`, { value: k === "lastSeen" ? time(val) : k === "whea" ? t(`monitor.whea.${val}`) : val })).join(" · ")}
+        </span>
+      )}
+      <span className="mt-1 block text-[11px] leading-relaxed">{t(`monitor.verdict.cause.${v.cause}.todo`)}</span>
+    </span>
+  );
 }
 
 const GPU_DRIVERS: Record<string, string> = { nvlddmkm: "NVIDIA", igdkmd64: "Intel", igdkmdn64: "Intel", igdkmdnd64: "Intel", amdkmdag: "AMD", atikmdag: "AMD" };
@@ -472,7 +495,10 @@ function IncidentLine({ e }: { e: Incident }) {
   return (
     <li className="grid grid-cols-[150px_1fr] gap-3 py-1.5">
       <span className="num text-[11px] text-muted">{when}</span>
-      <span className="leading-relaxed">{text}</span>
+      <span className="leading-relaxed">
+        {text}
+        {e.verdict && <VerdictBox v={e.verdict} />}
+      </span>
     </li>
   );
 }

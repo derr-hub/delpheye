@@ -66,6 +66,8 @@ pub struct Incident {
     pub code: Option<String>,
     /// A crash dump, a device or a driver.
     pub detail: Option<String>,
+    /// The cause, weighed against everything else known (shutdowns and blue screens).
+    pub verdict: Option<super::verdict::Verdict>,
 }
 
 /// Incidents kept per kind.
@@ -148,7 +150,7 @@ pub fn parse_crash_log(xml: &str) -> CrashLog {
         }
         let get = |name: &str| data.iter().find(|(n, _)| n == name).map(|(_, v)| v.as_str());
         let truthy = |name: &str| get(name).is_some_and(|v| v != "0" && !v.eq_ignore_ascii_case("false") && !v.is_empty());
-        let incident = |kind, cause, code, detail| Incident { at: at.clone().unwrap_or_default(), kind, cause, code, detail };
+        let incident = |kind, cause, code, detail| Incident { at: at.clone().unwrap_or_default(), kind, cause, code, detail, verdict: None };
         let counted = match (provider, id) {
             ("Microsoft-Windows-Kernel-Power", 41) => {
                 shutdown_times.extend(at.as_deref().and_then(seconds));
@@ -254,6 +256,10 @@ pub fn parse_crash_log(xml: &str) -> CrashLog {
 }
 
 /// Seconds since 1970 from an event time like `2026-10-01T10:00:00.1234567Z`.
+pub fn iso_seconds(iso: &str) -> Option<i64> {
+    seconds(iso)
+}
+
 fn seconds(iso: &str) -> Option<i64> {
     let number = |range: std::ops::Range<usize>| iso.get(range)?.parse::<i64>().ok();
     let (y, m, d) = (number(0..4)?, number(5..7)?, number(8..10)?);
@@ -283,7 +289,11 @@ pub fn read_crash_log(windows: &Path) -> Option<CrashLog> {
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok()?;
-    output.status.success().then(|| parse_crash_log(&String::from_utf8_lossy(&output.stdout)))
+    output.status.success().then(|| {
+        let mut log = parse_crash_log(&String::from_utf8_lossy(&output.stdout));
+        super::verdict::judge_all(&mut log, &super::verdict::load_beats());
+        log
+    })
 }
 
 pub fn crash_checks(log: &CrashLog) -> Vec<Check> {

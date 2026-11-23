@@ -52,6 +52,15 @@ fn sample(app: &AppHandle) {
     let hot = frame.as_ref().and_then(|f| f.throttle.as_ref()).is_some_and(|t| matches!(t.state, crate::monitor::throttle::State::Thermal)) || cpu_temp.is_some_and(|t| t >= 92.0);
     let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".into());
     let disk = crate::monitor::slowdown::drive_free(&drive);
+    let battery = frame.as_ref().and_then(|f| f.sensors().find(|(h, s)| h.kind == "Battery" && s.kind == "Level" && s.name.contains("Charge")).map(|(_, s)| s.value));
+    crate::monitor::verdict::record(crate::monitor::verdict::Beat {
+        t: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0),
+        cpu_temp,
+        gpu_temp,
+        cpu,
+        on_battery: frame.as_ref().is_some_and(|f| f.on_battery()),
+        battery,
+    });
     let day = local_day();
     let _ = app.state::<Journal>().with(|db| {
         db.execute_batch(SCHEMA)?;

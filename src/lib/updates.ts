@@ -63,3 +63,19 @@ export async function installUpdates(ids: string[]) {
 }
 
 export const cancelUpdates = () => invoke("updates_cancel");
+
+/** Closes the package's open programs and updates it again. */
+export async function closeAndRetry(id: string) {
+  startEvents();
+  useUpdates.setState((s) => {
+    const rows = { ...s.rows };
+    delete rows[id];
+    return { phase: "installing", rows };
+  });
+  try {
+    await invoke("updates_close_and_retry", { id });
+  } catch (e) {
+    useUpdates.setState({ error: String(e) });
+  }
+  useUpdates.setState({ phase: "list" });
+}
