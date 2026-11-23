@@ -1,3 +1,4 @@
+import { HistoryTab } from "./monitor/History";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -894,7 +895,7 @@ export function Monitoring() {
   return (
     <div className="flex flex-col gap-4 pb-2">
       <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[13px]" role="tablist">
-        {(["sensors", "stability"] as const).map((id) => (
+        {(["sensors", "stability", "history"] as const).map((id) => (
           <button
             key={id}
             role="tab"
@@ -908,7 +909,7 @@ export function Monitoring() {
           </button>
         ))}
       </div>
-      {tab === "sensors" ? <SensorsTab /> : <StabilityTab />}
+      {tab === "sensors" ? <SensorsTab /> : tab === "stability" ? <StabilityTab /> : <HistoryTab />}
     </div>
   );
 }

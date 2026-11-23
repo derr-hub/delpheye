@@ -16,9 +16,15 @@ import {
   Wifi,
   BellRing,
   Rocket,
+  MessageSquareHeart,
+  Monitor,
+  Moon,
+  Sun,
   type LucideIcon,
 } from "lucide-react";
 
+import { nextTheme, setTheme, useTheme } from "../lib/theme";
+import { openFeedback } from "../lib/feedback";
 import { useApp, type Page } from "../lib/app";
 import { UpdateChip } from "./UpdateChip";
 import { unread, useWatcher } from "../lib/watcher";
@@ -46,6 +52,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
   const lang = i18n.language.startsWith("uk") ? "uk" : "en";
   const alerts = useWatcher((s) => s.alerts);
   const fresh = unread(alerts);
+  const theme = useTheme((s) => s.pref);
 
   return (
     <nav className="shell flex w-[212px] shrink-0 flex-col bg-bg p-3">
@@ -92,7 +99,8 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
           {t("app.admin")}
         </div>
       )}
-      <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+      <div className="flex items-center gap-1.5">
+      <div className="flex flex-1 rounded-lg border border-line p-0.5 text-[12px]">
         {(["uk", "en"] as const).map((code) => (
           <button
             key={code}
@@ -109,9 +117,28 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
-            <span className="relative">{code === "uk" ? "Українська" : "English"}</span>
+            <span className="relative">{code === "uk" ? "Укр" : "Eng"}</span>
           </button>
         ))}
+      </div>
+        <button
+          onClick={() => setTheme(nextTheme(theme))}
+          title={t("theme.label", { mode: t(`theme.${theme}`) })}
+          aria-label={t("theme.label", { mode: t(`theme.${theme}`) })}
+          data-testid="theme-toggle"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-raised hover:text-fg"
+        >
+          {theme === "system" ? <Monitor size={15} /> : theme === "dark" ? <Moon size={15} /> : <Sun size={15} />}
+        </button>
+        <button
+          onClick={openFeedback}
+          title={t("feedback.open")}
+          aria-label={t("feedback.open")}
+          data-testid="feedback-open"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-raised hover:text-accent"
+        >
+          <MessageSquareHeart size={15} />
+        </button>
       </div>
     </nav>
   );

@@ -109,7 +109,7 @@ export function Direction({ target }: { target: string | null }) {
       </h3>
       <p className="mt-1 max-w-[90ch] text-[12px] leading-relaxed text-muted">{t("wifi.direction.text")}</p>
       <div className="mt-4 grid gap-5 lg:grid-cols-[1.25fr_1fr]">
-        <Suspense fallback={<div className="h-[300px] rounded-xl bg-[#0d1218]" />}>
+        <Suspense fallback={<div className="h-[300px] rounded-xl bg-raised" />}>
           <Room3D facing={facing} highlight={phase === "turn" || phase === "measure" ? step * 45 : null} result={result && result.confidence !== "weak" ? result.angle : null} labels={walls} />
         </Suspense>
 

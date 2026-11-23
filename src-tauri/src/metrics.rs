@@ -175,6 +175,7 @@ pub fn spawn(app: AppHandle) {
                     (rx + n.received(), tx + n.transmitted())
                 });
 
+            crate::history::note_metrics(load.total, sys.used_memory(), sys.total_memory());
             let snapshot = Snapshot {
                 cpu_usage: load.total,
                 cpu_frequency: sys.cpus().first().map(|c| c.frequency()).unwrap_or(0),

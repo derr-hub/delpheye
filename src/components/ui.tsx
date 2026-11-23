@@ -24,7 +24,7 @@ export function Card({
       variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       onClick={to ? () => go(to) : undefined}
-      className={`reveal rounded-card border border-line bg-surface p-5 transition-colors duration-200 hover:border-[#36404d] ${to ? "cursor-pointer" : ""} ${className}`}
+      className={`reveal rounded-card border border-line bg-surface p-5 transition-colors duration-200 hover:border-line-strong ${to ? "cursor-pointer" : ""} ${className}`}
     >
       {title && (
         <header className="mb-4 flex items-center gap-2 text-muted">
@@ -160,8 +160,8 @@ export function AnimatedBytes({ value }: { value: number }) {
 }
 
 const BUTTON_VARIANTS = {
-  primary: "bg-accent text-bg hover:bg-[#74cfff]",
-  danger: "bg-risk text-bg hover:bg-[#ffb3bb]",
+  primary: "bg-accent text-bg hover:bg-accent-hover",
+  danger: "bg-risk text-bg hover:bg-risk-hover",
   ghost: "border border-line text-fg hover:bg-raised",
   quiet: "text-muted hover:bg-raised hover:text-fg",
 };
@@ -211,7 +211,7 @@ export function Checkbox({
         onChange();
       }}
       className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-30 ${
-        filled ? "border-accent bg-accent" : "border-[#4a5462] hover:border-muted"
+        filled ? "border-accent bg-accent" : "border-line-strong hover:border-muted"
       }`}
     >
       <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="var(--color-bg)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -226,7 +226,7 @@ export function Checkbox({
   );
 }
 
-export function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+export function Modal({ open, onClose, children, width = "max-w-[460px]" }: { open: boolean; onClose: () => void; children: ReactNode; width?: string }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -248,7 +248,7 @@ export function Modal({ open, onClose, children }: { open: boolean; onClose: () 
           <motion.div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-[460px] rounded-card border border-line bg-surface p-6 shadow-2xl"
+            className={`w-full ${width} rounded-card border border-line bg-surface p-6 shadow-2xl`}
             initial={{ scale: 0.96, y: 8 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.97, opacity: 0 }}
@@ -278,7 +278,7 @@ export function Switch({ on, onChange, disabled, label }: { on: boolean; onChang
         onChange();
       }}
       className={`relative h-[22px] w-[40px] shrink-0 rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
-        on ? "border-accent bg-accent" : "border-[#4a5462] bg-transparent hover:border-muted"
+        on ? "border-accent bg-accent" : "border-line-strong bg-transparent hover:border-muted"
       }`}
     >
       <motion.span

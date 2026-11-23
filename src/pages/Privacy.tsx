@@ -50,7 +50,7 @@ function Tile({ cap, chosen, onChoose }: { cap: Capability; chosen: boolean; onC
       data-testid={`privacy-tile-${cap.kind}`}
       aria-pressed={chosen}
       className={`reveal relative flex flex-col items-start rounded-card border bg-surface p-4 text-left transition-colors ${
-        chosen ? "border-accent/60" : "border-line hover:border-[#3a4452]"
+        chosen ? "border-accent/60" : "border-line hover:border-line-strong"
       }`}
     >
       <div className="flex w-full items-center gap-2">

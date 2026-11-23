@@ -156,7 +156,7 @@ interface MonitorState {
   frame: Frame | null;
   /** Sensor id → recent values, oldest first. */
   history: Record<string, number[]>;
-  tab: "sensors" | "stability";
+  tab: "sensors" | "stability" | "history";
   quick: QuickReport | null;
   quickLoading: boolean;
   stress: { running: boolean; total: number; points: Point[]; report: StressReport | null; error: string | null; options: StressOptions; plan: StressPlan };

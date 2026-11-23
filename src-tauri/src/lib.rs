@@ -3,6 +3,8 @@ mod companion;
 mod cpu;
 mod disk;
 mod errlog;
+mod feedback;
+mod history;
 mod journal;
 mod leftovers;
 mod metrics;
@@ -12,6 +14,7 @@ mod overlay;
 mod privacy;
 mod processes;
 mod report;
+mod restore;
 mod router;
 mod security;
 mod startup;
@@ -93,6 +96,7 @@ pub fn run() {
             metrics::spawn(app.handle().clone());
             monitor::spawn(app.handle().clone(), &app.state::<monitor::MonitorState>());
             overlay::start(app);
+            history::start(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -104,6 +108,15 @@ pub fn run() {
             overlay::overlay_interactive,
             overlay::overlay_test,
             overlay::overlay_open_main,
+            feedback::feedback_available,
+            feedback::feedback_files,
+            feedback::feedback_send,
+            history::health_history,
+            restore::restore_status,
+            restore::restore_auto,
+            restore::restore_create,
+            restore::restore_before,
+            restore::restore_open_settings,
             cleanup::cleanup_scan,
             cleanup::cleanup_cancel,
             cleanup::cleanup_run,

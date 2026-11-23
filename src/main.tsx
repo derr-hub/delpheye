@@ -12,6 +12,7 @@ window.addEventListener("error", (e) => report(`${e.message} at ${e.filename}:${
 window.addEventListener("unhandledrejection", (e) => report(`unhandled: ${String(e.reason)}`));
 import "./i18n";
 import "./styles.css";
+import { startTheme } from "./lib/theme";
 
 async function boot() {
   // Plain-browser preview (`npm run dev` without Tauri): feed the UI simulated data.
@@ -27,6 +28,7 @@ async function boot() {
       return;
     }
   }
+  startTheme();
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
       <App />

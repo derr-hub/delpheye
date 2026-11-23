@@ -18,6 +18,7 @@ import { Processes } from "./pages/Processes";
 import { Network } from "./pages/Network";
 import { Report } from "./pages/Report";
 import { SlowdownPanel } from "./components/Slowdown";
+import { Feedback } from "./components/Feedback";
 import { Security } from "./pages/Security";
 import { Startup } from "./pages/Startup";
 import { Updates } from "./pages/Updates";
@@ -170,6 +171,7 @@ function App() {
         </div>
       </div>
       <SlowdownPanel />
+      <Feedback />
     </MotionConfig>
   );
 }

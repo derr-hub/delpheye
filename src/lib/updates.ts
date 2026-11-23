@@ -54,6 +54,7 @@ export async function installUpdates(ids: string[]) {
     return { phase: "installing", rows };
   });
   try {
+    await invoke<string>("restore_before", { what: "updates" }).catch(() => "");
     await invoke("updates_install", { ids });
   } catch (e) {
     useUpdates.setState({ error: String(e) });

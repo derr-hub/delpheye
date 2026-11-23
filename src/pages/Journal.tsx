@@ -6,6 +6,7 @@ import { ArchiveRestore, Brush, ChevronDown, History, ListX, Rocket, ShieldHalf,
 import type { CategoryResult } from "../lib/cleanup";
 import { useFmt } from "../lib/format";
 import { useCleanupNames } from "./cleanup/Report";
+import { RestorePoints } from "./RestorePoints";
 
 interface Entry {
   id: number;
@@ -117,7 +118,9 @@ export function Journal() {
   if (!entries) return null;
   if (entries.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center text-center">
+      <div className="grid gap-6 pb-2">
+      <RestorePoints />
+      <div className="flex flex-col items-center justify-center py-10 text-center">
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-muted">
           <History size={28} />
         </div>
@@ -127,10 +130,12 @@ export function Journal() {
           <ErrorLogLink />
         </div>
       </div>
+      </div>
     );
   }
   return (
     <div className="space-y-3 pb-2">
+      <RestorePoints />
       <ul className="overflow-hidden rounded-card border border-line bg-surface">
         {entries.map((entry) => (
           <Row key={entry.id} entry={entry} />

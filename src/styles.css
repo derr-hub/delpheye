@@ -12,12 +12,32 @@
   --color-safe: #6ccb5f;
   --color-warn: #fce100;
   --color-risk: #ff99a4;
+  --color-line-strong: #3d4653;
+  --color-accent-hover: #74cfff;
+  --color-risk-hover: #ffb3bb;
 
   --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
 
   --radius-card: 14px;
+}
+
+/* Light theme: the same roles, re-stepped for a light surface (text keeps 4.5:1 contrast). */
+html.light {
+  --color-bg: #f3f5f8;
+  --color-surface: #ffffff;
+  --color-raised: #e9edf2;
+  --color-line: #dce1e8;
+  --color-line-strong: #b9c1cc;
+  --color-fg: #161b22;
+  --color-muted: #5a6474;
+  --color-accent: #0b6fb0;
+  --color-accent-hover: #0a5f97;
+  --color-safe: #23843a;
+  --color-warn: #9a6b00;
+  --color-risk: #c42b45;
+  --color-risk-hover: #a8233a;
 }
 
 html,
@@ -72,6 +92,13 @@ html.mica .content-layer {
   background: rgb(15 18 22 / 0.66);
   border-top-left-radius: 12px;
   box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.06);
+}
+html.light.mica .content-layer {
+  background: rgb(246 248 251 / 0.78);
+  box-shadow: inset 1px 1px 0 rgb(0 0 0 / 0.06);
+}
+html.light .reveal::before {
+  background: radial-gradient(260px circle at var(--rx, -999px) var(--ry, -999px), rgb(11 111 176 / 0.05), transparent 65%);
 }
 
 /* Reveal highlight: borders near the pointer catch a soft light, as if the surface were glass.

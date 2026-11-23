@@ -155,6 +155,8 @@ export async function clean() {
 
   useCleanup.setState({ phase: "cleaning", progress: null, error: null });
   try {
+    // A Windows restore point first, when the user wants one and Windows allows it.
+    await invoke<string>("restore_before", { what: "cleanup" }).catch(() => "");
     const result = await invoke<CleanReport>("cleanup_run", { scanId: report.scanId, selection });
     useCleanup.setState({ phase: "done", result, report: null, selected: new Set(), progress: null });
   } catch (e) {
