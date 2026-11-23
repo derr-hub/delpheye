@@ -10,6 +10,7 @@ mod leftovers;
 mod metrics;
 mod monitor;
 mod network;
+mod headphones;
 mod overlay;
 mod privacy;
 mod processes;
@@ -86,6 +87,7 @@ pub fn run() {
         .manage(router::RouterState::default())
         .manage(watcher::WatcherState::default())
         .manage(companion::CompanionState::default())
+        .manage(headphones::HeadphonesState::default())
         .manage(overlay::OverlayState::default())
         .manage(std::sync::Arc::new(network::NetworkState::default()))
         .setup(|app| {
@@ -114,6 +116,9 @@ pub fn run() {
             metrics::system_info,
             system::app_status,
             system::relaunch_elevated,
+            headphones::headphones_list,
+            headphones::headphones_now,
+            headphones::headphones_switch,
             overlay::overlay_settings,
             overlay::overlay_save,
             overlay::overlay_interactive,

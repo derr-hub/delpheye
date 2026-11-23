@@ -306,7 +306,8 @@ fn tray_menu<R: tauri::Runtime, M: tauri::Manager<R>>(m: &M, uk: bool) -> tauri:
     use tauri::menu::{Menu, MenuItem};
     let open = MenuItem::with_id(m, "open", if uk { "Відкрити DelphEye" } else { "Open DelphEye" }, true, None::<&str>)?;
     let quit = MenuItem::with_id(m, "quit", if uk { "Вийти" } else { "Quit" }, true, None::<&str>)?;
-    Menu::with_items(m, &[&open, &quit])
+    let phones = MenuItem::with_id(m, "headphones", if uk { "Навушники: на ПК / відпустити" } else { "Headphones: take / let go" }, true, None::<&str>)?;
+    Menu::with_items(m, &[&open, &phones, &quit])
 }
 
 fn tray_tip(uk: bool) -> &'static str {
@@ -333,6 +334,10 @@ pub fn tray(app: &tauri::App) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, e| match e.id().as_ref() {
             "open" => show_main(app),
+            "headphones" => {
+                let app = app.clone();
+                std::thread::spawn(move || crate::headphones::switch(&app, None));
+            }
             "quit" => app.exit(0),
             _ => {}
         })

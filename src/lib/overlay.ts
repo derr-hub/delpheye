@@ -34,6 +34,19 @@ export interface Tick {
 
 export const TOGGLE_KEY = "Ctrl+Shift+F12";
 export const OPEN_KEY = "Ctrl+Shift+F11";
+export const PHONES_KEY = "Ctrl+Shift+F10";
+
+export interface Headphones {
+  id: string;
+  name: string;
+  linked: boolean;
+  ready: boolean;
+}
+export interface PhonesNow {
+  id: string;
+  name: string;
+  phase: "connecting" | "releasing";
+}
 
 export const useOverlay = create<{ settings: OverlaySettings | null }>(() => ({ settings: null }));
 

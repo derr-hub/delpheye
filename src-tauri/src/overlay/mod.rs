@@ -3,7 +3,8 @@
 //! Wi-Fi — and the watcher's alerts, which unfold from it instead of a Windows notification.
 //!
 //! It never takes clicks (they pass through to the game) except while opened with its hotkey.
-//! Ctrl+Shift+F12 shows or hides it; Ctrl+Shift+F11 opens it into a panel.
+//! Ctrl+Shift+F12 shows or hides it; Ctrl+Shift+F11 opens it into a panel; Ctrl+Shift+F10 takes
+//! the Bluetooth headphones to this computer or lets them go.
 
 pub mod fps;
 
@@ -24,7 +25,7 @@ pub const LABEL: &str = "overlay";
 /// The window is larger than the island so the island can unfold inside it; the rest is
 /// transparent and lets clicks through.
 const WIDTH: f64 = 480.0;
-const HEIGHT: f64 = 470.0;
+const HEIGHT: f64 = 600.0;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase", default)]
@@ -67,6 +68,10 @@ fn toggle_key() -> Shortcut {
 
 fn open_key() -> Shortcut {
     Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::F11)
+}
+
+fn headphones_key() -> Shortcut {
+    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::F10)
 }
 
 fn load(j: &Journal) -> Settings {
@@ -162,7 +167,9 @@ pub fn on_shortcut(app: &AppHandle, shortcut: &Shortcut, state: ShortcutState) {
 }
 
 fn hotkey(app: &AppHandle, shortcut: &Shortcut) {
-    if *shortcut == toggle_key() {
+    if *shortcut == headphones_key() {
+        crate::headphones::switch(app, None);
+    } else if *shortcut == toggle_key() {
         set_enabled(app, !visible(app));
     } else if *shortcut == open_key() {
         if !visible(app) {
@@ -236,7 +243,7 @@ pub fn start(app: &tauri::App) {
     let handle = app.handle().clone();
     let settings = load(&app.state::<Journal>());
     *app.state::<OverlayState>().settings.lock().unwrap() = settings.clone();
-    for key in [toggle_key(), open_key()] {
+    for key in [toggle_key(), open_key(), headphones_key()] {
         if let Err(e) = app.global_shortcut().register(key) {
             crate::errlog::write("overlay", &format!("hotkey taken: {e}"));
         }

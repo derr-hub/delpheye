@@ -3,9 +3,9 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { AlertTriangle, BellRing, Cpu, Eye, EyeOff, Gauge, Info, MemoryStick, MonitorPlay, ShieldAlert, Thermometer, Wifi, WifiOff, X, Zap } from "lucide-react";
-import type { OverlaySettings, Tick } from "../lib/overlay";
-import { OPEN_KEY, TOGGLE_KEY } from "../lib/overlay";
+import { AlertTriangle, BellRing, Cpu, Eye, EyeOff, Gauge, Headphones as HeadphonesIcon, Info, LoaderCircle, MemoryStick, MonitorPlay, ShieldAlert, Thermometer, Wifi, WifiOff, X, Zap } from "lucide-react";
+import type { Headphones, OverlaySettings, PhonesNow, Tick } from "../lib/overlay";
+import { OPEN_KEY, PHONES_KEY, TOGGLE_KEY } from "../lib/overlay";
 
 const SPRING = { type: "spring", stiffness: 380, damping: 30, mass: 0.9 } as const;
 const GREEN = "#4ade80";
@@ -86,6 +86,49 @@ function Tile({ label, value, color, data, max, sub }: { label: string; value: s
   );
 }
 
+/** The paired headphones: take them to this computer or let them go. */
+function Phones({ now }: { now: PhonesNow | null }) {
+  const { t } = useTranslation();
+  const [list, setList] = useState<Headphones[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const load = () => invoke<Headphones[]>("headphones_list").then((l) => alive && setList(l)).catch(() => {});
+    load();
+    const id = window.setInterval(load, 3000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [now]);
+  if (!list.length) return null;
+  return (
+    <div className="mt-2 rounded-[14px] bg-white/[0.04] px-3 py-1" data-testid="overlay-phones">
+      {list.slice(0, 3).map((h) => {
+        const mine = now?.id === h.id;
+        return (
+          <div key={h.id} className="flex items-center gap-2 py-1.5 text-[0.6875rem]">
+            <HeadphonesIcon size={13} className="shrink-0" style={{ color: h.ready ? GREEN : "rgba(255,255,255,0.5)" }} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-white/85">{h.name}</div>
+              <div className="text-[0.625rem] text-white/40">{t(mine ? `overlay.phones.${now.phase}` : h.ready ? "overlay.phones.here" : h.linked ? "overlay.phones.silent" : "overlay.phones.away")}</div>
+            </div>
+            <button
+              disabled={!!now}
+              onClick={() => invoke("headphones_switch", { id: h.id })}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-semibold text-white/85 hover:bg-white/20 disabled:opacity-50"
+              data-testid={`phones-${h.id}`}
+            >
+              {mine && <LoaderCircle size={12} className="animate-spin" />}
+              {t(h.ready ? "overlay.phones.release" : "overlay.phones.take")}
+            </button>
+          </div>
+        );
+      })}
+      <div className="pb-1 text-[0.625rem] text-white/30">{t("overlay.phones.key", { key: PHONES_KEY })}</div>
+    </div>
+  );
+}
+
 export function Overlay() {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<OverlaySettings | null>(null);
@@ -95,6 +138,7 @@ export function Overlay() {
   const [hist, setHist] = useState({ cpu: [] as number[], gpu: [] as number[], ram: [] as number[], ping: [] as number[], frame: [] as number[] });
   const [alert, setAlert] = useState<Alert | null>(null);
   const [open, setOpen] = useState(false);
+  const [phones, setPhones] = useState<PhonesNow | null>(null);
   const island = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -103,6 +147,7 @@ export function Overlay() {
       if (el) el.style.background = "transparent";
     }
     invoke<OverlaySettings>("overlay_settings").then(setSettings);
+    invoke<PhonesNow | null>("headphones_now").then(setPhones).catch(() => {});
     const offs = [
       listen<OverlaySettings>("overlay:settings", ({ payload }) => setSettings(payload)),
       listen<{ cpuUsage: number; memUsed: number; memTotal: number }>("metrics", ({ payload }) => {
@@ -122,6 +167,7 @@ export function Overlay() {
         }));
       }),
       listen<Omit<Alert, "at">>("overlay:alert", ({ payload }) => setAlert({ ...payload, at: Date.now() })),
+      listen<PhonesNow | null>("headphones:state", ({ payload }) => setPhones(payload)),
       listen<boolean>("overlay:interactive", ({ payload }) => setOpen(payload)),
     ];
     return () => offs.forEach((p) => p.then((off) => off()));
@@ -157,7 +203,7 @@ export function Overlay() {
   // Online, yet not one ping comes back: this network drops pings, so "loss" would be made up.
   const loss = offline || (ping === null && tick?.loss === 100) ? 0 : (tick?.loss ?? 0);
   const mode = open ? "panel" : alert ? "alert" : "pill";
-  const LevelIcon = alert?.level === "risk" ? ShieldAlert : alert?.level === "warn" ? AlertTriangle : alert?.kind === "test" ? BellRing : Info;
+  const LevelIcon = alert?.level === "risk" ? ShieldAlert : alert?.level === "warn" ? AlertTriangle : alert?.kind === "test" ? BellRing : alert?.kind === "headphones" ? HeadphonesIcon : Info;
   const levelColor = alert?.level === "risk" ? RED : alert?.level === "warn" ? AMBER : BLUE;
 
   return (
@@ -192,6 +238,13 @@ export function Overlay() {
                   </span>
                 ) : (
                   <Eye size={14} className="text-white/70" />
+                )}
+                {phones && (
+                  <Seg icon={<LoaderCircle size={12} className="animate-spin" />} title={phones.name}>
+                    <span style={{ color: BLUE }} data-testid="pill-phones">
+                      {t(`overlay.phones.${phones.phase}`)}
+                    </span>
+                  </Seg>
                 )}
                 {settings.pc && (
                   <>
@@ -321,6 +374,8 @@ export function Overlay() {
                     <span className="tabular-nums ml-auto">{tick.wifi.rssi} dBm</span>
                   </div>
                 )}
+
+                <Phones now={phones} />
 
                 <div className="mt-3 flex gap-2">
                   <button onClick={() => invoke("overlay_open_main", { page: null })} className="flex-1 rounded-full bg-white py-2 text-[0.75rem] font-semibold text-black hover:bg-white/85" data-testid="overlay-open-main">
