@@ -29,8 +29,8 @@ DelphEye inspects your system first and changes nothing until you choose. Every 
 * **Cleanup** — Scans temporary files and caches, generating a clear report before anything is deleted.
 * **App Leftovers** — Finds folders and registry keys left behind by uninstalled software. Items are moved to a **7-day quarantine**, so anything can be restored.
 * **Startup** — Analyzes startup programs, scheduled tasks, and services, showing boot impact and whether disabling them is safe (with full undo support).
-* **Disk** — Instant search directly through the NTFS file table (MFT), *"time layers"* (data untouched for years), duplicate finder, and Recycle Bin breakdown.
-* **Monitoring** — Hardware sensors, throttling detection without extra drivers, CPU/RAM/GPU stress tests with error checking, run-to-run cooling profiles, crash records explained incident by incident, and a **health history** — load, memory, temperatures and free space by day, over 30 / 90 / 365 days.
+* **Disk** — Instant search directly through the NTFS file table (MFT), *"time layers"* (data untouched for years), a **3D file city** (folders as districts around a plaza, branch roads as wide as the data they carry, beacons on critical system parts — and an explanation of what, where and why for every building), the drive built live in 3D while it is indexed, a duplicate finder and Recycle Bin breakdown.
+* **Monitoring** — Hardware sensors, throttling detection without extra drivers, CPU/RAM/GPU stress tests with error checking, run-to-run cooling profiles, crash records with a **verdict for every shutdown and blue screen** (overheating, battery, freeze, hardware, driver — with the facts behind it), and a **health history** — load, memory, temperatures and free space by day, over 30 / 90 / 365 days.
 * **Processes** — Detailed process tree explaining what each process actually does and what happens if you terminate it.
 * **Network** — Shows which apps talk to which servers, per-program traffic, open ports, suspicious connections, and a network health check (router, internet, DNS).
 * **Wi-Fi** — Three levels in one place:
@@ -40,7 +40,7 @@ DelphEye inspects your system first and changes nothing until you choose. Every 
   * *Professional* — connects to the router: **ASUS** fully (every device and how loud it is, a connection log, traffic, open ports, security checks, confirmed one-click fixes), **Keenetic, MikroTik and OpenWrt** read-only.
   * *Share Wi-Fi* — a QR code guests scan to join without reading the password aloud, and a printable card.
 * **Updates** — Finds newer versions of installed programs through winget and updates one or all of them.
-* **Camera & Mic** — Shows which programs used the camera, microphone and location — and which are using them right now.
+* **Camera & Mic** — Shows which programs used the camera, microphone and location — and which are using them right now; a last-24-hours timeline and an alert whenever a program turns the camera or microphone on.
 * **Protection** — An interactive **3D shield** with one piece per area — click a piece and the camera flies into it:
   * *Threats & tampering* — malware hiding spots, impostor processes, hosts/proxy/DNS, added root certificates, antivirus exclusions; optional hash-based reputation.
   * *Windows protection* — antivirus, firewall, UAC, SmartScreen, Secure Boot, TPM, encryption, core isolation and more, each explained.

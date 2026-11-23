@@ -124,7 +124,7 @@ export async function refresh() {
 /** Polls while the page is open; returns the function that stops it. */
 export function startPolling(): () => void {
   refresh();
-  const timer = window.setInterval(refresh, 1500);
+  const timer = window.setInterval(() => !document.hidden && refresh(), 1500);
   return () => window.clearInterval(timer);
 }
 

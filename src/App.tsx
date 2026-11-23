@@ -75,18 +75,36 @@ function useRevealLight() {
     let frame = 0;
     let x = -9999;
     let y = -9999;
+    // Where the lit elements are, measured at most a few times a second (not on every move),
+    // and only the ones near the pointer are touched — the rest keep their styles untouched.
+    let rects: [HTMLElement, DOMRect][] = [];
+    let measured = 0;
+    const lit = new Set<HTMLElement>();
+    const measure = () => {
+      rects = [...document.querySelectorAll<HTMLElement>(".reveal")].map((el) => [el, el.getBoundingClientRect()]);
+      measured = performance.now();
+    };
     const paint = () => {
       frame = 0;
-      for (const el of document.querySelectorAll<HTMLElement>(".reveal")) {
-        const r = el.getBoundingClientRect();
+      if (performance.now() - measured > 250) measure();
+      for (const [el, r] of rects) {
         const dx = Math.max(r.left - x, 0, x - r.right);
         const dy = Math.max(r.top - y, 0, y - r.bottom);
         const near = 1 - Math.min(1, Math.hypot(dx, dy) / 110);
-        el.style.setProperty("--rx", `${x - r.left}px`);
-        el.style.setProperty("--ry", `${y - r.top}px`);
-        el.style.setProperty("--ro", near.toFixed(2));
+        if (near > 0) {
+          el.style.setProperty("--rx", `${x - r.left}px`);
+          el.style.setProperty("--ry", `${y - r.top}px`);
+          el.style.setProperty("--ro", near.toFixed(2));
+          lit.add(el);
+        } else if (lit.has(el)) {
+          el.style.setProperty("--ro", "0");
+          lit.delete(el);
+        }
       }
     };
+    const stale = () => (measured = 0);
+    window.addEventListener("scroll", stale, { capture: true, passive: true });
+    window.addEventListener("resize", stale);
     const move = (e: PointerEvent) => {
       x = e.clientX;
       y = e.clientY;
@@ -101,6 +119,8 @@ function useRevealLight() {
     return () => {
       window.removeEventListener("pointermove", move);
       document.removeEventListener("pointerleave", leave);
+      window.removeEventListener("scroll", stale, { capture: true });
+      window.removeEventListener("resize", stale);
       cancelAnimationFrame(frame);
     };
   }, []);
@@ -114,6 +134,8 @@ function App() {
   const { scrollY } = useScroll({ container: main });
   const headingSize = useTransform(scrollY, [0, 72], [22, 15]);
   const barOpacity = useTransform(scrollY, [8, 72], [0, 1]);
+  // Hidden (not just transparent) at the top, so its backdrop blur costs nothing there.
+  const barVisible = useTransform(scrollY, (v) => (v > 8 ? "visible" : "hidden"));
   useRevealLight();
 
   useEffect(() => {
@@ -148,7 +170,7 @@ function App() {
             <div className="sticky top-0 z-20 -mx-7 mb-3 flex h-[52px] shrink-0 items-center px-7 pt-2">
               <motion.div
                 aria-hidden
-                style={{ opacity: barOpacity }}
+                style={{ opacity: barOpacity, visibility: barVisible }}
                 className="pointer-events-none absolute inset-0 border-b border-line/70 bg-bg/80 shadow-[0_8px_24px_-16px_rgb(0_0_0/0.35)] backdrop-blur-xl"
               />
               <motion.h1 style={{ fontSize: headingSize }} className="relative font-display font-semibold leading-none">

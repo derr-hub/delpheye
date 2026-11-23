@@ -46,7 +46,10 @@ let timer = 0;
 export function startPrivacy() {
   if (timer) return;
   refreshPrivacy();
-  timer = window.setInterval(refreshPrivacy, 3000);
+  timer = window.setInterval(() => {
+    // In the tray nothing shows it; the watcher keeps the history itself in the background.
+    if (!document.hidden) refreshPrivacy();
+  }, 4000);
 }
 
 /** What is using the camera, microphone or location at this moment. */

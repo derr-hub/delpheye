@@ -104,7 +104,7 @@ export async function refreshNetwork() {
 
 export function startNetworkPolling(): () => void {
   refreshNetwork();
-  const timer = window.setInterval(refreshNetwork, 2000);
+  const timer = window.setInterval(() => !document.hidden && refreshNetwork(), 2000);
   return () => window.clearInterval(timer);
 }
 
