@@ -213,7 +213,7 @@ export function Overlay() {
                 )}
                 {settings.net && tick && (
                   <Seg icon={offline ? <WifiOff size={12} /> : tick.wifi ? <Bars rssi={tick.wifi.rssi} /> : <Zap size={12} />} title={t("overlay.ping")}>
-                    <span style={{ color: pingTone(ping) }}>{ping !== null ? `${ping} ms` : offline ? t("overlay.offline") : "—"}</span>
+                    <span style={{ color: pingTone(ping) }}>{ping !== null ? `${ping} ${t("overlay.ms")}` : offline ? t("overlay.offline") : "—"}</span>
                     {!!tick.loss && <span className="text-[10px]" style={{ color: RED }}>−{tick.loss}%</span>}
                   </Seg>
                 )}
@@ -304,7 +304,7 @@ export function Overlay() {
                   <Tile label={t("overlay.ram")} value={`${ram ?? "—"}%`} color={ram !== null && ram >= 93 ? RED : "#38bdf8"} data={hist.ram} max={100} />
                   <Tile
                     label={t("overlay.ping")}
-                    value={ping !== null ? `${ping} ms` : "—"}
+                    value={ping !== null ? `${ping} ${t("overlay.ms")}` : "—"}
                     sub={tick?.loss ? t("overlay.loss", { pct: tick.loss }) : tick?.routerMs !== null && tick?.routerMs !== undefined ? t("overlay.router", { ms: tick.routerMs }) : undefined}
                     color={pingTone(ping)}
                     data={hist.ping}

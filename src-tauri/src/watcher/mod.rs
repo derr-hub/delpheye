@@ -293,16 +293,33 @@ fn weekly(app: &AppHandle) {
     let _ = app.notification().builder().title(&title).body(&body).show();
 }
 
+fn tray_menu<R: tauri::Runtime, M: tauri::Manager<R>>(m: &M, uk: bool) -> tauri::Result<tauri::menu::Menu<R>> {
+    use tauri::menu::{Menu, MenuItem};
+    let open = MenuItem::with_id(m, "open", if uk { "Відкрити DelphEye" } else { "Open DelphEye" }, true, None::<&str>)?;
+    let quit = MenuItem::with_id(m, "quit", if uk { "Вийти" } else { "Quit" }, true, None::<&str>)?;
+    Menu::with_items(m, &[&open, &quit])
+}
+
+fn tray_tip(uk: bool) -> &'static str {
+    if uk { "DelphEye — наглядач працює" } else { "DelphEye — watcher on" }
+}
+
+/// Relabels the tray icon's menu after the language changed.
+pub fn tray_language(app: &AppHandle, lang: &str) {
+    let uk = lang != "en";
+    if let (Some(tray), Ok(menu)) = (app.tray_by_id("main"), tray_menu(app, uk)) {
+        let _ = tray.set_menu(Some(menu));
+        let _ = tray.set_tooltip(Some(tray_tip(uk)));
+    }
+}
+
 /// The tray icon: click to show the window; a menu to open it or quit for real.
 pub fn tray(app: &tauri::App) -> tauri::Result<()> {
-    use tauri::menu::{Menu, MenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     let uk = app.state::<WatcherState>().settings.lock().unwrap().lang != "en";
-    let open = MenuItem::with_id(app, "open", if uk { "Відкрити DelphEye" } else { "Open DelphEye" }, true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", if uk { "Вийти" } else { "Quit" }, true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &quit])?;
+    let menu = tray_menu(app, uk)?;
     let mut builder = TrayIconBuilder::with_id("main")
-        .tooltip(if uk { "DelphEye — наглядач працює" } else { "DelphEye — watcher on" })
+        .tooltip(tray_tip(uk))
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, e| match e.id().as_ref() {
@@ -375,9 +392,14 @@ pub fn watcher_settings(state: State<'_, WatcherState>) -> Settings {
 }
 
 #[tauri::command]
-pub fn watcher_save(state: State<'_, WatcherState>, journal: State<'_, Journal>, settings: Settings) {
+pub fn watcher_save(app: AppHandle, state: State<'_, WatcherState>, journal: State<'_, Journal>, settings: Settings) {
     kv_set(&journal, "settings", &serde_json::to_string(&settings).unwrap_or_default());
+    let relabel = state.settings.lock().unwrap().lang != settings.lang;
+    let lang = settings.lang.clone();
     *state.settings.lock().unwrap() = settings;
+    if relabel {
+        tray_language(&app, &lang);
+    }
 }
 
 #[tauri::command]

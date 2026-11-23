@@ -173,6 +173,18 @@ pub fn app_status() -> AppStatus {
     }
 }
 
+/// Waits (up to `ms`) for process `pid` to end.
+pub fn wait_for_exit(pid: u32, ms: u32) {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject};
+    unsafe {
+        if let Ok(h) = OpenProcess(PROCESS_SYNCHRONIZE, false, pid) {
+            let _ = WaitForSingleObject(h, ms);
+            let _ = CloseHandle(h);
+        }
+    }
+}
+
 /// Starts a second, elevated copy of the app and closes this one.
 ///
 /// Fails with `"declined"` when the user dismisses the UAC prompt; this copy then keeps running.
@@ -184,13 +196,14 @@ pub fn relaunch_elevated(app: AppHandle) -> Result<(), String> {
 
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let exe = HSTRING::from(exe.as_os_str());
+    let args = HSTRING::from(format!("--after={}", std::process::id()));
     // SAFETY: every string passed is a valid, NUL-terminated wide string that outlives the call.
     let result = unsafe {
         ShellExecuteW(
             None,
             w!("runas"),
             &exe,
-            PCWSTR::null(),
+            &args,
             PCWSTR::null(),
             SW_SHOWNORMAL,
         )

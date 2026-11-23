@@ -17,13 +17,10 @@ import {
   BellRing,
   Rocket,
   MessageSquareHeart,
-  Monitor,
-  Moon,
-  Sun,
   type LucideIcon,
 } from "lucide-react";
 
-import { nextTheme, setTheme, useTheme } from "../lib/theme";
+import { ThemeMenu } from "./ThemeMenu";
 import { openFeedback } from "../lib/feedback";
 import { useApp, type Page } from "../lib/app";
 import { UpdateChip } from "./UpdateChip";
@@ -52,7 +49,6 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
   const lang = i18n.language.startsWith("uk") ? "uk" : "en";
   const alerts = useWatcher((s) => s.alerts);
   const fresh = unread(alerts);
-  const theme = useTheme((s) => s.pref);
 
   return (
     <nav className="shell flex w-[212px] shrink-0 flex-col bg-bg p-3">
@@ -121,15 +117,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
           </button>
         ))}
       </div>
-        <button
-          onClick={() => setTheme(nextTheme(theme))}
-          title={t("theme.label", { mode: t(`theme.${theme}`) })}
-          aria-label={t("theme.label", { mode: t(`theme.${theme}`) })}
-          data-testid="theme-toggle"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-raised hover:text-fg"
-        >
-          {theme === "system" ? <Monitor size={15} /> : theme === "dark" ? <Moon size={15} /> : <Sun size={15} />}
-        </button>
+        <ThemeMenu />
         <button
           onClick={openFeedback}
           title={t("feedback.open")}

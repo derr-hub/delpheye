@@ -56,9 +56,20 @@ fn open_main_window(app: &tauri::App) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // A copy started to replace this one (with administrator rights) waits for it to close first,
+    // or the single-instance check below would hand over to the copy that is about to exit.
+    if let Some(pid) = std::env::args().find_map(|a| a.strip_prefix("--after=").and_then(|p| p.parse::<u32>().ok())) {
+        system::wait_for_exit(pid, 8000);
+    }
     errlog::install_panic_hook();
     errlog::write("app", "started");
     tauri::Builder::default()
+        // Only one DelphEye: starting it again brings the open window forward.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if !args.iter().any(|a| a == "--background") {
+                watcher::show_main(app);
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())

@@ -991,6 +991,7 @@ const uk = {
     system: "як у Windows",
     dark: "темна",
     light: "світла",
+    option: { system: "Як у Windows", light: "Світла", dark: "Темна" },
   },
   feedback: {
     open: "Написати розробнику",
@@ -1086,6 +1087,7 @@ const uk = {
     temp: "Температура",
     ping: "Пінг",
     offline: "немає мережі",
+    ms: "мс",
     keys: "{{open}} — згорнути · {{toggle}} — сховати",
     close: "Згорнути",
     frame: "кадр {{avg}} мс · найдовший {{worst}} мс",
@@ -3146,6 +3148,7 @@ const en: typeof uk = {
     system: "like Windows",
     dark: "dark",
     light: "light",
+    option: { system: "Like Windows", light: "Light", dark: "Dark" },
   },
   feedback: {
     open: "Write to the developer",
@@ -3241,6 +3244,7 @@ const en: typeof uk = {
     temp: "Temperature",
     ping: "Ping",
     offline: "offline",
+    ms: "ms",
     keys: "{{open}} close · {{toggle}} hide",
     close: "Close",
     frame: "frame {{avg}} ms · longest {{worst}} ms",
@@ -4334,7 +4338,9 @@ function initialLang(): "uk" | "en" {
   } catch {
     /* storage unavailable */
   }
-  return navigator.language.toLowerCase().startsWith("uk") ? "uk" : "en";
+  // First start: the language Windows uses. Ukrainian for uk/ru/be, English otherwise.
+  const langs = (navigator.languages?.length ? navigator.languages : [navigator.language]).map((l) => l.toLowerCase());
+  return langs.some((l) => l.startsWith("uk") || l.startsWith("ru") || l.startsWith("be")) ? "uk" : "en";
 }
 
 i18n.use(initReactI18next).init({
@@ -4354,3 +4360,10 @@ i18n.on("languageChanged", (lng) => {
 });
 
 export default i18n;
+
+// Another DelphEye window (the overlay) changed the language: follow it here too.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === LANG_KEY && (e.newValue === "uk" || e.newValue === "en") && e.newValue !== i18n.language) i18n.changeLanguage(e.newValue);
+  });
+}
