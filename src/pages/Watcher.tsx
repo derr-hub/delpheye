@@ -7,8 +7,8 @@ import { go, type Page } from "../lib/app";
 import { OPEN_KEY, TOGGLE_KEY, loadOverlay, saveOverlay, testOverlay, useOverlay } from "../lib/overlay";
 import { KINDS, readAll, saveWatcher, setAutostart, testNotification, unread, useWatcher, type Alert, type Kind } from "../lib/watcher";
 
-const ICON: Record<Kind, LucideIcon> = { device: Smartphone, twin: Wifi, heat: Cpu, disk: HardDrive, autostart: Rocket, crash: Zap };
-const PAGE: Record<Kind, Page> = { device: "wifi", twin: "wifi", heat: "monitoring", disk: "cleanup", autostart: "startup", crash: "monitoring" };
+const ICON: Record<Kind, LucideIcon> = { device: Smartphone, twin: Wifi, heat: Cpu, disk: HardDrive, autostart: Rocket, crash: Zap, threat: ShieldAlert };
+const PAGE: Record<Kind, Page> = { device: "wifi", twin: "wifi", heat: "monitoring", disk: "cleanup", autostart: "startup", crash: "monitoring", threat: "security" };
 const TONE = { info: "text-accent", warn: "text-warn", risk: "text-risk" } as const;
 
 function when(at: number, locale: string) {

@@ -21,7 +21,7 @@ use tauri_plugin_notification::NotificationExt;
 use crate::journal::Journal;
 
 #[cfg(test)]
-pub const KINDS: [&str; 6] = ["device", "twin", "heat", "disk", "autostart", "crash"];
+pub const KINDS: [&str; 7] = ["device", "twin", "heat", "disk", "autostart", "crash", "threat"];
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -147,7 +147,7 @@ struct Loop {
     hot_minutes: u32,
     router: Option<(String, String)>,
     router_off: bool,
-    next: [Instant; 6],
+    next: [Instant; 7],
 }
 
 fn heat(app: &AppHandle, l: &mut Loop) {
@@ -253,6 +253,23 @@ fn devices(app: &AppHandle, l: &mut Loop) {
     }
 }
 
+/// Hiding places of malware, between scans: anything new that settled in since the last look.
+fn threats(app: &AppHandle) {
+    let now = crate::security::watch_keys();
+    let j = app.state::<Journal>();
+    let keys: HashSet<String> = now.iter().map(|(k, _)| k.clone()).collect();
+    match set_of(&j, "threats") {
+        None => save_set(&j, "threats", &keys),
+        Some(before) => {
+            for (k, f) in now.iter().filter(|(k, _)| !before.contains(k)) {
+                let level = if f.severity == crate::security::finding::Severity::High { "risk" } else { "warn" };
+                raise(app, "threat", level, json!({ "name": f.title, "kind": f.kind, "where": f.location, "key": k }));
+            }
+            save_set(&j, "threats", &keys);
+        }
+    }
+}
+
 fn weekly(app: &AppHandle) {
     let j = app.state::<Journal>();
     let settings = app.state::<WatcherState>().settings.lock().unwrap().clone();
@@ -322,9 +339,9 @@ pub fn start(app: AppHandle) {
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_secs(45));
         let t = Instant::now();
-        let mut l = Loop { hot_minutes: 0, router: None, router_off: false, next: [t; 6] };
-        // How often each check runs: device, twin, heat, disk, autostart, crash.
-        let every = [300, 900, 60, 600, 600, 1800].map(Duration::from_secs);
+        let mut l = Loop { hot_minutes: 0, router: None, router_off: false, next: [t; 7] };
+        // How often each check runs: device, twin, heat, disk, autostart, crash, threat.
+        let every = [300, 900, 60, 600, 600, 1800, 900].map(Duration::from_secs);
         loop {
             let enabled = app.state::<WatcherState>().settings.lock().unwrap().enabled;
             if enabled {
@@ -339,7 +356,8 @@ pub fn start(app: AppHandle) {
                         2 => heat(&app, &mut l),
                         3 => disk(&app),
                         4 => autostart(&app),
-                        _ => crashes(&app),
+                        5 => crashes(&app),
+                        _ => threats(&app),
                     }
                 }
                 weekly(&app);

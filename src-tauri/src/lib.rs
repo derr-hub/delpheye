@@ -112,6 +112,7 @@ pub fn run() {
             feedback::feedback_files,
             feedback::feedback_send,
             history::health_history,
+            security::pwned::password_check,
             wifi::share::wifi_share,
             restore::restore_status,
             restore::restore_auto,

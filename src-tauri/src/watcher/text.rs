@@ -78,6 +78,13 @@ pub fn render(lang: &str, kind: &str, v: &Value) -> (String, String) {
                 (format!("{what} — DelphEye recorded it"), "Details and the likely cause are under Monitoring, stability section.".into())
             }
         }
+        "threat" => {
+            if uk {
+                (format!("Нове в схованках вірусів: {}", s(v, "name")), "Щось нове з'явилося там, де закріплюються шкідливі програми. Відкрий «Захист», щоб побачити подробиці.".into())
+            } else {
+                (format!("New in a malware hiding place: {}", s(v, "name")), "Something new settled where malware makes itself start. Open Protection for the details.".into())
+            }
+        }
         _ => (String::from("DelphEye"), String::new()),
     }
 }

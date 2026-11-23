@@ -5,9 +5,13 @@
 //! ending a process) is a separate, explicit step, and the first two can be undone from
 //! quarantine.
 
+mod backup;
 mod certs;
-mod finding;
+mod exposure;
+pub mod extensions;
+pub mod finding;
 mod hardening;
+pub mod pwned;
 mod patterns;
 mod persistence;
 mod processes;
@@ -52,12 +56,21 @@ pub struct ScanReport {
     limited: Vec<&'static str>,
     findings: Vec<Finding>,
     hardening: hardening::Report,
+    /// Browser extensions and what they may do.
+    extensions: Vec<extensions::Extension>,
+    /// Would the files survive ransomware?
+    backup: hardening::Report,
+    /// What the network can reach on this computer.
+    exposure: exposure::Exposure,
 }
 
 fn scan(windows: &Path, elevated: bool) -> ScanReport {
     let started = Instant::now();
     // The slow parts run side by side.
-    let (facts, (xml, running)) = rayon::join(helper_facts, || rayon::join(|| task_xml(windows), processes::list));
+    let ((facts, (xml, running)), (exts, exposure)) = rayon::join(
+        || rayon::join(helper_facts, || rayon::join(|| task_xml(windows), processes::list)),
+        || rayon::join(extensions::list, exposure::check),
+    );
 
     let mut findings = Vec::new();
     findings.extend(persistence::ifeo());
@@ -91,13 +104,37 @@ fn scan(windows: &Path, elevated: bool) -> ScanReport {
         limited.extend(["defender-exclusions", "system-processes", "encryption"]);
     }
     let today = quarantine::now();
+    // Microsoft Defender is the active antivirus (not replaced by another one).
+    let defender = facts.antivirus.items.iter().any(|p| p.enabled && (p.name.contains("Defender") || p.name.contains("Захисник")));
     ScanReport {
         elevated,
-        duration_ms: started.elapsed().as_millis() as u64,
         limited,
         findings,
         hardening: hardening::run(&facts, &hardening::read_settings(), today),
+        extensions: exts,
+        backup: backup::run(defender),
+        exposure,
+        duration_ms: started.elapsed().as_millis() as u64,
     }
+}
+
+/// For the watcher: the hiding places that can be read quickly, as stable keys
+/// ("kind|title|location") — a new key between two looks means something new settled in.
+pub fn watch_keys() -> Vec<(String, Finding)> {
+    let Some(dirs) = Dirs::real() else { return Vec::new() };
+    let mut f = Vec::new();
+    f.extend(persistence::ifeo());
+    f.extend(persistence::winlogon(&dirs.windows));
+    f.extend(persistence::injected_dlls());
+    f.extend(persistence::lsa_packages());
+    f.extend(persistence::run_commands());
+    f.extend(persistence::startup_scripts());
+    f.extend(persistence::browser_policies());
+    f.extend(tamper::proxy());
+    f.extend(tamper::dns());
+    f.extend(tamper::defender_exclusions());
+    f.extend(tamper::root_certificates(&certs::roots));
+    f.into_iter().filter(|x| x.severity != finding::Severity::Info).map(|x| (format!("{}|{}|{}", x.kind, x.title, x.location), x)).collect()
 }
 
 #[derive(Default)]

@@ -28,12 +28,77 @@ export interface HardeningTest {
   fix: string | null;
 }
 
+export interface Extension {
+  browser: "chrome" | "edge" | "brave" | "vivaldi" | "opera" | "firefox";
+  profile: string;
+  id: string;
+  name: string;
+  version: string;
+  enabled: boolean | null;
+  fromStore: boolean;
+  unpacked: boolean;
+  allSites: boolean;
+  powers: string[];
+  risk: "high" | "medium" | "low";
+  known: boolean;
+  path: string;
+}
+
+export interface OpenPort {
+  port: number;
+  ports: number[];
+  name: string;
+  exe: string | null;
+  service: string | null;
+  risk: "high" | "medium" | "low";
+  windows: boolean;
+}
+
 export interface ScanReport {
   elevated: boolean;
   durationMs: number;
   limited: string[];
   findings: Finding[];
   hardening: { score: number; tests: HardeningTest[] };
+  extensions: Extension[];
+  backup: { score: number; tests: HardeningTest[] };
+  exposure: { open: OpenPort[]; publicNetworks: string[]; privateNetworks: string[] };
+}
+
+export type Section = "threats" | "tamper" | "windows" | "browser" | "backup" | "network" | "passwords";
+export const SECTIONS: Section[] = ["threats", "tamper", "windows", "browser", "backup", "network", "passwords"];
+
+/** 0–100 per section; passwords are a tool, not scored. */
+export function sectionScores(r: ScanReport): Record<Exclude<Section, "passwords">, number> {
+  const penalty = (fs: Finding[]) => Math.max(0, 100 - fs.reduce((a, f) => a + (f.severity === "high" ? 45 : f.severity === "medium" ? 15 : f.severity === "low" ? 4 : 0), 0));
+  const browser = Math.max(0, 100 - r.extensions.filter((e) => e.enabled !== false).reduce((a, e) => a + (e.risk === "high" ? 22 : e.risk === "medium" ? 6 : 0), 0));
+  const network = Math.max(
+    0,
+    100 - r.exposure.open.reduce((a, o) => a + (o.risk === "high" ? 30 : o.risk === "medium" ? 8 : 0), 0) - (r.exposure.publicNetworks.length && r.exposure.open.some((o) => o.risk !== "low") ? 15 : 0),
+  );
+  return {
+    threats: penalty(r.findings.filter((f) => f.area !== "tamper")),
+    tamper: penalty(r.findings.filter((f) => f.area === "tamper")),
+    windows: r.hardening.score,
+    browser,
+    backup: r.backup.score,
+    network,
+  };
+}
+
+/** The shield: threats weigh most, then Windows' defences. */
+export function shieldScore(r: ScanReport): number {
+  const s = sectionScores(r);
+  const w = { threats: 30, tamper: 15, windows: 20, browser: 12, backup: 12, network: 11 } as const;
+  let sum = 0;
+  let total = 0;
+  for (const k of Object.keys(w) as (keyof typeof w)[]) {
+    sum += s[k] * w[k];
+    total += w[k];
+  }
+  // A real threat caps the shield whatever else is fine.
+  const high = r.findings.some((f) => f.severity === "high");
+  return Math.round(Math.min(high ? 45 : 100, sum / total));
 }
 
 export type Verdict = "malicious" | "known" | "unknown" | "failed";
@@ -54,7 +119,7 @@ interface SecurityState {
   phase: "idle" | "scanning" | "done";
   report: ScanReport | null;
   error: string | null;
-  tab: "findings" | "hardening";
+  tab: Section | null;
   /** Online reputation lookups are off until the user switches them on. */
   reputationOn: boolean;
   /** File path → its reputation, or "pending" while being looked up. */
@@ -77,7 +142,7 @@ export const useSecurity = create<SecurityState>(() => ({
   phase: "idle",
   report: null,
   error: null,
-  tab: "findings",
+  tab: null,
   reputationOn: storedReputation(),
   reputation: {},
   acted: {},
@@ -133,3 +198,10 @@ export async function act(finding: Finding, action: Action) {
 
 export const SEVERITY_ORDER: Severity[] = ["high", "medium", "low", "info"];
 export const AREAS: Area[] = ["persistence", "process", "tamper"];
+
+export interface PasswordCheck {
+  leaked: number | null;
+  strength: number;
+  weak: string[];
+}
+export const checkPassword = (password: string) => invoke<PasswordCheck>("password_check", { password });

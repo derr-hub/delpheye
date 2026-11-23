@@ -344,6 +344,21 @@ pub fn lan_ipv4() -> Vec<Ipv4Addr> {
         .collect()
 }
 
+/// TCP services reachable from other machines: (port, program, its file, part of Windows).
+pub fn exposed_listeners() -> Vec<(u16, String, Option<String>, bool)> {
+    let rows = processes::rows();
+    let by_pid: HashMap<u32, &processes::Row> = rows.iter().map(|r| (r.pid, r)).collect();
+    win::tcp()
+        .into_iter()
+        .filter(|s| s.state == LISTEN && s.local.ip().is_unspecified())
+        .map(|s| {
+            let row = by_pid.get(&s.pid);
+            let name = row.map(|r| r.name.clone()).unwrap_or_else(|| if s.pid == 4 { "System".into() } else { format!("PID {}", s.pid) });
+            (s.local.port(), name, row.and_then(|r| r.exe.clone()), row.map_or(true, |r| r.level == Level::Windows))
+        })
+        .collect()
+}
+
 /// The Wi-Fi adapter's IPv4 address and gateway, when it is connected.
 pub fn wifi_route() -> Option<(Ipv4Addr, Ipv4Addr)> {
     let a = win::adapters().into_iter().find(|a| a.up && a.kind == "wifi")?;
