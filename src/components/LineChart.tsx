@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { smooth } from "./ui";
 
 /** Categorical colours for the dark surface, in fixed order (validated set). */
 export const SERIES_COLORS = ["#3987e5", "#d95926", "#199e70", "#c98500"];
@@ -37,8 +38,17 @@ export function LineChart({
   /** Draw a dot on every value; for sparse series such as one point per test run. */
   markers?: boolean;
 }) {
+  const gid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
-  const width = 600;
+  // Drawn at the real pixel width, so labels and lines keep their size on any window.
+  const box = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(600);
+  useLayoutEffect(() => {
+    if (!box.current) return;
+    const ro = new ResizeObserver(([e]) => setWidth(Math.max(240, Math.round(e.contentRect.width))));
+    ro.observe(box.current);
+    return () => ro.disconnect();
+  }, []);
   const pad = { top: 8, right: 8, bottom: 18, left: 44 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
@@ -77,10 +87,11 @@ export function LineChart({
           ))}
         </ul>
       )}
-      <div className="relative">
+      <div className="relative" ref={box}>
         <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="block w-full"
+          width={width}
+          height={height}
+          className="block"
           role="img"
           aria-label={label}
           onMouseLeave={() => setHover(null)}
@@ -99,17 +110,27 @@ export function LineChart({
               </text>
             </g>
           ))}
-          {series.map((s) => (
-            <polyline
-              key={s.id}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={2}
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-              points={s.values.map((v, i) => `${x(i, s.values.length).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}
-            />
-          ))}
+          <defs>
+            {series.map((s) => (
+              <linearGradient key={s.id} id={`lc-${gid}-${s.id}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stopColor={s.color} stopOpacity={series.length > 1 ? 0.12 : 0.25} />
+                <stop offset="1" stopColor={s.color} stopOpacity="0" />
+              </linearGradient>
+            ))}
+          </defs>
+          {series.map((s) => {
+            // A light 3-point average takes the sensor jitter out of the line (the tooltip keeps the real values).
+            const vals = markers ? s.values : s.values.map((v, i, a) => (a[i - 1] ?? v) * 0.25 + v * 0.5 + (a[i + 1] ?? v) * 0.25);
+            const pts = vals.map((v, i) => [x(i, vals.length), y(v)] as [number, number]);
+            const line = smooth(pts, pad.top, pad.top + innerH);
+            if (!line) return null;
+            return (
+              <g key={s.id}>
+                <path d={`${line} L${pts[pts.length - 1][0]},${pad.top + innerH} L${pts[0][0]},${pad.top + innerH} Z`} fill={`url(#lc-${gid}-${s.id})`} />
+                <path d={line} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+              </g>
+            );
+          })}
           {markers &&
             series.map((s) =>
               s.values.map((v, i) => <circle key={`${s.id}-${i}`} cx={x(i, s.values.length)} cy={y(v)} r={4} fill={s.color} stroke="var(--color-surface)" strokeWidth={2} />),

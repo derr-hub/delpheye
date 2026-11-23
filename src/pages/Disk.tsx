@@ -1,3 +1,5 @@
+import { Hero } from "../components/Hero";
+import { Clock3, FileStack } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -65,12 +67,22 @@ function Intro() {
   const fmt = useFmt();
   const { drives, drive, error } = useDisk();
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-line bg-surface text-accent">
-        <HardDrive size={36} strokeWidth={1.4} />
-      </div>
-      <h2 className="font-display text-[20px] font-semibold">{t("disk.introTitle")}</h2>
-      <p className="mt-2 max-w-[50ch] text-[13px] leading-relaxed text-muted">{t("disk.introText")}</p>
+    <Hero
+      icon={HardDrive}
+      title={t("disk.introTitle")}
+      text={t("disk.introText")}
+      features={[
+        { icon: Clock3, title: t("hero.disk.f1"), text: t("hero.disk.f1t") },
+        { icon: FileStack, title: t("hero.disk.f2"), text: t("hero.disk.f2t") },
+        { icon: Copy, title: t("hero.disk.f3"), text: t("hero.disk.f3t") },
+      ]}
+      action={
+        <Button variant="primary" className="!h-11 !px-8 text-[14px]" disabled={!drive} onClick={startIndex} data-testid="disk-index">
+          {t("disk.index", { drive: drive?.replace(/\\$/, "") ?? "" })}
+        </Button>
+      }
+      error={<ErrorLine error={error} />}
+    >
       {drives.length > 1 && (
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           {drives.map((d) => (
@@ -78,7 +90,7 @@ function Intro() {
               key={d.mount}
               onClick={() => useDisk.setState({ drive: d.mount })}
               className={`rounded-lg border px-3 py-1.5 text-[12px] transition-colors duration-150 ${
-                d.mount === drive ? "border-accent text-fg" : "border-line text-muted hover:text-fg"
+                d.mount === drive ? "border-accent bg-accent/10 text-fg" : "border-line text-muted hover:text-fg"
               }`}
             >
               <span className="num font-medium">{d.mount.replace(/\\$/, "")}</span> · {fmt.bytes(d.total - d.available)} / {fmt.bytes(d.total)}
@@ -86,13 +98,7 @@ function Intro() {
           ))}
         </div>
       )}
-      <Button variant="primary" className="mt-6 !h-10 !px-7" disabled={!drive} onClick={startIndex} data-testid="disk-index">
-        {t("disk.index", { drive: drive?.replace(/\\$/, "") ?? "" })}
-      </Button>
-      <div className="mt-4">
-        <ErrorLine error={error} />
-      </div>
-    </div>
+    </Hero>
   );
 }
 

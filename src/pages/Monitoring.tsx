@@ -409,13 +409,13 @@ function SensorsTab() {
 
       {temps.length > 0 && (
         <Card title={t("monitor.tempChart")} icon={<Gauge size={15} />}>
-          <LineChart series={temps} format={(v) => `${Math.round(v)}°`} label={t("monitor.tempChart")} minRange={10} />
+          <LineChart series={temps} format={(v) => `${Math.round(v)}°`} label={t("monitor.tempChart")} minRange={10} height={190} />
           <p className="mt-1 text-right text-[11px] text-muted">{t("monitor.lastMinutes")}</p>
         </Card>
       )}
       {fanSeries.length > 0 && (
         <Card title={t("monitor.fanChart")} icon={<Fan size={15} />}>
-          <LineChart series={fanSeries} format={(v) => `${Math.round(v)}`} label={t("monitor.fanChart")} minRange={400} floor={0} />
+          <LineChart series={fanSeries} format={(v) => `${Math.round(v)}`} label={t("monitor.fanChart")} minRange={400} floor={0} height={170} />
         </Card>
       )}
 

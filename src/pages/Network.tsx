@@ -127,7 +127,7 @@ function Connection() {
           points={60}
           minRange={64 * 1024}
           floor={0}
-          height={120}
+          height={200}
           label={t("network.traffic")}
         />
         <p className="mt-1 text-right text-[11px] text-muted">{t("network.lastMinute")}</p>

@@ -207,7 +207,7 @@ export function Overview() {
           ) : null}
         </div>
         <div className="mt-3">
-          <Sparkline data={history.cpu} max={100} color={loadColor(m.cpuUsage, 80, 95)} />
+          <Sparkline data={history.cpu} max={100} height={58} color={loadColor(m.cpuUsage, 80, 95)} />
         </div>
         <div className="mt-3 flex h-6 items-end gap-[3px]" aria-hidden>
           {m.perCore.map((v, i) => (
@@ -242,7 +242,7 @@ export function Overview() {
           </span>
         </div>
         <div className="mt-3">
-          <Sparkline data={history.mem} max={100} color={loadColor(memPct)} />
+          <Sparkline data={history.mem} max={100} height={58} color={loadColor(memPct)} />
         </div>
         <div className="mt-[18px] flex items-center justify-between text-[12px] text-muted">
           <span>{t("overview.swap")}</span>
@@ -278,8 +278,8 @@ export function Overview() {
           </div>
         </div>
         <div className="mt-3 space-y-1">
-          <Sparkline data={history.rx} max={netMax} color="var(--color-accent)" />
-          <Sparkline data={history.tx} max={netMax} color="var(--color-safe)" />
+          <Sparkline data={history.rx} max={netMax} height={36} color="var(--color-accent)" />
+          <Sparkline data={history.tx} max={netMax} height={36} color="var(--color-safe)" />
         </div>
       </Card>
 

@@ -99,9 +99,6 @@ export function Watcher() {
             </ul>
           )}
         </div>
-      </div>
-
-      <div className="grid content-start gap-4">
         {overlay && (
           <div className="rounded-card border border-line bg-surface p-4" data-testid="overlay-card">
             <div className="flex items-start gap-3">
@@ -132,6 +129,9 @@ export function Watcher() {
             </Button>
           </div>
         )}
+      </div>
+
+      <div className="grid content-start gap-4">
         <div className="rounded-card border border-line bg-surface p-4">
           <h3 className="mb-2 text-[13px] font-medium">{t("watcher.what")}</h3>
           <ul className="grid gap-1">

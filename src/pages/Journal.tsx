@@ -19,8 +19,20 @@ interface Entry {
   details: { categories?: CategoryResult[]; sandbox?: boolean; items?: { path: string; bytes: number }[]; name?: string; from?: string; to?: string } | null;
 }
 
+/** Each kind of action has its own colour, so a day reads at a glance. */
+const TONE: Record<string, string> = {
+  cleanup: "bg-accent/12 text-accent",
+  trash: "bg-risk/12 text-risk",
+  quarantine: "bg-warn/12 text-warn",
+  restore: "bg-safe/12 text-safe",
+  purge: "bg-risk/12 text-risk",
+  startup: "bg-accent/12 text-accent",
+  security: "bg-safe/12 text-safe",
+  process: "bg-warn/12 text-warn",
+};
+
 function Row({ entry }: { entry: Entry }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmt = useFmt();
   const names = useCleanupNames();
   const [open, setOpen] = useState(false);
@@ -38,7 +50,7 @@ function Row({ entry }: { entry: Entry }) {
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-raised text-muted">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE[entry.kind] ?? "bg-raised text-muted"}`}>
           <Icon size={17} />
         </div>
         <div className="min-w-0 flex-1">
@@ -48,7 +60,7 @@ function Row({ entry }: { entry: Entry }) {
               <span className="rounded-full bg-warn/10 px-2 py-0.5 text-[11px] font-normal text-warn">{t("app.sandbox")}</span>
             )}
           </div>
-          <div className="num text-[12px] text-muted">{fmt.dateTime(entry.at)}</div>
+          <div className="num text-[12px] text-muted">{new Date(entry.at * 1000).toLocaleTimeString(i18n.language.startsWith("uk") ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" })}</div>
         </div>
         <div className="shrink-0 text-right">
           {frees && <div className="num text-[14px] text-safe">{t("journal.freed", { value: fmt.bytes(entry.bytes) })}</div>}
@@ -103,7 +115,8 @@ function Row({ entry }: { entry: Entry }) {
 }
 
 export function Journal() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const fmt = useFmt();
   const [entries, setEntries] = useState<Entry[] | null>(null);
 
   useEffect(() => {
@@ -133,14 +146,42 @@ export function Journal() {
       </div>
     );
   }
+  // By day, newest first: "Today", "Yesterday", then dates.
+  const locale = i18n.language.startsWith("uk") ? "uk-UA" : "en-US";
+  const dayKey = (at: number) => new Date(at * 1000).toDateString();
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86_400_000).toDateString();
+  const days: { key: string; label: string; items: Entry[] }[] = [];
+  for (const e of entries) {
+    const k = dayKey(e.at);
+    let d = days.find((x) => x.key === k);
+    if (!d) {
+      const label = k === today ? t("journal.today") : k === yesterday ? t("journal.yesterday") : new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long" }).format(new Date(e.at * 1000));
+      d = { key: k, label, items: [] };
+      days.push(d);
+    }
+    d.items.push(e);
+  }
   return (
-    <div className="space-y-3 pb-2">
+    <div className="space-y-5 pb-2">
       <RestorePoints />
-      <ul className="overflow-hidden rounded-card border border-line bg-surface">
-        {entries.map((entry) => (
-          <Row key={entry.id} entry={entry} />
-        ))}
-      </ul>
+      {days.map((d) => {
+        const freed = d.items.reduce((a, e) => a + (["cleanup", "trash", "purge"].includes(e.kind) ? e.bytes : 0), 0);
+        return (
+          <section key={d.key} data-testid="journal-day">
+            <div className="mb-2 flex items-baseline gap-2 px-1">
+              <h3 className="text-[13px] font-semibold first-letter:uppercase">{d.label}</h3>
+              <span className="text-[12px] text-muted">{t("journal.actions", { count: d.items.length })}</span>
+              {freed > 0 && <span className="num ml-auto text-[12px] text-safe">{t("journal.freed", { value: fmt.bytes(freed) })}</span>}
+            </div>
+            <ul className="overflow-hidden rounded-card border border-line bg-surface">
+              {d.items.map((entry) => (
+                <Row key={entry.id} entry={entry} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
       <ErrorLogLink />
     </div>
   );

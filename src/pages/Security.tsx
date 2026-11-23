@@ -1,3 +1,5 @@
+import { Hero } from "../components/Hero";
+import { Bug, Network, ShieldHalf } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -337,17 +339,22 @@ export function Security() {
   }
   if (!report) {
     return (
-      <div className="flex h-full flex-col items-center justify-center text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-line bg-surface text-accent">
-          <ShieldCheck size={36} strokeWidth={1.4} />
-        </div>
-        <h2 className="font-display text-[20px] font-semibold">{t("security.introTitle")}</h2>
-        <p className="mt-2 max-w-[60ch] text-[13px] leading-relaxed text-muted">{t("security.introText")}</p>
-        <Button variant="primary" className="mt-6 !h-10 !px-7" onClick={scan} data-testid="security-scan">
-          {t("security.scan")}
-        </Button>
-        {error && <p className="mt-4 text-[12px] text-risk">{t("cleanup.error.other", { message: error })}</p>}
-      </div>
+      <Hero
+        icon={ShieldCheck}
+        title={t("security.introTitle")}
+        text={t("security.introText")}
+        features={[
+          { icon: Bug, title: t("hero.security.f1"), text: t("hero.security.f1t") },
+          { icon: Network, title: t("hero.security.f2"), text: t("hero.security.f2t") },
+          { icon: ShieldHalf, title: t("hero.security.f3"), text: t("hero.security.f3t") },
+        ]}
+        action={
+          <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={scan} data-testid="security-scan">
+            {t("security.scan")}
+          </Button>
+        }
+        error={error && <p className="text-[12px] text-risk">{t("cleanup.error.other", { message: error })}</p>}
+      />
     );
   }
 

@@ -1,3 +1,5 @@
+import { Hero } from "../components/Hero";
+import { BadgeCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -10,26 +12,28 @@ function Intro() {
   const { t } = useTranslation();
   const error = useUpdates((s) => s.error);
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center">
-      <div className="relative mb-7 flex h-28 w-28 items-center justify-center rounded-full border border-line bg-surface text-accent">
-        <motion.span
-          className="absolute inset-0 rounded-full border border-accent/50"
-          animate={{ scale: [1, 1.28], opacity: [0.7, 0] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
-        />
-        <PackageCheck size={44} strokeWidth={1.4} />
-      </div>
-      <h2 className="font-display text-[20px] font-semibold">{t("updates.introTitle")}</h2>
-      <p className="mt-2 max-w-[52ch] text-[13px] leading-relaxed text-muted">{t("updates.introText")}</p>
-      <Button variant="primary" className="mt-6 !h-10 !px-7" onClick={checkUpdates} data-testid="updates-check">
-        {t("updates.check")}
-      </Button>
-      {error && (
-        <p className="mt-4 max-w-[52ch] text-[12px] text-risk" role="alert">
-          {error === "no-winget" ? t("updates.noWinget") : t("updates.error", { message: error })}
-        </p>
-      )}
-    </div>
+    <Hero
+      icon={PackageCheck}
+      title={t("updates.introTitle")}
+      text={t("updates.introText")}
+      features={[
+        { icon: BadgeCheck, title: t("hero.updates.f1"), text: t("hero.updates.f1t") },
+        { icon: RefreshCw, title: t("hero.updates.f2"), text: t("hero.updates.f2t") },
+        { icon: Cpu, title: t("hero.updates.f3"), text: t("hero.updates.f3t") },
+      ]}
+      action={
+        <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={checkUpdates} data-testid="updates-check">
+          {t("updates.check")}
+        </Button>
+      }
+      error={
+        error && (
+          <p className="text-[12px] text-risk" role="alert">
+            {error === "no-winget" ? t("updates.noWinget") : t("updates.error", { message: error })}
+          </p>
+        )
+      }
+    />
   );
 }
 

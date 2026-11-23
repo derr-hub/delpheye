@@ -62,9 +62,15 @@ body {
   cursor: default;
 }
 
+/* Numbers: the interface font with equal-width digits, so they line up and do not jump. */
 .num {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.005em;
+}
+/* Code-like text that should look typed: paths, addresses, commands. */
+.mono {
+  font-family: var(--font-mono);
 }
 
 /* Thin, unobtrusive scrollbars. */

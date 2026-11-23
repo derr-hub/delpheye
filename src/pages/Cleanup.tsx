@@ -1,3 +1,5 @@
+import { Hero } from "../components/Hero";
+import { FileX2, Globe, Package } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { History, RefreshCw, ScanSearch } from "lucide-react";
@@ -12,26 +14,28 @@ const KNOWN_ERRORS = ["busy", "stale", "environment"];
 function Intro({ error }: { error: string | null }) {
   const { t } = useTranslation();
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center">
-      <div className="relative mb-7 flex h-28 w-28 items-center justify-center rounded-full border border-line bg-surface text-accent">
-        <motion.span
-          className="absolute inset-0 rounded-full border border-accent/50"
-          animate={{ scale: [1, 1.28], opacity: [0.7, 0] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
-        />
-        <ScanSearch size={44} strokeWidth={1.4} />
-      </div>
-      <h2 className="font-display text-[20px] font-semibold">{t("cleanup.introTitle")}</h2>
-      <p className="mt-2 max-w-[44ch] text-[13px] leading-relaxed text-muted">{t("cleanup.introText")}</p>
-      <Button variant="primary" className="mt-6 !h-10 !px-7" onClick={scan} data-testid="scan">
-        {t("cleanup.scan")}
-      </Button>
-      {error && (
-        <p className="mt-4 text-[12px] text-risk" role="alert">
-          {KNOWN_ERRORS.includes(error) ? t(`cleanup.error.${error}`) : t("cleanup.error.other", { message: error })}
-        </p>
-      )}
-    </div>
+    <Hero
+      icon={ScanSearch}
+      title={t("cleanup.introTitle")}
+      text={t("cleanup.introText")}
+      features={[
+        { icon: FileX2, title: t("hero.cleanup.f1"), text: t("hero.cleanup.f1t") },
+        { icon: Globe, title: t("hero.cleanup.f2"), text: t("hero.cleanup.f2t") },
+        { icon: Package, title: t("hero.cleanup.f3"), text: t("hero.cleanup.f3t") },
+      ]}
+      action={
+        <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={scan} data-testid="scan">
+          {t("cleanup.scan")}
+        </Button>
+      }
+      error={
+        error && (
+          <p className="text-[12px] text-risk" role="alert">
+            {KNOWN_ERRORS.includes(error) ? t(`cleanup.error.${error}`) : t("cleanup.error.other", { message: error })}
+          </p>
+        )
+      }
+    />
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useSpring, useTransform, type HTMLMotionProps } from "motion/react";
 import { useFmt } from "../lib/format";
 import { go, type Page } from "../lib/app";
@@ -93,6 +93,29 @@ export function Ring({
 }
 
 /** Area sparkline. `max` fixes the scale; omit it to auto-scale to the data. */
+/** A smooth path through the points (Catmull-Rom turned into cubic Béziers, kept inside the box). */
+export function smooth(pts: [number, number][], top: number, bottom: number): string {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const k = 1 / 6;
+    const c1y = Math.min(bottom, Math.max(top, p1[1] + (p2[1] - p0[1]) * k));
+    const c2y = Math.min(bottom, Math.max(top, p2[1] - (p3[1] - p1[1]) * k));
+    d += ` C${(p1[0] + (p2[0] - p0[0]) * k).toFixed(2)},${c1y.toFixed(2)} ${(p2[0] - (p3[0] - p1[0]) * k).toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+  }
+  return d;
+}
+
+let sparkId = 0;
+
+/**
+ * A small live chart: a smooth line over a fading area, a faint midline, and a glowing dot at the
+ * newest value. Until the history fills, what there is spreads across the whole width.
+ */
 export function Sparkline({
   data,
   color,
@@ -106,33 +129,45 @@ export function Sparkline({
   height?: number;
   points?: number;
 }) {
+  const [id] = useState(() => `spark${++sparkId}`);
   const w = 100;
-  const top = Math.max(max ?? Math.max(...data, 1), 1e-6);
-  const step = w / (points - 1);
-  const offset = points - data.length;
-  const xy = data.map((v, i) => {
-    const x = (offset + i) * step;
-    const y = height - 2 - (Math.min(v, top) / top) * (height - 4);
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  });
-  const line = xy.length > 1 ? `M${xy.join(" L")}` : "";
-  const area = line ? `${line} L${w},${height} L${(offset * step).toFixed(2)},${height} Z` : "";
+  const top = Math.max(max ?? Math.max(...data, 1) * 1.15, 1e-6);
+  const shown = data.slice(-points);
+  const n = Math.max(shown.length - 1, 1);
+  const xy: [number, number][] = shown.map((v, i) => [(i / n) * w, height - 3 - (Math.min(Math.max(v, 0), top) / top) * (height - 6)]);
+  const line = smooth(xy, 2, height - 2);
+  const area = line ? `${line} L${w},${height} L0,${height} Z` : "";
+  const last = xy[xy.length - 1];
   return (
-    <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="block w-full" style={{ height }}>
-      {area && <path d={area} fill={color} opacity={0.12} />}
-      {line && (
-        <path d={line} fill="none" stroke={color} strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    <div className="relative" style={{ height }}>
+      <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="absolute inset-0 block h-full w-full overflow-visible">
+        <defs>
+          <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor={color} stopOpacity="0.28" />
+            <stop offset="1" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line x1={0} x2={w} y1={height / 2} y2={height / 2} stroke="var(--color-line)" strokeDasharray="2 3" vectorEffect="non-scaling-stroke" opacity={0.6} />
+        {area && <path d={area} fill={`url(#${id})`} />}
+        {line && <path d={line} fill="none" stroke={color} strokeWidth={1.75} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />}
+      </svg>
+      {last && shown.length > 1 && (
+        // The dot is HTML so it stays round however the chart stretches.
+        <span
+          className="pointer-events-none absolute h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ left: `${last[0]}%`, top: `${(last[1] / height) * 100}%`, background: color, boxShadow: `0 0 0 3px color-mix(in srgb, ${color} 22%, transparent)` }}
+        />
       )}
-    </svg>
+    </div>
   );
 }
 
 export function Bar({ value, color }: { value: number; color: string }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-raised">
+    <div className="h-2 w-full overflow-hidden rounded-full bg-raised shadow-[inset_0_1px_2px_rgb(0_0_0/0.15)]">
       <motion.div
         className="h-full rounded-full"
-        style={{ background: color }}
+        style={{ background: `linear-gradient(90deg, color-mix(in srgb, ${color} 70%, transparent), ${color})`, boxShadow: `0 0 10px -2px ${color}` }}
         initial={{ width: 0 }}
         animate={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
         transition={{ type: "spring", stiffness: 80, damping: 20 }}

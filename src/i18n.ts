@@ -922,6 +922,34 @@ const uk = {
     downloading: "Завантажую… {{value}}%",
     error: "Не вдалося оновити: {{message}}",
   },
+  hero: {
+    safe: "Нічого не зміниться без твого підтвердження",
+    cleanup: {
+      f1: "Тимчасові файли", f1t: "Що Windows і програми лишили в Temp, журналах і звітах про збої.",
+      f2: "Кеші браузерів і програм", f2t: "Збережені копії сторінок, мініатюри, кеш шейдерів — вони відновлюються самі.",
+      f3: "Залишки оновлень", f3t: "Старі файли Windows Update і завантажені інсталятори, які вже не потрібні.",
+    },
+    disk: {
+      f1: "Шари часу", f1t: "Що лежить тижнями й роками без діла — кольорові кільця по віку файлів.",
+      f2: "Найбільші файли", f2t: "Топ того, що займає найбільше, з шляхом і кнопкою «показати в провіднику».",
+      f3: "Дублікати", f3t: "Однакові файли в різних папках — побайтово, а не лише за назвою.",
+    },
+    leftovers: {
+      f1: "Program Files і ProgramData", f1t: "Папки програм, яких уже немає у списку встановлених.",
+      f2: "Твій AppData", f2t: "Налаштування й кеші видалених програм у профілі користувача.",
+      f3: "Карантин на 7 днів", f3t: "Вибране не видаляється одразу — тиждень його можна повернути одним кліком.",
+    },
+    security: {
+      f1: "Шкідливе й підозріле", f1t: "Програми, що ховаються в автозапуску, службах і завданнях, чи маскуються під системні.",
+      f2: "З'єднання з інтернетом", f2t: "Хто й куди підключений, через які порти і чи підписана програма.",
+      f3: "Захищеність Windows", f3t: "Брандмауер, Defender, контроль облікових записів, оновлення — що вимкнено.",
+    },
+    updates: {
+      f1: "Офіційні джерела", f1t: "Через winget — менеджер програм, вбудований у Windows, з сайтів виробників.",
+      f2: "Одну чи всі", f2t: "Оновлюй вибране або все разом; перед цим DelphEye зробить точку відновлення.",
+      f3: "Драйвери окремо", f3t: "Для драйверів підкаже необов'язкові оновлення в Windows Update.",
+    },
+  },
   share: {
     button: "Поділитися Wi-Fi",
     title: "Wi-Fi для гостей",
@@ -1968,6 +1996,12 @@ const uk = {
     },
   },
   journal: {
+    today: "Сьогодні",
+    yesterday: "Вчора",
+    actions_one: "{{count}} дія",
+    actions_few: "{{count}} дії",
+    actions_many: "{{count}} дій",
+    actions_other: "{{count}} дії",
     empty: "Журнал поки порожній",
     errorLog: "Якщо щось пішло не так, подробиці записуються в журнал помилок.",
     openErrorLog: "Відкрити папку журналу",
@@ -2892,6 +2926,34 @@ const en: typeof uk = {
     later: "Later",
     downloading: "Downloading… {{value}}%",
     error: "Could not update: {{message}}",
+  },
+  hero: {
+    safe: "Nothing changes without your confirmation",
+    cleanup: {
+      f1: "Temporary files", f1t: "What Windows and apps left in Temp, logs and crash reports.",
+      f2: "Browser and app caches", f2t: "Saved page copies, thumbnails, shader caches — they rebuild themselves.",
+      f3: "Update leftovers", f3t: "Old Windows Update files and downloaded installers no longer needed.",
+    },
+    disk: {
+      f1: "Time layers", f1t: "What has sat unused for weeks and years — coloured rings by file age.",
+      f2: "Largest files", f2t: "The top space users, with the path and \"show in Explorer\".",
+      f3: "Duplicates", f3t: "Identical files in different folders — byte by byte, not by name.",
+    },
+    leftovers: {
+      f1: "Program Files and ProgramData", f1t: "Folders of apps that are no longer installed.",
+      f2: "Your AppData", f2t: "Settings and caches of removed apps in your user profile.",
+      f3: "Quarantine for 7 days", f3t: "Nothing is deleted at once — for a week it comes back with one click.",
+    },
+    security: {
+      f1: "Malicious and suspicious", f1t: "Apps hiding in startup, services and tasks, or posing as system files.",
+      f2: "Internet connections", f2t: "Who connects where, through which ports, and whether the app is signed.",
+      f3: "Windows protection", f3t: "Firewall, Defender, account control, updates — what is switched off.",
+    },
+    updates: {
+      f1: "Official sources", f1t: "Through winget, the app manager built into Windows, from the makers' sites.",
+      f2: "One or all", f2t: "Update the chosen ones or all at once; DelphEye makes a restore point first.",
+      f3: "Drivers apart", f3t: "For drivers it points to optional updates in Windows Update.",
+    },
   },
   share: {
     button: "Share Wi-Fi",
@@ -3933,6 +3995,12 @@ const en: typeof uk = {
     },
   } as typeof uk.security),
   journal: {
+    today: "Today",
+    yesterday: "Yesterday",
+    actions_one: "{{count}} action",
+    actions_few: "{{count}} actions",
+    actions_many: "{{count}} actions",
+    actions_other: "{{count}} actions",
     errorLog: "If something goes wrong, the details go into the error log.",
     openErrorLog: "Open the log folder",
     empty: "The journal is empty so far",

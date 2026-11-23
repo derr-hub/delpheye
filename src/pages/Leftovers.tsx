@@ -1,3 +1,5 @@
+import { Hero } from "../components/Hero";
+import { FolderSearch } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -96,20 +98,29 @@ function Intro() {
   const { t } = useTranslation();
   const error = useLeftovers((s) => s.error);
   return (
-    <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-line bg-surface text-accent">
-        <PackageSearch size={36} strokeWidth={1.4} />
-      </div>
-      <h2 className="font-display text-[20px] font-semibold">{t("leftovers.introTitle")}</h2>
-      <p className="mt-2 max-w-[54ch] text-[13px] leading-relaxed text-muted">{t("leftovers.introText")}</p>
-      <Button variant="primary" className="mt-6 !h-10 !px-7" onClick={scan} data-testid="leftovers-scan">
-        {t("cleanup.scan")}
-      </Button>
-      {error && (
-        <p className="mt-4 text-[12px] text-risk" role="alert">
-          {KNOWN_ERRORS.includes(error) ? t(`cleanup.error.${error}`) : t("cleanup.error.other", { message: error })}
-        </p>
-      )}
+    <div className="flex flex-1 flex-col">
+      <Hero
+        icon={PackageSearch}
+        title={t("leftovers.introTitle")}
+        text={t("leftovers.introText")}
+        features={[
+          { icon: FolderSearch, title: t("hero.leftovers.f1"), text: t("hero.leftovers.f1t") },
+          { icon: FolderOpen, title: t("hero.leftovers.f2"), text: t("hero.leftovers.f2t") },
+          { icon: ArchiveRestore, title: t("hero.leftovers.f3"), text: t("hero.leftovers.f3t") },
+        ]}
+        action={
+          <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={scan} data-testid="leftovers-scan">
+            {t("cleanup.scan")}
+          </Button>
+        }
+        error={
+          error && (
+            <p className="text-[12px] text-risk" role="alert">
+              {KNOWN_ERRORS.includes(error) ? t(`cleanup.error.${error}`) : t("cleanup.error.other", { message: error })}
+            </p>
+          )
+        }
+      />
     </div>
   );
 }
