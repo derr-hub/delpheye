@@ -103,20 +103,20 @@ export function Direction({ target }: { target: string | null }) {
 
   return (
     <div className="rounded-card border border-line bg-surface p-5" data-testid="wifi-direction">
-      <h3 className="flex items-center gap-2 text-[14px] font-medium">
+      <h3 className="flex items-center gap-2 text-[0.875rem] font-medium">
         <Compass size={16} className="text-accent" />
         {t("wifi.direction.title")}
       </h3>
-      <p className="mt-1 max-w-[90ch] text-[12px] leading-relaxed text-muted">{t("wifi.direction.text")}</p>
+      <p className="mt-1 max-w-[90ch] text-[0.75rem] leading-relaxed text-muted">{t("wifi.direction.text")}</p>
       <div className="mt-4 grid gap-5 lg:grid-cols-[1.25fr_1fr]">
-        <Suspense fallback={<div className="h-[300px] rounded-xl bg-raised" />}>
+        <Suspense fallback={<div className="h-[18.75rem] rounded-xl bg-raised" />}>
           <Room3D facing={facing} highlight={phase === "turn" || phase === "measure" ? step * 45 : null} result={result && result.confidence !== "weak" ? result.angle : null} labels={walls} />
         </Suspense>
 
         <div className="grid content-start gap-4">
           {phase === "idle" && (
             <>
-              <ol className="list-decimal space-y-1.5 pl-5 text-[12px] leading-relaxed text-muted">
+              <ol className="list-decimal space-y-1.5 pl-5 text-[0.75rem] leading-relaxed text-muted">
                 <li>{t("wifi.direction.how1")}</li>
                 <li>{t("wifi.direction.how2")}</li>
                 <li>{t("wifi.direction.how3")}</li>
@@ -128,9 +128,9 @@ export function Direction({ target }: { target: string | null }) {
           )}
           {(phase === "turn" || phase === "measure") && (
             <div data-testid="direction-running">
-              <div className="text-[12px] text-muted">{t("wifi.direction.round", { n: round + 1, total: ROUNDS })}</div>
-              <div className="font-display text-[22px] font-semibold">{t("wifi.direction.step", { n: step + 1, total: STEPS })}</div>
-              <div className={`mt-1 text-[15px] ${phase === "measure" ? "text-safe" : "text-warn"}`}>
+              <div className="text-[0.75rem] text-muted">{t("wifi.direction.round", { n: round + 1, total: ROUNDS })}</div>
+              <div className="font-display text-[1.375rem] font-semibold">{t("wifi.direction.step", { n: step + 1, total: STEPS })}</div>
+              <div className={`mt-1 text-[0.9375rem] ${phase === "measure" ? "text-safe" : "text-warn"}`}>
                 {phase === "turn" ? t("wifi.direction.face", { place: placeOf(step * 45) }) : t("wifi.direction.hold")}
               </div>
               <Button className="mt-4" icon={<Square size={13} />} onClick={() => (stop.current = true)}>
@@ -140,11 +140,11 @@ export function Direction({ target }: { target: string | null }) {
           )}
           {phase === "done" && result && (
             <div data-testid="direction-result">
-              <div className="font-display text-[19px] font-semibold">
+              <div className="font-display text-[1.1875rem] font-semibold">
                 {result.confidence === "weak" ? t("wifi.direction.unsure") : t("wifi.direction.towards", { place: placeOf(result.angle) })}
               </div>
-              <div className="num mt-1 text-[12px] text-muted">{t("wifi.direction.numbers", { db: result.spread.toFixed(1), diff: Math.round(result.disagreement) })}</div>
-              <p className={`mt-2 text-[12px] leading-relaxed ${result.confidence === "good" ? "text-safe" : result.confidence === "rough" ? "text-warn" : "text-risk"}`}>
+              <div className="num mt-1 text-[0.75rem] text-muted">{t("wifi.direction.numbers", { db: result.spread.toFixed(1), diff: Math.round(result.disagreement) })}</div>
+              <p className={`mt-2 text-[0.75rem] leading-relaxed ${result.confidence === "good" ? "text-safe" : result.confidence === "rough" ? "text-warn" : "text-risk"}`}>
                 {t(`wifi.direction.confidence.${result.confidence}`)}
               </p>
               <Button className="mt-4" icon={<RotateCw size={15} />} onClick={run}>
@@ -155,7 +155,7 @@ export function Direction({ target }: { target: string | null }) {
 
           {/* the readings themselves, as a small rose */}
           {shown.length > 0 && (
-            <svg viewBox="-120 -120 240 240" className="mx-auto w-full max-w-[200px]">
+            <svg viewBox="-120 -120 240 240" className="mx-auto w-full max-w-[12.5rem]">
               <circle r={R} fill="none" stroke="var(--color-line)" />
               {shown.map((v, k) => {
                 const a0 = ((k - 0.5) / STEPS) * Math.PI * 2;

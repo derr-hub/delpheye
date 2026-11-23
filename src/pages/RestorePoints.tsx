@@ -52,15 +52,15 @@ export function RestorePoints() {
           <LifeBuoy size={20} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-[14px] font-medium">{t("restore.title")}</h3>
-          <p className="text-[12px] leading-relaxed text-muted">{t("restore.lead")}</p>
+          <h3 className="text-[0.875rem] font-medium">{t("restore.title")}</h3>
+          <p className="text-[0.75rem] leading-relaxed text-muted">{t("restore.lead")}</p>
         </div>
       </div>
 
-      <div className="mt-4 flex items-start gap-3 text-[13px]">
+      <div className="mt-4 flex items-start gap-3 text-[0.8125rem]">
         <div className="min-w-0 flex-1">
           <div>{t("restore.auto")}</div>
-          <div className="text-[11px] leading-relaxed text-muted">{t("restore.autoText")}</div>
+          <div className="text-[0.6875rem] leading-relaxed text-muted">{t("restore.autoText")}</div>
         </div>
         <Switch
           on={status.auto}
@@ -73,14 +73,14 @@ export function RestorePoints() {
       </div>
 
       {status.protection === false ? (
-        <div className="mt-4 flex items-center gap-3 rounded-lg bg-warn/10 px-3 py-2.5 text-[12px] text-warn">
+        <div className="mt-4 flex items-center gap-3 rounded-lg bg-warn/10 px-3 py-2.5 text-[0.75rem] text-warn">
           <span className="min-w-0 flex-1">{t("restore.protectionOff")}</span>
           <Button icon={<Settings2 size={14} />} onClick={() => invoke("restore_open_settings").catch(() => {})}>
             {t("restore.openSettings")}
           </Button>
         </div>
       ) : !status.elevated ? (
-        <div className="mt-4 flex items-center gap-3 rounded-lg bg-raised/60 px-3 py-2.5 text-[12px] text-muted">
+        <div className="mt-4 flex items-center gap-3 rounded-lg bg-raised/60 px-3 py-2.5 text-[0.75rem] text-muted">
           <span className="min-w-0 flex-1">{t("restore.needAdmin")}</span>
           <Button icon={<ShieldCheck size={14} />} onClick={relaunchElevated}>
             {t("restore.asAdmin")}
@@ -93,7 +93,7 @@ export function RestorePoints() {
               {busy ? t("restore.creating") : t("restore.create")}
             </Button>
             {result && (
-              <span className={`flex items-center gap-1.5 text-[12px] ${result === "created" ? "text-safe" : result === "skipped" ? "text-muted" : "text-risk"}`}>
+              <span className={`flex items-center gap-1.5 text-[0.75rem] ${result === "created" ? "text-safe" : result === "skipped" ? "text-muted" : "text-risk"}`}>
                 {result === "created" && <Check size={14} />}
                 {known.includes(result) ? t(`restore.result.${result}`) : result}
               </span>
@@ -101,14 +101,14 @@ export function RestorePoints() {
           </div>
           <ul className="mt-4 grid gap-1">
             {status.points.slice(0, 6).map((p) => (
-              <li key={p.seq} className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-[12px] hover:bg-raised/50">
+              <li key={p.seq} className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-[0.75rem] hover:bg-raised/50">
                 <span className="min-w-0 flex-1 truncate">{p.description}</span>
-                <span className="num shrink-0 text-[11px] text-muted">{p.created ? when(p.created) : ""}</span>
+                <span className="num shrink-0 text-[0.6875rem] text-muted">{p.created ? when(p.created) : ""}</span>
               </li>
             ))}
-            {status.points.length === 0 && <li className="px-2 text-[12px] text-muted">{t("restore.none")}</li>}
+            {status.points.length === 0 && <li className="px-2 text-[0.75rem] text-muted">{t("restore.none")}</li>}
           </ul>
-          {status.points.length > 0 && <p className="mt-2 text-[11px] leading-relaxed text-muted">{t("restore.howBack")}</p>}
+          {status.points.length > 0 && <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{t("restore.howBack")}</p>}
         </>
       )}
     </section>

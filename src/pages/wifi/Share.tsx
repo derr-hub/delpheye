@@ -57,30 +57,30 @@ export function ShareWifi() {
       <Button icon={<QrCode size={14} />} onClick={() => setOpen(true)} data-testid="share-wifi">
         {t("share.button")}
       </Button>
-      <Modal open={open} onClose={() => setOpen(false)} width="max-w-[420px]">
+      <Modal open={open} onClose={() => setOpen(false)} width="max-w-[26.25rem]">
         <div className="text-center" data-testid="share-card">
           <div className="flex items-start">
             <div className="min-w-0 flex-1 text-left">
-              <h2 className="font-display text-[17px] font-semibold">{t("share.title")}</h2>
-              <p className="text-[12px] leading-relaxed text-muted">{t("share.lead")}</p>
+              <h2 className="font-display text-[1.0625rem] font-semibold">{t("share.title")}</h2>
+              <p className="text-[0.75rem] leading-relaxed text-muted">{t("share.lead")}</p>
             </div>
             <button onClick={() => setOpen(false)} className="rounded-md p-1 text-muted hover:bg-raised hover:text-fg" aria-label={t("feedback.close")}>
               <X size={16} />
             </button>
           </div>
           {error ? (
-            <p className="mt-6 rounded-lg bg-warn/10 px-3 py-3 text-[12px] leading-relaxed text-warn">{t(`share.error.${error}`, { defaultValue: t("share.error.other") })}</p>
+            <p className="mt-6 rounded-lg bg-warn/10 px-3 py-3 text-[0.75rem] leading-relaxed text-warn">{t(`share.error.${error}`, { defaultValue: t("share.error.other") })}</p>
           ) : !share ? (
-            <div className="flex h-[300px] items-center justify-center">
+            <div className="flex h-[18.75rem] items-center justify-center">
               <Loader2 className="animate-spin text-accent" />
             </div>
           ) : (
             <>
-              <div className="mx-auto mt-5 h-[240px] w-[240px] overflow-hidden rounded-2xl bg-white p-3 shadow-[0_8px_30px_-10px_rgba(11,111,176,0.45)] [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} data-testid="share-qr" />
-              <div className="mt-4 text-[18px] font-semibold">{share.ssid}</div>
+              <div className="mx-auto mt-5 h-[15rem] w-[15rem] overflow-hidden rounded-2xl bg-white p-3 shadow-[0_8px_30px_-10px_rgba(11,111,176,0.45)] [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} data-testid="share-qr" />
+              <div className="mt-4 text-[1.125rem] font-semibold">{share.ssid}</div>
               {share.kind !== "nopass" && (
                 <div className="mt-2 flex items-center justify-center gap-2">
-                  <span className="num rounded-lg bg-raised px-3 py-1.5 text-[14px]">{show ? share.password : "•".repeat(Math.min(14, share.password.length))}</span>
+                  <span className="num rounded-lg bg-raised px-3 py-1.5 text-[0.875rem]">{show ? share.password : "•".repeat(Math.min(14, share.password.length))}</span>
                   <button onClick={() => setShow(!show)} className="rounded-md p-1.5 text-muted hover:bg-raised hover:text-fg" aria-label={t("share.show")}>
                     {show ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
@@ -97,7 +97,7 @@ export function ShareWifi() {
                   </button>
                 </div>
               )}
-              <p className="mt-3 text-[11px] leading-relaxed text-muted">{t(share.kind === "SAE" ? "share.hintWpa3" : "share.hint")}</p>
+              <p className="mt-3 text-[0.6875rem] leading-relaxed text-muted">{t(share.kind === "SAE" ? "share.hintWpa3" : "share.hint")}</p>
               <Button className="mt-4" icon={<Printer size={14} />} onClick={print}>
                 {t("share.print")}
               </Button>

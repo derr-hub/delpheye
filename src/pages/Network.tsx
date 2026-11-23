@@ -52,7 +52,7 @@ function SignalBars({ value }: { value: number }) {
 }
 
 function Chip({ children, tone = "bg-raised text-muted" }: { children: ReactNode; tone?: string }) {
-  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] ${tone}`}>{children}</span>;
+  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] ${tone}`}>{children}</span>;
 }
 
 function Connection() {
@@ -72,7 +72,7 @@ function Connection() {
           <Icon size={24} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-display text-[20px] font-semibold leading-tight">
+          <div className="font-display text-[1.25rem] font-semibold leading-tight">
             {!snap ? t("network.loading") : !active ? t("network.offline") : wifi ? t("network.viaWifi", { ssid: wifi.ssid }) : t("network.viaCable", { name: active.name })}
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -97,23 +97,23 @@ function Connection() {
               </Chip>
             )}
           </div>
-          {wifi && wifi.signal < 40 && <p className="mt-2 text-[12px] text-warn">{t("network.weakSignal")}</p>}
-          {wifi && (wifi.security === "open" || wifi.security === "wep") && <p className="mt-2 text-[12px] text-risk">{t("network.openWifi")}</p>}
+          {wifi && wifi.signal < 40 && <p className="mt-2 text-[0.75rem] text-warn">{t("network.weakSignal")}</p>}
+          {wifi && (wifi.security === "open" || wifi.security === "wep") && <p className="mt-2 text-[0.75rem] text-risk">{t("network.openWifi")}</p>}
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-5 text-right">
           <div>
-            <div className="flex items-center justify-end gap-1 text-[11px] text-muted">
+            <div className="flex items-center justify-end gap-1 text-[0.6875rem] text-muted">
               <ArrowDown size={12} className="text-accent" />
               {t("overview.download")}
             </div>
-            <div className="num text-[18px]">{fmt.bytes(current?.netRx ?? 0)}/s</div>
+            <div className="num text-[1.125rem]">{fmt.bytes(current?.netRx ?? 0)}/s</div>
           </div>
           <div>
-            <div className="flex items-center justify-end gap-1 text-[11px] text-muted">
+            <div className="flex items-center justify-end gap-1 text-[0.6875rem] text-muted">
               <ArrowUp size={12} className="text-safe" />
               {t("overview.upload")}
             </div>
-            <div className="num text-[18px]">{fmt.bytes(current?.netTx ?? 0)}/s</div>
+            <div className="num text-[1.125rem]">{fmt.bytes(current?.netTx ?? 0)}/s</div>
           </div>
         </div>
       </div>
@@ -130,7 +130,7 @@ function Connection() {
           height={200}
           label={t("network.traffic")}
         />
-        <p className="mt-1 text-right text-[11px] text-muted">{t("network.lastMinute")}</p>
+        <p className="mt-1 text-right text-[0.6875rem] text-muted">{t("network.lastMinute")}</p>
       </div>
     </section>
   );
@@ -142,9 +142,9 @@ function ProbeRow({ label, probe, hint }: { label: string; probe: Probe | null |
   const tone = ms === null || ms === undefined ? "text-risk" : ms > 100 || (probe?.loss ?? 0) > 0 ? "text-warn" : "text-safe";
   return (
     <div className="rounded-xl bg-raised/50 px-3.5 py-3">
-      <div className="text-[11px] text-muted">{label}</div>
-      <div className={`num text-[18px] ${probe ? tone : "text-muted"}`}>{!probe ? "—" : ms === null ? t("network.noAnswer") : `${ms} ${t("network.ms")}`}</div>
-      <div className="text-[11px] text-muted/80">{probe && probe.loss > 0 ? t("network.loss", { value: probe.loss }) : hint}</div>
+      <div className="text-[0.6875rem] text-muted">{label}</div>
+      <div className={`num text-[1.125rem] ${probe ? tone : "text-muted"}`}>{!probe ? "—" : ms === null ? t("network.noAnswer") : `${ms} ${t("network.ms")}`}</div>
+      <div className="text-[0.6875rem] text-muted/80">{probe && probe.loss > 0 ? t("network.loss", { value: probe.loss }) : hint}</div>
     </div>
   );
 }
@@ -154,7 +154,7 @@ function CheckCard() {
   const { check, checking } = useNetwork();
   return (
     <Card title={t("network.checkTitle")} icon={<Gauge size={15} />}>
-      <p className="mb-3 max-w-[90ch] text-[12px] leading-relaxed text-muted">{t("network.checkIntro")}</p>
+      <p className="mb-3 max-w-[90ch] text-[0.75rem] leading-relaxed text-muted">{t("network.checkIntro")}</p>
       {check && (
         <div className="mb-3 space-y-3" data-testid="net-check">
           <div className="grid grid-cols-4 gap-3">
@@ -163,7 +163,7 @@ function CheckCard() {
             <ProbeRow label="Google" probe={check.internet[1]} hint="8.8.8.8" />
             <ProbeRow label={t("network.dns")} probe={check.dnsMs !== null ? { target: "", avgMs: check.dnsMs, loss: 0 } : { target: "", avgMs: null, loss: 0 }} hint={t("network.dnsHint")} />
           </div>
-          <p className={`flex gap-2 text-[13px] leading-relaxed ${check.verdict === "good" ? "text-safe" : "text-warn"}`}>
+          <p className={`flex gap-2 text-[0.8125rem] leading-relaxed ${check.verdict === "good" ? "text-safe" : "text-warn"}`}>
             {check.verdict === "good" ? <CheckCircle2 size={16} className="mt-0.5 shrink-0" /> : <ShieldAlert size={16} className="mt-0.5 shrink-0" />}
             {t(`network.verdict.${check.verdict}`)}
           </p>
@@ -180,18 +180,18 @@ function ConnectionList({ app }: { app: NetApp }) {
   const { t } = useTranslation();
   const rate = useRate();
   return (
-    <ul className="space-y-1 border-t border-line/60 bg-bg/40 px-5 py-3 text-[12px]">
+    <ul className="space-y-1 border-t border-line/60 bg-bg/40 px-5 py-3 text-[0.75rem]">
       {app.connections.map((c, i) => (
         <li key={`${c.remote}-${i}`} className="grid grid-cols-[minmax(0,1fr)_120px_90px_90px] items-center gap-3">
           <span className="min-w-0 truncate">
-            <span className={c.host ? "" : "num text-[11px]"}>{c.host ?? c.ip}</span>
-            {c.host && <span className="num ml-2 text-[11px] text-muted">{c.ip}</span>}
+            <span className={c.host ? "" : "num text-[0.6875rem]"}>{c.host ?? c.ip}</span>
+            {c.host && <span className="num ml-2 text-[0.6875rem] text-muted">{c.ip}</span>}
           </span>
           <span className="text-muted">
             <span className="num">{c.port}</span>
             {c.service && ` · ${t(`network.service.${c.service}`)}`}
           </span>
-          <span className={`text-[11px] ${c.public ? "text-muted" : "text-accent"}`}>{c.public ? t("network.internet") : t("network.local")}</span>
+          <span className={`text-[0.6875rem] ${c.public ? "text-muted" : "text-accent"}`}>{c.public ? t("network.internet") : t("network.local")}</span>
           <span className="num text-right text-muted">{c.rx !== null ? `↓ ${rate(c.rx)}` : ""}</span>
         </li>
       ))}
@@ -216,19 +216,19 @@ function AppRow({ app }: { app: NetApp }) {
         <span className="flex min-w-0 items-center gap-2.5">
           <ProcIcon proc={proc} size={18} />
           <span className="min-w-0">
-            <span className="flex items-center gap-1.5 text-[13px]">
+            <span className="flex items-center gap-1.5 text-[0.8125rem]">
               <span className="truncate">{displayName(proc)}</span>
               {app.concerns.length > 0 && <ShieldAlert size={13} className="shrink-0 text-warn" />}
             </span>
-            <span className="block truncate text-[11px] text-muted">{hosts.length ? hosts.join(", ") : t("network.onlyLocal")}</span>
+            <span className="block truncate text-[0.6875rem] text-muted">{hosts.length ? hosts.join(", ") : t("network.onlyLocal")}</span>
           </span>
         </span>
-        <span className="num text-right text-[12px]" title={t("network.connectionsHint")}>
+        <span className="num text-right text-[0.75rem]" title={t("network.connectionsHint")}>
           {publicCount}
           <span className="text-muted">/{app.connections.length}</span>
         </span>
-        <span className="num text-right text-[12px]">{app.rx !== null ? rate(app.rx) : "—"}</span>
-        <span className="num text-right text-[12px]">{app.tx !== null ? rate(app.tx) : "—"}</span>
+        <span className="num text-right text-[0.75rem]">{app.rx !== null ? rate(app.rx) : "—"}</span>
+        <span className="num text-right text-[0.75rem]">{app.tx !== null ? rate(app.tx) : "—"}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} className="text-muted">
           <ChevronDown size={14} />
         </motion.span>
@@ -249,7 +249,7 @@ function Concerns({ apps }: { apps: NetApp[] }) {
   const flagged = apps.filter((a) => a.concerns.length > 0);
   if (!flagged.length) {
     return (
-      <div className="flex items-start gap-3 rounded-card border border-safe/20 bg-safe/[0.05] px-5 py-3.5 text-[13px]" data-testid="net-concerns-none">
+      <div className="flex items-start gap-3 rounded-card border border-safe/20 bg-safe/[0.05] px-5 py-3.5 text-[0.8125rem]" data-testid="net-concerns-none">
         <ShieldCheck size={18} className="mt-0.5 shrink-0 text-safe" />
         <span className="leading-relaxed">{t("network.noConcerns")}</span>
       </div>
@@ -257,11 +257,11 @@ function Concerns({ apps }: { apps: NetApp[] }) {
   }
   return (
     <section className="rounded-card border border-warn/25 bg-warn/[0.05] p-5" data-testid="net-concerns">
-      <h2 className="mb-1 flex items-center gap-2 font-display text-[16px] font-semibold">
+      <h2 className="mb-1 flex items-center gap-2 font-display text-[1rem] font-semibold">
         <ShieldAlert size={17} className="text-warn" />
         {t("network.concernsTitle")}
       </h2>
-      <p className="mb-3 text-[12px] leading-relaxed text-muted">{t("network.concernsIntro")}</p>
+      <p className="mb-3 text-[0.75rem] leading-relaxed text-muted">{t("network.concernsIntro")}</p>
       <ul className="space-y-3">
         {flagged.map((app) => {
           const proc = asProc(app);
@@ -269,7 +269,7 @@ function Concerns({ apps }: { apps: NetApp[] }) {
             <li key={app.pid} className="rounded-xl bg-surface/70 px-4 py-3">
               <div className="flex items-center gap-2.5">
                 <ProcIcon proc={proc} size={18} />
-                <span className="flex-1 text-[13px] font-medium">{displayName(proc)}</span>
+                <span className="flex-1 text-[0.8125rem] font-medium">{displayName(proc)}</span>
                 <Button
                   variant="quiet"
                   onClick={() => {
@@ -280,11 +280,11 @@ function Concerns({ apps }: { apps: NetApp[] }) {
                   {t("network.openProcess")}
                 </Button>
               </div>
-              <ul className="mt-1.5 space-y-1 pl-7 text-[12px] leading-relaxed text-muted">
+              <ul className="mt-1.5 space-y-1 pl-7 text-[0.75rem] leading-relaxed text-muted">
                 {app.concerns.map((c) => (
                   <li key={c}>{t(`network.concern.${c}`)}</li>
                 ))}
-                <li className="num text-[11px]">{app.connections.filter((c) => c.public).slice(0, 4).map((c) => c.host ?? c.remote).join(" · ")}</li>
+                <li className="num text-[0.6875rem]">{app.connections.filter((c) => c.public).slice(0, 4).map((c) => c.host ?? c.remote).join(" · ")}</li>
               </ul>
             </li>
           );
@@ -328,18 +328,18 @@ function Apps() {
   if (!snap) return null;
   return (
     <section>
-      <h2 className="mb-2 flex items-baseline justify-between px-1 text-[11px] uppercase tracking-wider text-muted">
+      <h2 className="mb-2 flex items-baseline justify-between px-1 text-[0.6875rem] uppercase tracking-wider text-muted">
         {t("network.appsTitle")}
         <span className="normal-case tracking-normal">{t("network.appsCount", { count: apps.length })}</span>
       </h2>
       {!snap.elevated && (
-        <div className="mb-2 flex items-center gap-3 rounded-card border border-line bg-surface px-5 py-3 text-[12px] text-muted">
+        <div className="mb-2 flex items-center gap-3 rounded-card border border-line bg-surface px-5 py-3 text-[0.75rem] text-muted">
           <span className="flex-1 leading-relaxed">{t("network.trafficNeedsAdmin")}</span>
           <Button onClick={() => relaunchElevated()}>{t("cleanup.adminAction")}</Button>
         </div>
       )}
       <div className="overflow-clip rounded-card border border-line bg-surface">
-        <div className="grid grid-cols-[minmax(0,1fr)_80px_96px_96px_20px] gap-3 border-b border-line px-5 py-2 text-[11px] uppercase tracking-wider text-muted">
+        <div className="grid grid-cols-[minmax(0,1fr)_80px_96px_96px_20px] gap-3 border-b border-line px-5 py-2 text-[0.6875rem] uppercase tracking-wider text-muted">
           <span>{t("network.program")}</span>
           <span className="text-right" title={t("network.connectionsHint")}>
             {t("network.connections")}
@@ -348,7 +348,7 @@ function Apps() {
           <span className="text-right">↑ {t("network.sends")}</span>
           <span />
         </div>
-        <div className="max-h-[460px] overflow-y-auto">
+        <div className="max-h-[28.75rem] overflow-y-auto">
           {apps.map((app) => (
             <motion.div key={app.pid} layout="position" transition={{ type: "spring", stiffness: 260, damping: 32 }}>
               <AppRow app={app} />
@@ -377,21 +377,21 @@ function Ports() {
   if (!snap) return null;
   return (
     <Card title={t("network.portsTitle")} icon={<DoorOpen size={15} />}>
-      <p className="mb-3 max-w-[95ch] text-[12px] leading-relaxed text-muted">{t("network.portsIntro")}</p>
-      <ul className="space-y-1.5 text-[12px]">
+      <p className="mb-3 max-w-[95ch] text-[0.75rem] leading-relaxed text-muted">{t("network.portsIntro")}</p>
+      <ul className="space-y-1.5 text-[0.75rem]">
         {exposed.map((e) => {
           const proc = asProc({ pid: e.pid, start: 0, name: e.name, exe: e.exe, description: null, level: e.level });
           return (
             <li key={e.pid} className="flex items-center gap-2.5">
               <ProcIcon proc={proc} size={16} />
               <span className="min-w-0 flex-1 truncate">{displayName(proc)}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${e.level === "app" ? "bg-warn/10 text-warn" : "bg-raised text-muted"}`}>{t(`processes.level.${e.level}`)}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[0.6875rem] ${e.level === "app" ? "bg-warn/10 text-warn" : "bg-raised text-muted"}`}>{t(`processes.level.${e.level}`)}</span>
               <span className="num w-40 truncate text-right text-muted">{e.ports.sort((a, b) => a - b).slice(0, 6).join(", ")}</span>
             </li>
           );
         })}
       </ul>
-      {localOnly > 0 && <p className="mt-3 text-[11px] text-muted">{t("network.localOnly", { count: localOnly })}</p>}
+      {localOnly > 0 && <p className="mt-3 text-[0.6875rem] text-muted">{t("network.localOnly", { count: localOnly })}</p>}
     </Card>
   );
 }
@@ -404,13 +404,13 @@ function AdapterCard({ a }: { a: Adapter }) {
     <div className={`reveal rounded-card border border-line bg-surface p-4 ${a.up ? "" : "opacity-60"}`}>
       <div className="mb-2 flex items-center gap-2">
         <Icon size={15} className={a.up ? "text-accent" : "text-muted"} />
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{a.name}</span>
-        <span className={`text-[11px] ${a.up ? "text-safe" : "text-muted"}`}>{a.up ? t("network.up") : t("network.down")}</span>
+        <span className="min-w-0 flex-1 truncate text-[0.8125rem] font-medium">{a.name}</span>
+        <span className={`text-[0.6875rem] ${a.up ? "text-safe" : "text-muted"}`}>{a.up ? t("network.up") : t("network.down")}</span>
       </div>
-      <p className="mb-2 truncate text-[11px] text-muted" title={a.description}>
+      <p className="mb-2 truncate text-[0.6875rem] text-muted" title={a.description}>
         {t(`network.kind.${a.kind}`)} · {a.description}
       </p>
-      <dl className="grid grid-cols-[96px_1fr] gap-x-3 gap-y-1 text-[12px]">
+      <dl className="grid grid-cols-[96px_1fr] gap-x-3 gap-y-1 text-[0.75rem]">
         {a.up && (
           <>
             <dt className="text-muted">{t("network.speed")}</dt>
@@ -467,14 +467,14 @@ export function Network() {
   return (
     <div className="flex flex-col gap-4 pb-2">
       <Connection />
-      {error && <p className="px-1 text-[12px] text-risk">{error}</p>}
+      {error && <p className="px-1 text-[0.75rem] text-risk">{error}</p>}
       {snapshot && <Concerns apps={snapshot.apps} />}
       <Apps />
       <CheckCard />
       <Ports />
       {adapters.length > 0 && (
         <section>
-          <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[11px] uppercase tracking-wider text-muted">
+          <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[0.6875rem] uppercase tracking-wider text-muted">
             <Globe size={12} />
             {t("network.adaptersTitle")}
           </h2>

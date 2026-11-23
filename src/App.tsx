@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
-import { AnimatePresence, MotionConfig, motion, useScroll, useTransform } from "motion/react";
+import {
+  AnimatePresence,
+  MotionConfig,
+  motion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { useTranslation } from "react-i18next";
 import { Sidebar } from "./components/Sidebar";
 import { TitleBar } from "./components/TitleBar";
@@ -81,7 +87,9 @@ function useRevealLight() {
     let measured = 0;
     const lit = new Set<HTMLElement>();
     const measure = () => {
-      rects = [...document.querySelectorAll<HTMLElement>(".reveal")].map((el) => [el, el.getBoundingClientRect()]);
+      rects = [...document.querySelectorAll<HTMLElement>(".reveal")].map(
+        (el) => [el, el.getBoundingClientRect()],
+      );
       measured = performance.now();
     };
     const paint = () => {
@@ -132,10 +140,12 @@ function App() {
   const main = useRef<HTMLElement>(null);
   // The page heading shrinks into a compact, blurred bar as the page scrolls.
   const { scrollY } = useScroll({ container: main });
-  const headingSize = useTransform(scrollY, [0, 72], [22, 15]);
+  const headingSize = useTransform(scrollY, [0, 72], ["1.375rem", "0.9375rem"]);
   const barOpacity = useTransform(scrollY, [8, 72], [0, 1]);
   // Hidden (not just transparent) at the top, so its backdrop blur costs nothing there.
-  const barVisible = useTransform(scrollY, (v) => (v > 8 ? "visible" : "hidden"));
+  const barVisible = useTransform(scrollY, (v) =>
+    v > 8 ? "visible" : "hidden",
+  );
   useRevealLight();
 
   useEffect(() => {
@@ -147,10 +157,13 @@ function App() {
     startMonitor();
     startPrivacy();
     startWatcher(i18n.language.startsWith("en") ? "en" : "uk");
-    i18n.on("languageChanged", (lng) => saveWatcher({ lang: lng.startsWith("en") ? "en" : "uk" }));
+    i18n.on("languageChanged", (lng) =>
+      saveWatcher({ lang: lng.startsWith("en") ? "en" : "uk" }),
+    );
     loadDrives();
     // The overlay's "open DelphEye" can ask for a page.
-    if ("__TAURI_INTERNALS__" in window) listen<Page>("navigate", ({ payload }) => go(payload));
+    if ("__TAURI_INTERNALS__" in window)
+      listen<Page>("navigate", ({ payload }) => go(payload));
     // A quiet look for a newer release, at most once a day.
     window.setTimeout(() => checkForUpdate(true), 8000);
   }, []);
@@ -166,23 +179,40 @@ function App() {
         <TitleBar />
         <div className="flex min-h-0 flex-1">
           <Sidebar page={page} onChange={go} />
-          <main ref={main} className="content-layer relative flex min-w-0 flex-1 flex-col overflow-y-auto px-7 pb-6">
-            <div className="sticky top-0 z-20 -mx-7 mb-3 flex h-[52px] shrink-0 items-center px-7 pt-2">
-              <motion.div
-                aria-hidden
-                style={{ opacity: barOpacity, visibility: barVisible }}
-                className="pointer-events-none absolute inset-0 border-b border-line/70 bg-bg/80 shadow-[0_8px_24px_-16px_rgb(0_0_0/0.35)] backdrop-blur-xl"
-              />
-              <motion.h1 style={{ fontSize: headingSize }} className="relative font-display font-semibold leading-none">
-                <motion.span key={page} layoutId={`page-title-${page}`} className="inline-block" transition={{ type: "spring", stiffness: 300, damping: 32 }}>
-                  {page === "overview" ? t("overview.title") : page === "report" ? t("report.title") : t(`nav.${page}`)}
-                </motion.span>
-              </motion.h1>
+          <main
+            ref={main}
+            className="content-layer relative flex min-w-0 flex-1 flex-col overflow-y-auto px-7 pb-6"
+          >
+            <div className="sticky top-0 z-20 -mx-7 mb-3 flex h-[3.25rem] shrink-0 items-center px-7 pt-2">
+              <div className="mx-auto flex h-full w-full max-w-[90rem] items-center">
+                <motion.div
+                  aria-hidden
+                  style={{ opacity: barOpacity, visibility: barVisible }}
+                  className="pointer-events-none absolute inset-0 border-b border-line/70 bg-bg/80 shadow-[0_8px_24px_-16px_rgb(0_0_0/0.35)] backdrop-blur-xl"
+                />
+                <motion.h1
+                  style={{ fontSize: headingSize }}
+                  className="relative font-display font-semibold leading-none"
+                >
+                  <motion.span
+                    key={page}
+                    layoutId={`page-title-${page}`}
+                    className="inline-block"
+                    transition={{ type: "spring", stiffness: 300, damping: 32 }}
+                  >
+                    {page === "overview"
+                      ? t("overview.title")
+                      : page === "report"
+                        ? t("report.title")
+                        : t(`nav.${page}`)}
+                  </motion.span>
+                </motion.h1>
+              </div>
             </div>
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.div
                 key={page}
-                className="page-enter flex-1"
+                className="page-enter mx-auto w-full max-w-[90rem] flex-1"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}

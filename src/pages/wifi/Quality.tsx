@@ -79,7 +79,7 @@ export function Quality() {
 
   if (!connected)
     return (
-      <div className="rounded-card border border-line bg-surface p-6 text-center text-[13px] text-muted" data-testid="wifi-quality-off">
+      <div className="rounded-card border border-line bg-surface p-6 text-center text-[0.8125rem] text-muted" data-testid="wifi-quality-off">
         {t("wifi.quality.notConnected")}
       </div>
     );
@@ -91,8 +91,8 @@ export function Quality() {
       <div className="flex gap-3 rounded-card border border-line bg-surface px-5 py-4">
         <Icon size={20} className={`mt-0.5 shrink-0 ${tone}`} />
         <div>
-          <div className="text-[14px] font-medium">{t(`wifi.quality.verdict.${v}.title`)}</div>
-          <div className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`wifi.quality.verdict.${v}.text`)}</div>
+          <div className="text-[0.875rem] font-medium">{t(`wifi.quality.verdict.${v}.title`)}</div>
+          <div className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`wifi.quality.verdict.${v}.text`)}</div>
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -103,29 +103,29 @@ export function Quality() {
           ] as const
         ).map(([key, Ico, st, colour]) => (
           <div key={key} className="rounded-card border border-line bg-surface p-4">
-            <div className="flex items-center gap-2 text-[12px] text-muted">
+            <div className="flex items-center gap-2 text-[0.75rem] text-muted">
               <Ico size={14} style={{ color: colour }} />
               {t(`wifi.quality.${key}`)}
             </div>
-            <div className="num mt-2 font-display text-[26px] font-semibold leading-none">
+            <div className="num mt-2 font-display text-[1.625rem] font-semibold leading-none">
               {st.avg ?? "—"}
-              <span className="ml-1 text-[12px] text-muted">{t("wifi.quality.ms")}</span>
+              <span className="ml-1 text-[0.75rem] text-muted">{t("wifi.quality.ms")}</span>
             </div>
-            <div className="num mt-2 text-[11px] text-muted">
+            <div className="num mt-2 text-[0.6875rem] text-muted">
               {t("wifi.quality.jitter")} {st.jitter ?? "—"} {t("wifi.quality.ms")} · {t("wifi.quality.loss")} {st.loss}%
             </div>
           </div>
         ))}
         <div className="rounded-card border border-line bg-surface p-4">
-          <div className="flex items-center gap-2 text-[12px] text-muted">
+          <div className="flex items-center gap-2 text-[0.75rem] text-muted">
             <Wifi size={14} className="text-safe" />
             {t("wifi.quality.signal")}
           </div>
-          <div className="num mt-2 font-display text-[26px] font-semibold leading-none">
+          <div className="num mt-2 font-display text-[1.625rem] font-semibold leading-none">
             {linkHistory.length ? linkHistory[linkHistory.length - 1].rssi : "—"}
-            <span className="ml-1 text-[12px] text-muted">dBm</span>
+            <span className="ml-1 text-[0.75rem] text-muted">dBm</span>
           </div>
-          <div className="mt-2 text-[11px] text-muted">{t("wifi.quality.signalHint")}</div>
+          <div className="mt-2 text-[0.6875rem] text-muted">{t("wifi.quality.signalHint")}</div>
         </div>
       </div>
       <div className="rounded-card border border-line bg-surface p-4">
@@ -149,7 +149,7 @@ export function Quality() {
           <path d={line("internet")} fill="none" stroke="#F5A35C" strokeWidth={2} strokeLinejoin="round" />
           <path d={line("router")} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinejoin="round" />
         </svg>
-        <div className="mt-2 flex flex-wrap gap-4 text-[11px] text-muted">
+        <div className="mt-2 flex flex-wrap gap-4 text-[0.6875rem] text-muted">
           <span className="flex items-center gap-1.5">
             <span className="h-0.5 w-4 rounded bg-accent" /> {t("wifi.quality.router")}
           </span>

@@ -80,7 +80,7 @@ function RiskBadge({ risk }: { risk: Risk }) {
   const { t } = useTranslation();
   const tone = risk === "safe" ? "bg-safe/10 text-safe" : "bg-warn/10 text-warn";
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] ${tone}`}>
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.6875rem] ${tone}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {t(`cleanup.risk.${risk}`)}
     </span>
@@ -89,7 +89,7 @@ function RiskBadge({ risk }: { risk: Risk }) {
 
 function Note({ tone = "muted", icon: Icon, children }: { tone?: "muted" | "warn"; icon: LucideIcon; children: string }) {
   return (
-    <p className={`flex items-start gap-2 text-[12px] leading-relaxed ${tone === "warn" ? "text-warn" : "text-muted"}`}>
+    <p className={`flex items-start gap-2 text-[0.75rem] leading-relaxed ${tone === "warn" ? "text-warn" : "text-muted"}`}>
       <Icon size={14} className="mt-[3px] shrink-0" />
       {children}
     </p>
@@ -103,8 +103,8 @@ function AdminBanner() {
     <div className="flex items-center gap-4 rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-3.5">
       <ShieldAlert size={20} className="shrink-0 text-warn" />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium">{t("cleanup.adminTitle")}</div>
-        <div className="text-[12px] text-muted">{declined ? t("cleanup.adminDeclined") : t("cleanup.adminText")}</div>
+        <div className="text-[0.8125rem] font-medium">{t("cleanup.adminTitle")}</div>
+        <div className="text-[0.75rem] text-muted">{declined ? t("cleanup.adminDeclined") : t("cleanup.adminText")}</div>
       </div>
       <Button data-testid="relaunch-admin" onClick={async () => setDeclined(!(await relaunchElevated()))}>
         {t("cleanup.adminAction")}
@@ -134,7 +134,7 @@ function TargetRow({ report, category, target, solo }: { report: ScanReport; cat
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-[13px]">
+        <div className="flex items-center gap-2 text-[0.8125rem]">
           <span className="truncate">{names.target(target)}</span>
           {locked && (
             <span className="shrink-0 text-warn" title={t("cleanup.needsAdmin")}>
@@ -143,13 +143,13 @@ function TargetRow({ report, category, target, solo }: { report: ScanReport; cat
           )}
         </div>
         {target.paths.map((path) => (
-          <div key={path} className="num truncate text-[11px] text-muted/80" title={path}>
+          <div key={path} className="num truncate text-[0.6875rem] text-muted/80" title={path}>
             {shortenPath(path, 84)}
           </div>
         ))}
-        {target.blocked && <div className="text-[11px] text-warn">{t("cleanup.partial")}</div>}
+        {target.blocked && <div className="text-[0.6875rem] text-warn">{t("cleanup.partial")}</div>}
       </div>
-      <span className="num shrink-0 pt-px text-[12px] text-muted">{fmt.bytes(target.bytes)}</span>
+      <span className="num shrink-0 pt-px text-[0.75rem] text-muted">{fmt.bytes(target.bytes)}</span>
       {target.paths.length > 0 && (
         <button
           className="shrink-0 rounded p-1 text-muted transition-colors duration-150 hover:bg-raised hover:text-fg"
@@ -182,7 +182,7 @@ function Details({ report, category }: { report: ScanReport; category: CategoryR
 
   return (
     <div className="space-y-3 border-t border-line/60 bg-bg/40 py-4 pl-[88px] pr-5">
-      <p className="max-w-[78ch] text-[12px] leading-relaxed text-muted">{names.description(category)}</p>
+      <p className="max-w-[78ch] text-[0.75rem] leading-relaxed text-muted">{names.description(category)}</p>
       {age !== null && (
         <Note icon={Info}>
           {age % 24 === 0 && age > 24 ? t("cleanup.olderDays", { value: age / 24 }) : t("cleanup.olderHours", { value: age })}
@@ -205,14 +205,14 @@ function Details({ report, category }: { report: ScanReport; category: CategoryR
         ))}
       </ul>
       {targets.length > TARGETS_SHOWN && (
-        <button className="text-[12px] text-accent hover:underline" onClick={() => setAll(!all)}>
+        <button className="text-[0.75rem] text-accent hover:underline" onClick={() => setAll(!all)}>
           {all ? t("cleanup.showLess") : t("cleanup.showAll", { value: targets.length })}
         </button>
       )}
 
       {largest.length > 0 && (
         <div>
-          <div className="mb-1 text-[11px] uppercase tracking-wider text-muted/70">{t("cleanup.largest")}</div>
+          <div className="mb-1 text-[0.6875rem] uppercase tracking-wider text-muted/70">{t("cleanup.largest")}</div>
           <ul>
             {largest.map((file) => (
               <li key={file.path}>
@@ -221,10 +221,10 @@ function Details({ report, category }: { report: ScanReport; category: CategoryR
                   title={`${file.path}\n${t("cleanup.reveal")}`}
                   onClick={() => reveal(file.path)}
                 >
-                  <span className="num min-w-0 flex-1 truncate text-[11px] text-muted transition-colors duration-150 group-hover:text-fg">
+                  <span className="num min-w-0 flex-1 truncate text-[0.6875rem] text-muted transition-colors duration-150 group-hover:text-fg">
                     {shortenPath(file.path, 96)}
                   </span>
-                  <span className="num shrink-0 text-[11px] text-muted">{fmt.bytes(file.bytes)}</span>
+                  <span className="num shrink-0 text-[0.6875rem] text-muted">{fmt.bytes(file.bytes)}</span>
                 </button>
               </li>
             ))}
@@ -265,7 +265,7 @@ function CategoryRow({ report, category }: { report: ScanReport; category: Categ
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-medium">{name}</span>
+            <span className="truncate text-[0.875rem] font-medium">{name}</span>
             <RiskBadge risk={category.risk} />
             {needsAdmin && (
               <span className="shrink-0 text-warn" title={t("cleanup.needsAdmin")}>
@@ -273,11 +273,11 @@ function CategoryRow({ report, category }: { report: ScanReport; category: Categ
               </span>
             )}
           </div>
-          <div className="mt-0.5 truncate text-[12px] text-muted">{names.description(category)}</div>
+          <div className="mt-0.5 truncate text-[0.75rem] text-muted">{names.description(category)}</div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="num text-[14px]">{category.bytes > 0 ? fmt.bytes(category.bytes) : "—"}</div>
-          <div className="num text-[11px] text-muted">{t("cleanup.filesCount", { value: fmt.int(category.files) })}</div>
+          <div className="num text-[0.875rem]">{category.bytes > 0 ? fmt.bytes(category.bytes) : "—"}</div>
+          <div className="num text-[0.6875rem] text-muted">{t("cleanup.filesCount", { value: fmt.int(category.files) })}</div>
         </div>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 text-muted">
           <ChevronDown size={16} />
@@ -317,9 +317,9 @@ function ConfirmDialog({ report, open, onClose }: { report: ScanReport; open: bo
 
   return (
     <Modal open={open} onClose={onClose}>
-      <h2 className="font-display text-[18px] font-semibold">{t("cleanup.confirmTitle")}</h2>
-      <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("cleanup.confirmText", { size })}</p>
-      <ul className="mt-4 max-h-[220px] space-y-1.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3.5 py-2.5 text-[13px]">
+      <h2 className="font-display text-[1.125rem] font-semibold">{t("cleanup.confirmTitle")}</h2>
+      <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("cleanup.confirmText", { size })}</p>
+      <ul className="mt-4 max-h-[13.75rem] space-y-1.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3.5 py-2.5 text-[0.8125rem]">
         {rows.map(({ category, bytes }) => (
           <li key={category.id} className="flex items-center gap-3">
             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${category.risk === "safe" ? "bg-safe" : "bg-warn"}`} />
@@ -373,10 +373,10 @@ export function Report({ report }: { report: ScanReport }) {
       <div className="sticky -top-6 z-10 -mx-7 -mt-5 bg-bg/90 px-7 pb-2 pt-5 shadow-[0_-8px_0_0_var(--color-bg)] backdrop-blur-md">
         <div className="flex items-center gap-6 rounded-card border border-line bg-surface px-5 py-4">
           <div className="min-w-0">
-            <div className="font-display text-[30px] font-semibold leading-none" data-testid="total-bytes">
+            <div className="font-display text-[1.875rem] font-semibold leading-none" data-testid="total-bytes">
               {totalBytes > 0 ? <AnimatedBytes value={totalBytes} /> : t("cleanup.allClean")}
             </div>
-            <div className="mt-1.5 truncate text-[12px] text-muted">
+            <div className="mt-1.5 truncate text-[0.75rem] text-muted">
               {totalBytes > 0 && `${t("cleanup.reclaimable")} · ${t("cleanup.filesCount", { value: fmt.int(totalFiles) })} · `}
               {t("cleanup.scanTook", { value: fmt.duration(report.durationMs) })}
             </div>
@@ -405,7 +405,7 @@ export function Report({ report }: { report: ScanReport }) {
         if (categories.length === 0) return null;
         return (
           <section key={group}>
-            <h2 className="mb-2 flex items-baseline justify-between px-1 text-[11px] uppercase tracking-wider text-muted">
+            <h2 className="mb-2 flex items-baseline justify-between px-1 text-[0.6875rem] uppercase tracking-wider text-muted">
               {t(`cleanup.group.${group}`)}
               <span className="num normal-case tracking-normal">{fmt.bytes(categories.reduce((sum, c) => sum + c.bytes, 0))}</span>
             </h2>
@@ -419,7 +419,7 @@ export function Report({ report }: { report: ScanReport }) {
       })}
 
       {cleanCount > 0 && (
-        <p className="py-1 text-center text-[12px] text-muted">{t("cleanup.cleanCategories", { value: cleanCount })}</p>
+        <p className="py-1 text-center text-[0.75rem] text-muted">{t("cleanup.cleanCategories", { value: cleanCount })}</p>
       )}
 
       <ConfirmDialog report={report} open={confirming} onClose={() => setConfirming(false)} />

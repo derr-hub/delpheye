@@ -30,11 +30,11 @@ export function Card({
         <header className="mb-4 flex items-center gap-2 text-muted">
           {icon}
           {to ? (
-            <motion.h2 layoutId={`page-title-${to}`} className="text-[13px] font-medium" transition={{ type: "spring", stiffness: 300, damping: 32 }}>
+            <motion.h2 layoutId={`page-title-${to}`} className="text-[0.8125rem] font-medium" transition={{ type: "spring", stiffness: 300, damping: 32 }}>
               {title}
             </motion.h2>
           ) : (
-            <h2 className="text-[13px] font-medium">{title}</h2>
+            <h2 className="text-[0.8125rem] font-medium">{title}</h2>
           )}
           {aside && <div className="ml-auto">{aside}</div>}
         </header>
@@ -212,7 +212,7 @@ export function Button({
     <motion.button
       type="button"
       whileTap={{ scale: 0.97 }}
-      className={`reveal inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-40 ${BUTTON_VARIANTS[variant]} ${className}`}
+      className={`reveal inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg px-3.5 text-[0.8125rem] font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-40 ${BUTTON_VARIANTS[variant]} ${className}`}
       {...props}
     >
       {icon}
@@ -261,7 +261,7 @@ export function Checkbox({
   );
 }
 
-export function Modal({ open, onClose, children, width = "max-w-[460px]" }: { open: boolean; onClose: () => void; children: ReactNode; width?: string }) {
+export function Modal({ open, onClose, children, width = "max-w-[28.75rem]" }: { open: boolean; onClose: () => void; children: ReactNode; width?: string }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -312,7 +312,7 @@ export function Switch({ on, onChange, disabled, label }: { on: boolean; onChang
         e.stopPropagation();
         onChange();
       }}
-      className={`relative h-[22px] w-[40px] shrink-0 rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`relative h-[22px] w-[2.5rem] shrink-0 rounded-full border transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
         on ? "border-accent bg-accent" : "border-line-strong bg-transparent hover:border-muted"
       }`}
     >

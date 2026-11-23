@@ -35,7 +35,7 @@ export function RouterExtras({ onUnblock }: { onUnblock: (mac: string, label: st
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="rounded-card border border-line bg-surface p-4" data-testid="router-traffic">
-        <h3 className="mb-3 text-[13px] font-medium">{t("router.extras.traffic")}</h3>
+        <h3 className="mb-3 text-[0.8125rem] font-medium">{t("router.extras.traffic")}</h3>
         <div className="grid grid-cols-2 gap-3">
           {(
             [
@@ -44,28 +44,28 @@ export function RouterExtras({ onUnblock }: { onUnblock: (mac: string, label: st
             ] as const
           ).map(([Icon, v, k, tone]) => (
             <div key={k}>
-              <div className="num flex items-baseline gap-1.5 whitespace-nowrap font-display text-[19px] font-semibold">
+              <div className="num flex items-baseline gap-1.5 whitespace-nowrap font-display text-[1.1875rem] font-semibold">
                 <Icon size={14} className={`self-center ${tone}`} />
                 {v === undefined ? "—" : bitrate(v, t)}
               </div>
-              <div className="text-[11px] text-muted">{t(`router.extras.${k}`)}</div>
+              <div className="text-[0.6875rem] text-muted">{t(`router.extras.${k}`)}</div>
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[11px] leading-relaxed text-muted">{t("router.extras.wifiShare", { wifi: fmt.bytes(tr.wirelessRx + tr.wirelessTx), wired: fmt.bytes(tr.wiredRx + tr.wiredTx) })}</p>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted/80">{t("router.extras.perDevice")}</p>
+        <p className="mt-3 text-[0.6875rem] leading-relaxed text-muted">{t("router.extras.wifiShare", { wifi: fmt.bytes(tr.wirelessRx + tr.wirelessTx), wired: fmt.bytes(tr.wiredRx + tr.wiredTx) })}</p>
+        <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted/80">{t("router.extras.perDevice")}</p>
       </div>
 
       <div className="rounded-card border border-line bg-surface p-4" data-testid="router-ports">
-        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-medium">
+        <h3 className="mb-3 flex items-center gap-2 text-[0.8125rem] font-medium">
           <DoorOpen size={15} className="text-accent" />
           {t("router.extras.ports")}
         </h3>
         {o.ports.length === 0 ? (
-          <p className="text-[12px] leading-relaxed text-safe">{t("router.extras.noPorts")}</p>
+          <p className="text-[0.75rem] leading-relaxed text-safe">{t("router.extras.noPorts")}</p>
         ) : (
           <>
-            <ul className="grid gap-1.5 text-[12px]">
+            <ul className="grid gap-1.5 text-[0.75rem]">
               {o.ports.map((p, i) => (
                 <li key={i} className="flex flex-wrap items-baseline gap-x-2">
                   <span className="num font-medium text-warn">
@@ -74,27 +74,27 @@ export function RouterExtras({ onUnblock }: { onUnblock: (mac: string, label: st
                   <span className="num text-muted">
                     → {p.ip}:{p.internal}
                   </span>
-                  <span className="text-[11px] text-muted">
+                  <span className="text-[0.6875rem] text-muted">
                     {p.name} · {p.upnp ? t("router.extras.upnp") : t("router.extras.manual")}
                   </span>
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted">{t("router.extras.portsHint")}</p>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{t("router.extras.portsHint")}</p>
           </>
         )}
         {(o.blocked.length > 0 || o.allowList) && (
           <div className="mt-4 border-t border-line pt-3">
-            <h4 className="mb-2 flex items-center gap-2 text-[12px] font-medium">
+            <h4 className="mb-2 flex items-center gap-2 text-[0.75rem] font-medium">
               <Ban size={13} className="text-risk" />
               {t("router.extras.blocked")}
             </h4>
-            {o.allowList && <p className="text-[11px] text-warn">{t("router.extras.allowList")}</p>}
+            {o.allowList && <p className="text-[0.6875rem] text-warn">{t("router.extras.allowList")}</p>}
             <ul className="grid gap-1">
               {o.blocked.map((m) => (
-                <li key={m} className="flex items-center gap-2 text-[12px]">
+                <li key={m} className="flex items-center gap-2 text-[0.75rem]">
                   <span className="min-w-0 flex-1 truncate">{nameOf(m)}</span>
-                  <button disabled={!!applying} onClick={() => onUnblock(m, nameOf(m))} className="text-[11px] text-accent hover:underline disabled:opacity-40">
+                  <button disabled={!!applying} onClick={() => onUnblock(m, nameOf(m))} className="text-[0.6875rem] text-accent hover:underline disabled:opacity-40">
                     {t("router.fix.unblock.button")}
                   </button>
                 </li>
@@ -105,18 +105,18 @@ export function RouterExtras({ onUnblock }: { onUnblock: (mac: string, label: st
       </div>
 
       <div className="rounded-card border border-line bg-surface p-4" data-testid="router-log">
-        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-medium">
+        <h3 className="mb-3 flex items-center gap-2 text-[0.8125rem] font-medium">
           <History size={15} className="text-accent" />
           {t("router.extras.log")}
         </h3>
         {events.length === 0 ? (
-          <p className="text-[12px] text-muted">{t("router.extras.noLog")}</p>
+          <p className="text-[0.75rem] text-muted">{t("router.extras.noLog")}</p>
         ) : (
-          <ul className="grid max-h-[220px] gap-1 overflow-y-auto pr-1 text-[12px]">
+          <ul className="grid max-h-[13.75rem] gap-1 overflow-y-auto pr-1 text-[0.75rem]">
             {[...events].reverse().slice(0, 60).map((e, i) => (
               <li key={i} className="flex items-center gap-2">
                 {e.kind === "join" ? <LogIn size={12} className="shrink-0 text-safe" /> : <LogOut size={12} className="shrink-0 text-muted" />}
-                <span className="num w-[92px] shrink-0 text-[11px] text-muted">{when(e.at)}</span>
+                <span className="num w-[5.75rem] shrink-0 text-[0.6875rem] text-muted">{when(e.at)}</span>
                 <span className="min-w-0 flex-1 truncate" title={e.kind === "join" ? t("router.extras.joined") : t("router.extras.left")}>
                   {nameOf(e.mac)}
                 </span>

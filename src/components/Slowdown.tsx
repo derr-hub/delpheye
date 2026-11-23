@@ -93,10 +93,10 @@ function CauseCard({ cause, close }: { cause: Cause; close: () => void }) {
       <div className="flex items-start gap-3">
         <Icon size={18} className={`mt-0.5 shrink-0 ${TONE[cause.level]}`} />
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-medium">{t(`slowdown.cause.${cause.id}.title`, { ...values, name })}</div>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`slowdown.cause.${cause.id}.text`, { ...values, name })}</p>
+          <div className="text-[0.875rem] font-medium">{t(`slowdown.cause.${cause.id}.title`, { ...values, name })}</div>
+          <p className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`slowdown.cause.${cause.id}.text`, { ...values, name })}</p>
           {c && (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-raised/50 px-3 py-2 text-[12px]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-raised/50 px-3 py-2 text-[0.75rem]">
               <span className="font-medium">{name}</span>
               {c.count > 1 && <span className="text-muted">{t("overview.procCount", { count: c.count })}</span>}
               <span className="num text-muted">
@@ -148,23 +148,23 @@ export function SlowdownPanel() {
   });
   return (
     <Modal open={open} onClose={close}>
-      <div className="w-[560px] max-w-full" data-testid="slowdown-panel">
-        <h2 className="flex items-center gap-2 font-display text-[18px] font-semibold">
+      <div className="w-[35rem] max-w-full" data-testid="slowdown-panel">
+        <h2 className="flex items-center gap-2 font-display text-[1.125rem] font-semibold">
           <Snail size={18} className="text-accent" />
           {t("slowdown.title")}
         </h2>
         <AnimatePresence mode="wait">
           {running ? (
             <motion.div key="watching" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-6">
-              <p className="text-[13px] text-muted">{t("slowdown.watching")}</p>
+              <p className="text-[0.8125rem] text-muted">{t("slowdown.watching")}</p>
               <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-raised">
                 <motion.div className="h-full rounded-full bg-accent" animate={{ width: `${(second / SECONDS) * 100}%` }} transition={{ type: "spring", stiffness: 60, damping: 18 }} />
               </div>
-              <p className="mt-2 text-[11px] text-muted/80">{t("slowdown.hint")}</p>
+              <p className="mt-2 text-[0.6875rem] text-muted/80">{t("slowdown.hint")}</p>
             </motion.div>
           ) : (
             <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {error && <p className="mt-3 text-[12px] text-risk">{error}</p>}
+              {error && <p className="mt-3 text-[0.75rem] text-risk">{error}</p>}
               {result && (
                 <ul className="mt-4 max-h-[60vh] space-y-2.5 overflow-y-auto pr-1">
                   {result.causes.map((c) => (

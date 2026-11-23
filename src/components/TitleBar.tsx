@@ -33,11 +33,11 @@ export function TitleBar() {
     <div data-tauri-drag-region className="shell grid h-9 shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-bg pl-4">
       <div data-tauri-drag-region className="flex items-center gap-2">
         <Logo />
-        <span data-tauri-drag-region className="font-display text-[13px] font-semibold tracking-wide">
+        <span data-tauri-drag-region className="font-display text-[0.8125rem] font-semibold tracking-wide">
           DelphEye
         </span>
         {sandbox && (
-          <span data-tauri-drag-region className="rounded-full bg-warn/10 px-2 py-0.5 text-[11px] text-warn" title={t("cleanup.sandbox")}>
+          <span data-tauri-drag-region className="rounded-full bg-warn/10 px-2 py-0.5 text-[0.6875rem] text-warn" title={t("cleanup.sandbox")}>
             {t("app.sandbox")}
           </span>
         )}

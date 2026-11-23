@@ -78,7 +78,7 @@ export function LineChart({
   return (
     <div>
       {series.length > 1 && (
-        <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
+        <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.75rem] text-muted">
           {series.map((s) => (
             <li key={s.id} className="flex items-center gap-1.5">
               <span className="h-[3px] w-3 rounded-full" style={{ background: s.color }} />
@@ -105,7 +105,7 @@ export function LineChart({
           {grid.map((v) => (
             <g key={v}>
               <line x1={pad.left} x2={width - pad.right} y1={y(v)} y2={y(v)} stroke="var(--color-line)" strokeWidth={1} />
-              <text x={pad.left - 6} y={y(v) + 4} textAnchor="end" className="num fill-[var(--color-muted)] text-[10px]">
+              <text x={pad.left - 6} y={y(v) + 4} textAnchor="end" className="num fill-[var(--color-muted)] text-[0.625rem]">
                 {format(v)}
               </text>
             </g>
@@ -147,7 +147,7 @@ export function LineChart({
         </svg>
         {hover !== null && (
           <div
-            className="pointer-events-none absolute top-0 z-10 rounded-lg border border-line bg-raised px-3 py-2 text-[12px] shadow-xl"
+            className="pointer-events-none absolute top-0 z-10 rounded-lg border border-line bg-raised px-3 py-2 text-[0.75rem] shadow-xl"
             style={{ left: `${Math.min((x(hover, longest) / width) * 100, 70)}%` }}
           >
             {series.map((s) => {

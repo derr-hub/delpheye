@@ -51,14 +51,14 @@ export function Onboarding() {
   };
 
   return (
-    <Modal open={open} onClose={close} width="max-w-[520px]">
+    <Modal open={open} onClose={close} width="max-w-[32.5rem]">
       <div data-testid="onboarding">
         <div className="mb-4 flex gap-1.5">
           {STEPS.map((s, k) => (
             <span key={s.id} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${k <= i ? "bg-accent" : "bg-raised"}`} />
           ))}
         </div>
-        <div className="relative h-[230px] overflow-hidden">
+        <div className="relative h-[14.375rem] overflow-hidden">
           <AnimatePresence mode="popLayout" initial={false} custom={dir}>
             <motion.div
               key={step.id}
@@ -72,15 +72,15 @@ export function Onboarding() {
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
                 <Icon size={28} />
               </span>
-              <h2 className="mt-4 font-display text-[20px] font-semibold">{t(`onboarding.${step.id}.title`)}</h2>
-              <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(`onboarding.${step.id}.text`)}</p>
+              <h2 className="mt-4 font-display text-[1.25rem] font-semibold">{t(`onboarding.${step.id}.title`)}</h2>
+              <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t(`onboarding.${step.id}.text`)}</p>
               {step.page && i > 0 && (
                 <button
                   onClick={() => {
                     go(step.page as Page);
                     close();
                   }}
-                  className="mt-3 text-[12px] text-accent hover:underline"
+                  className="mt-3 text-[0.75rem] text-accent hover:underline"
                 >
                   {t("onboarding.open", { page: t(`nav.${step.page}`) })} →
                 </button>
@@ -89,7 +89,7 @@ export function Onboarding() {
           </AnimatePresence>
         </div>
         <div className="mt-4 flex items-center gap-2">
-          <button onClick={close} className="text-[12px] text-muted hover:text-fg" data-testid="onboarding-skip">
+          <button onClick={close} className="text-[0.75rem] text-muted hover:text-fg" data-testid="onboarding-skip">
             {t("onboarding.skip")}
           </button>
           <span className="ml-auto" />

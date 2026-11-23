@@ -29,8 +29,8 @@ function Hero() {
     return (
       <div className="rounded-card border border-line bg-surface p-6 text-center" data-testid="wifi-not-connected">
         <WifiIcon size={28} className="mx-auto text-muted" />
-        <h2 className="mt-3 font-display text-[17px] font-semibold">{t("wifi.simple.notConnected")}</h2>
-        <p className="mt-1 text-[13px] text-muted">{t("wifi.simple.notConnectedText", { count: snap.networks.length })}</p>
+        <h2 className="mt-3 font-display text-[1.0625rem] font-semibold">{t("wifi.simple.notConnected")}</h2>
+        <p className="mt-1 text-[0.8125rem] text-muted">{t("wifi.simple.notConnectedText", { count: snap.networks.length })}</p>
       </div>
     );
   const rssi = link.rssi || own.rssi;
@@ -39,17 +39,17 @@ function Hero() {
   return (
     <div className="grid gap-4 rounded-card border border-line bg-surface p-5 md:grid-cols-[auto_1fr]" data-testid="wifi-hero">
       <Ring value={percent(rssi)} color={LEVEL_COLOR[level]} size={164} stroke={11}>
-        <span className="num font-display text-[34px] font-semibold leading-none">{percent(rssi)}%</span>
-        <span className="num mt-1 text-[11px] text-muted">{rssi} dBm</span>
+        <span className="num font-display text-[2.125rem] font-semibold leading-none">{percent(rssi)}%</span>
+        <span className="num mt-1 text-[0.6875rem] text-muted">{rssi} dBm</span>
       </Ring>
       <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wide text-muted">{t("wifi.simple.connectedTo")}</div>
-        <h2 className="truncate font-display text-[22px] font-semibold">{link.ssid}</h2>
-        <p className="mt-1 text-[14px]" style={{ color: LEVEL_COLOR[level] }}>
+        <div className="text-[0.6875rem] uppercase tracking-wide text-muted">{t("wifi.simple.connectedTo")}</div>
+        <h2 className="truncate font-display text-[1.375rem] font-semibold">{link.ssid}</h2>
+        <p className="mt-1 text-[0.875rem]" style={{ color: LEVEL_COLOR[level] }}>
           {t(`wifi.signal.${level}`)}
         </p>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`wifi.signalText.${level}`)}</p>
-        <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+        <p className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`wifi.signalText.${level}`)}</p>
+        <div className="mt-3 flex flex-wrap gap-1.5 text-[0.6875rem]">
           <span className="rounded-md px-2 py-1" style={{ background: `${BAND_COLORS[bss.band]}22`, color: BAND_COLORS[bss.band] }}>
             {bss.band} {t("wifi.ghz")}
           </span>
@@ -61,7 +61,7 @@ function Hero() {
           <span className="rounded-md bg-raised px-2 py-1">{t(`wifi.security.${bss.security}`)}</span>
         </div>
         <div className="mt-4">
-          <div className="flex items-baseline justify-between text-[12px]">
+          <div className="flex items-baseline justify-between text-[0.75rem]">
             <span className="text-muted">{t("wifi.simple.neighbours")}</span>
             <span>{t(`wifi.congestion.${own.congestion}`)}</span>
           </div>
@@ -75,7 +75,7 @@ function Hero() {
               />
             ))}
           </div>
-          <p className="mt-1.5 text-[11px] text-muted">{own.overlapping ? t("wifi.simple.overlapping", { count: own.overlapping }) : t("wifi.simple.overlappingNone")}</p>
+          <p className="mt-1.5 text-[0.6875rem] text-muted">{own.overlapping ? t("wifi.simple.overlapping", { count: own.overlapping }) : t("wifi.simple.overlappingNone")}</p>
         </div>
       </div>
     </div>
@@ -97,8 +97,8 @@ export function AdviceList({ analysis }: { analysis: Analysis }) {
           <div key={a.id} className="flex gap-3 rounded-card border border-line bg-surface px-4 py-3">
             <Icon size={18} className={`mt-0.5 shrink-0 ${ADVICE_TONE[a.level]}`} />
             <div className="min-w-0">
-              <div className="text-[13px] font-medium">{t(`wifi.advice.${a.id}.title`, a.values)}</div>
-              <div className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`wifi.advice.${a.id}.text`, a.values)}</div>
+              <div className="text-[0.8125rem] font-medium">{t(`wifi.advice.${a.id}.title`, a.values)}</div>
+              <div className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`wifi.advice.${a.id}.text`, a.values)}</div>
             </div>
           </div>
         );
@@ -122,17 +122,17 @@ function Around() {
   return (
     <div className="rounded-card border border-line bg-surface">
       <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
-        <h3 className="text-[13px] font-medium">{t("wifi.simple.around")}</h3>
-        <span className="text-[11px] text-muted">{t("wifi.simple.aroundStats", { names: a.names, total: a.total })}</span>
+        <h3 className="text-[0.8125rem] font-medium">{t("wifi.simple.around")}</h3>
+        <span className="text-[0.6875rem] text-muted">{t("wifi.simple.aroundStats", { names: a.names, total: a.total })}</span>
       </div>
       <ul>
         {rows.map((b) => (
           <li key={b.bssid} className="flex items-center gap-3 border-b border-line/60 px-4 py-2 last:border-b-0" data-testid="wifi-around-row">
             <Bars rssi={b.rssi} />
-            <span className={`min-w-0 flex-1 truncate text-[13px] ${b.hidden ? "italic text-muted" : ""}`}>{nameOf(b, t("wifi.hidden"))}</span>
-            {b.connected && <span className="rounded bg-accent/15 px-1.5 text-[10px] text-accent">{t("wifi.yours")}</span>}
-            {!b.connected && a.mine.includes(b.bssid) && <span className="rounded bg-raised px-1.5 text-[10px] text-muted">{t("wifi.yourRouter")}</span>}
-            <span className="w-12 text-right text-[11px]" style={{ color: BAND_COLORS[b.band] }}>
+            <span className={`min-w-0 flex-1 truncate text-[0.8125rem] ${b.hidden ? "italic text-muted" : ""}`}>{nameOf(b, t("wifi.hidden"))}</span>
+            {b.connected && <span className="rounded bg-accent/15 px-1.5 text-[0.625rem] text-accent">{t("wifi.yours")}</span>}
+            {!b.connected && a.mine.includes(b.bssid) && <span className="rounded bg-raised px-1.5 text-[0.625rem] text-muted">{t("wifi.yourRouter")}</span>}
+            <span className="w-12 text-right text-[0.6875rem]" style={{ color: BAND_COLORS[b.band] }}>
               {b.band}
             </span>
             {b.security === "open" ? <LockOpen size={13} className="text-warn" /> : <Lock size={13} className="text-muted" />}

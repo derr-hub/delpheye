@@ -76,7 +76,7 @@ const reveal = (path: string) => revealItemInDir(path).catch((e) => console.erro
 
 function AdviceBadge({ advice }: { advice: Advice }) {
   const { t } = useTranslation();
-  return <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] ${ADVICE_TONE[advice]}`}>{t(`startup.advice.${advice}`)}</span>;
+  return <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] ${ADVICE_TONE[advice]}`}>{t(`startup.advice.${advice}`)}</span>;
 }
 
 /** Three short bars, filled up to the impact level, with the level spelled out beside them. */
@@ -85,13 +85,13 @@ function ImpactMeter({ impact }: { impact: Impact }) {
   const level = IMPACT_LEVEL[impact];
   const color = level === 3 ? "bg-risk" : level === 2 ? "bg-warn" : "bg-accent";
   return (
-    <span className="flex w-[104px] shrink-0 items-center gap-2" title={t("startup.impactHint")}>
+    <span className="flex w-[6.5rem] shrink-0 items-center gap-2" title={t("startup.impactHint")}>
       <span className="flex items-end gap-[3px]" aria-hidden>
         {[1, 2, 3].map((bar) => (
           <span key={bar} className={`w-[5px] rounded-sm ${bar <= level ? color : "bg-raised"}`} style={{ height: 5 + bar * 3 }} />
         ))}
       </span>
-      <span className="text-[11px] text-muted">{t(`startup.impact.${impact}`)}</span>
+      <span className="text-[0.6875rem] text-muted">{t(`startup.impact.${impact}`)}</span>
     </span>
   );
 }
@@ -102,7 +102,7 @@ function Control({ entry }: { entry: Entry }) {
   const elevated = useStartup((s) => s.report?.elevated ?? false);
   if (!entry.editable) {
     return (
-      <span className="flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted" title={t("startup.why.windows")} data-testid="startup-locked">
+      <span className="flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[0.6875rem] text-muted" title={t("startup.why.windows")} data-testid="startup-locked">
         <Lock size={11} />
         {t("startup.lockedShort")}
       </span>
@@ -111,7 +111,7 @@ function Control({ entry }: { entry: Entry }) {
   const locked = busy || (entry.needsAdmin && !elevated);
   if (entry.needsAdmin && !elevated && !busy) {
     return (
-      <span className="flex shrink-0 items-center gap-1 rounded-full border border-warn/30 bg-warn/[0.06] px-2 py-0.5 text-[11px] text-warn" title={t("startup.why.admin")} data-testid="startup-admin">
+      <span className="flex shrink-0 items-center gap-1 rounded-full border border-warn/30 bg-warn/[0.06] px-2 py-0.5 text-[0.6875rem] text-warn" title={t("startup.why.admin")} data-testid="startup-admin">
         <ShieldAlert size={11} />
         {t("startup.adminShort")}
       </span>
@@ -125,7 +125,7 @@ function Control({ entry }: { entry: Entry }) {
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => setState(entry.id, e.target.value)}
         title={entry.needsAdmin && !elevated ? t("cleanup.needsAdmin") : t("startup.startType")}
-        className="h-8 w-[132px] shrink-0 rounded-lg border border-line bg-surface px-2 text-[12px] text-fg outline-none focus:border-accent disabled:opacity-40"
+        className="h-8 w-[8.25rem] shrink-0 rounded-lg border border-line bg-surface px-2 text-[0.75rem] text-fg outline-none focus:border-accent disabled:opacity-40"
         data-testid="start-type"
       >
         {START_TYPES.map((type) => (
@@ -183,7 +183,7 @@ function Details({ entry }: { entry: Entry }) {
   const fmt = useFmt();
   const fp = entry.footprint;
   return (
-    <div className="space-y-3 border-t border-line/60 bg-bg/40 py-4 pl-[76px] pr-5 text-[12px]">
+    <div className="space-y-3 border-t border-line/60 bg-bg/40 py-4 pl-[76px] pr-5 text-[0.75rem]">
       <WhyLocked entry={entry} />
       {entry.description && entry.description.toLowerCase() !== entry.name.toLowerCase() && (
         <p className="max-w-[80ch] leading-relaxed text-muted">{entry.description}</p>
@@ -198,18 +198,18 @@ function Details({ entry }: { entry: Entry }) {
       </ul>
       <dl className="grid grid-cols-[150px_1fr] gap-x-4 gap-y-1.5">
         <Fact label={t("startup.command")}>
-          <span className="num select-text text-[11px]">{entry.command || "—"}</span>
+          <span className="num select-text text-[0.6875rem]">{entry.command || "—"}</span>
         </Fact>
         {entry.program && (
           <Fact label={t("startup.program")}>
-            <button className="num inline-flex items-center gap-1.5 text-left text-[11px] hover:text-accent" onClick={() => reveal(entry.program!)} title={t("disk.reveal")}>
+            <button className="num inline-flex items-center gap-1.5 text-left text-[0.6875rem] hover:text-accent" onClick={() => reveal(entry.program!)} title={t("disk.reveal")}>
               {shortenPath(entry.program, 90)}
               <FolderOpen size={12} className="shrink-0" />
             </button>
           </Fact>
         )}
         <Fact label={t("startup.where")}>
-          <span className="num text-[11px]">{entry.location}</span>
+          <span className="num text-[0.6875rem]">{entry.location}</span>
         </Fact>
         <Fact label={t("startup.scope")}>{t(entry.machine ? "startup.allUsers" : "startup.thisUser")}</Fact>
         <Fact label={t("startup.now")}>
@@ -258,28 +258,28 @@ function Row({ entry }: { entry: Entry }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-medium">{entry.name}</span>
+            <span className="truncate text-[0.875rem] font-medium">{entry.name}</span>
             <AdviceBadge advice={entry.advice} />
             {entry.changed && (
-              <span className="shrink-0 text-[11px] text-accent" title={t("startup.changedHint")}>
+              <span className="shrink-0 text-[0.6875rem] text-accent" title={t("startup.changedHint")}>
                 {t("startup.changedTag")}
               </span>
             )}
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[12px] text-muted">
+          <div className="mt-0.5 flex items-center gap-1.5 truncate text-[0.75rem] text-muted">
             {entry.signed === true && <ShieldCheck size={12} className="shrink-0 text-safe" aria-label={t("startup.signed")} />}
             {entry.signed === false && <ShieldAlert size={12} className="shrink-0 text-warn" aria-label={t("startup.unsigned")} />}
             <span className="truncate">{entry.publisher ?? t("startup.unknownPublisher")}</span>
             {entry.running && <span className="shrink-0">· {t("startup.running")}</span>}
           </div>
           {error && (
-            <div className="mt-1 text-[11px] text-risk" role="alert">
+            <div className="mt-1 text-[0.6875rem] text-risk" role="alert">
               {t(`startup.error.${error}`, { defaultValue: t("startup.error.other") })}
             </div>
           )}
         </div>
         <ImpactMeter impact={entry.impact} />
-        <span className="num w-20 shrink-0 text-right text-[12px] text-muted">{entry.footprint.memory > 0 ? fmt.bytes(entry.footprint.memory) : "—"}</span>
+        <span className="num w-20 shrink-0 text-right text-[0.75rem] text-muted">{entry.footprint.memory > 0 ? fmt.bytes(entry.footprint.memory) : "—"}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 text-muted">
           <ChevronDown size={16} />
         </motion.span>
@@ -318,22 +318,22 @@ function Summary() {
             <>
               <div className="flex items-baseline gap-2">
                 <Clock size={18} className="self-center text-accent" />
-                <span className="font-display text-[30px] font-semibold leading-none" data-testid="boot-time">
+                <span className="font-display text-[1.875rem] font-semibold leading-none" data-testid="boot-time">
                   {fmt.duration(last.totalMs)}
                 </span>
-                <span className="text-[13px] text-muted">{t("startup.lastBoot")}</span>
+                <span className="text-[0.8125rem] text-muted">{t("startup.lastBoot")}</span>
               </div>
-              <div className="mt-1.5 text-[12px] text-muted">
+              <div className="mt-1.5 text-[0.75rem] text-muted">
                 {t("startup.bootSplit", { main: fmt.duration(last.mainMs), post: fmt.duration(last.postMs) })}
                 {report.boots.length > 1 && ` · ${t("startup.bootAverage", { count: report.boots.length, value: fmt.duration(average) })}`}
               </div>
             </>
           ) : (
             <>
-              <div className="font-display text-[24px] font-semibold leading-tight" data-testid="startup-count">
+              <div className="font-display text-[1.5rem] font-semibold leading-tight" data-testid="startup-count">
                 {t("startup.startingCount", { count: starting.length })}
               </div>
-              <div className="mt-1.5 text-[12px] text-muted">{t("startup.memoryNow", { value: fmt.bytes(memory) })}</div>
+              <div className="mt-1.5 text-[0.75rem] text-muted">{t("startup.memoryNow", { value: fmt.bytes(memory) })}</div>
             </>
           )}
         </div>
@@ -353,7 +353,7 @@ function Summary() {
       </div>
 
       {last && (
-        <p className="px-1 text-[12px] text-muted">
+        <p className="px-1 text-[0.75rem] text-muted">
           {t("startup.startingCount", { count: starting.length })} · {t("startup.memoryNow", { value: fmt.bytes(memory) })}
         </p>
       )}
@@ -361,19 +361,19 @@ function Summary() {
       {!report.elevated && (
         <div className="flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-3">
           <ShieldAlert size={18} className="shrink-0 text-warn" />
-          <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-muted">{declined ? t("cleanup.adminDeclined") : t("startup.adminHint")}</p>
+          <p className="min-w-0 flex-1 text-[0.75rem] leading-relaxed text-muted">{declined ? t("cleanup.adminDeclined") : t("startup.adminHint")}</p>
           <Button onClick={async () => setDeclined(!(await relaunchElevated()))}>{t("cleanup.adminAction")}</Button>
         </div>
       )}
 
       <Modal open={confirming} onClose={() => setConfirming(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("startup.confirmTitle")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("startup.confirmText")}</p>
-        <ul className="mt-4 max-h-[240px] space-y-1.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3.5 py-2.5 text-[13px]">
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("startup.confirmTitle")}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("startup.confirmText")}</p>
+        <ul className="mt-4 max-h-[15rem] space-y-1.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3.5 py-2.5 text-[0.8125rem]">
           {suggested.map((entry) => (
             <li key={entry.id} className="flex items-center gap-3">
               <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-              <span className="shrink-0 text-[11px] text-muted">{t(`startup.category.${entry.category}`)}</span>
+              <span className="shrink-0 text-[0.6875rem] text-muted">{t(`startup.category.${entry.category}`)}</span>
             </li>
           ))}
         </ul>
@@ -423,7 +423,7 @@ export function Startup() {
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
         <motion.div className="h-14 w-14 rounded-full border-[5px] border-raised border-t-accent" animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }} />
-        <p className="mt-5 text-[13px] text-muted">{loading ? t("startup.loading") : t("startup.error.other")}</p>
+        <p className="mt-5 text-[0.8125rem] text-muted">{loading ? t("startup.loading") : t("startup.error.other")}</p>
         {error && !loading && (
           <Button className="mt-4" onClick={load}>
             {t("startup.refresh")}
@@ -439,12 +439,12 @@ export function Startup() {
     <div className="flex flex-col gap-4 pb-2">
       <Summary />
       {error && error.id === null && (
-        <p className="px-1 text-[12px] text-risk" role="alert">
+        <p className="px-1 text-[0.75rem] text-risk" role="alert">
           {error.code.startsWith("revert:") ? t("startup.revertFailed", { names: error.code.slice(7) }) : t(`startup.error.${error.code}`, { defaultValue: t("startup.error.other") })}
         </p>
       )}
 
-      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[13px]" role="tablist">
+      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[0.8125rem]" role="tablist">
         {TABS.map((id) => (
           <button
             key={id}
@@ -463,7 +463,7 @@ export function Startup() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+        <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]">
           {FILTERS.map((id) => (
             <button
               key={id}
@@ -474,17 +474,17 @@ export function Startup() {
             </button>
           ))}
         </div>
-        <label className="flex h-8 min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-line px-3 focus-within:border-accent">
+        <label className="flex h-8 min-w-[12.5rem] flex-1 items-center gap-2 rounded-lg border border-line px-3 focus-within:border-accent">
           <Search size={14} className="shrink-0 text-muted" />
           <input
             value={query}
             onChange={(e) => useStartup.setState({ query: e.target.value })}
             placeholder={t("startup.search")}
-            className="min-w-0 flex-1 select-text bg-transparent text-[13px] outline-none placeholder:text-muted/60"
+            className="min-w-0 flex-1 select-text bg-transparent text-[0.8125rem] outline-none placeholder:text-muted/60"
           />
         </label>
         {tab !== "apps" && (
-          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-muted">
+          <label className="flex cursor-pointer items-center gap-2 text-[0.75rem] text-muted">
             <Switch on={showWindows} onChange={() => useStartup.setState({ showWindows: !showWindows })} label={t("startup.showWindows")} />
             {t("startup.showWindows")}
           </label>
@@ -492,7 +492,7 @@ export function Startup() {
       </div>
 
       {visible.length === 0 ? (
-        <div className="flex flex-col items-center py-12 text-center text-[13px] text-muted">
+        <div className="flex flex-col items-center py-12 text-center text-[0.8125rem] text-muted">
           <Ban size={22} className="mb-3" />
           {t("startup.nothingHere")}
         </div>
@@ -505,13 +505,13 @@ export function Startup() {
       )}
       {tab === "apps" && report.removed.length > 0 && (
         <section data-testid="removed-list">
-          <h2 className="mb-2 px-1 text-[11px] uppercase tracking-wider text-muted">{t("startup.removedTitle")}</h2>
+          <h2 className="mb-2 px-1 text-[0.6875rem] uppercase tracking-wider text-muted">{t("startup.removedTitle")}</h2>
           <ul className="overflow-hidden rounded-card border border-line bg-surface">
             {report.removed.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 border-b border-line px-5 py-2.5 text-[13px] last:border-b-0">
+              <li key={item.id} className="flex items-center gap-3 border-b border-line px-5 py-2.5 text-[0.8125rem] last:border-b-0">
                 <Trash2 size={15} className="shrink-0 text-muted" />
                 <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                <span className="num shrink-0 text-[11px] text-muted">{fmt.dateTime(item.at)}</span>
+                <span className="num shrink-0 text-[0.6875rem] text-muted">{fmt.dateTime(item.at)}</span>
                 <Button icon={<Undo2 size={14} />} onClick={() => revert([item.id])} data-testid="restore-removed">
                   {t("leftovers.restore")}
                 </Button>
@@ -520,7 +520,7 @@ export function Startup() {
           </ul>
         </section>
       )}
-      <p className="px-1 text-[11px] text-muted/80">{t("startup.footnote")}</p>
+      <p className="px-1 text-[0.6875rem] text-muted/80">{t("startup.footnote")}</p>
     </div>
   );
 }

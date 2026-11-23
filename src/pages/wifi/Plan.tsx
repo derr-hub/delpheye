@@ -239,8 +239,8 @@ export function Plan() {
     <div className="grid gap-4" data-testid="wifi-plan">
       <Modal open={askClear} onClose={() => setAskClear(false)}>
         <div data-testid="plan-clear-confirm">
-          <h2 className="font-display text-[18px] font-semibold">{t("wifi.plan.clearTitle")}</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted">
+          <h2 className="font-display text-[1.125rem] font-semibold">{t("wifi.plan.clearTitle")}</h2>
+          <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">
             {t("wifi.plan.clearText", { points: plan.points.length, walls: walls.length })}
             {plan.image ? ` ${t("wifi.plan.clearImage")}` : ""}
           </p>
@@ -264,9 +264,9 @@ export function Plan() {
       </Modal>
       <div className="rounded-card border border-line bg-surface p-4">
         <div className="flex flex-wrap items-end gap-3">
-          <label className="grid min-w-[200px] flex-1 gap-1 text-[11px] text-muted">
+          <label className="grid min-w-[12.5rem] flex-1 gap-1 text-[0.6875rem] text-muted">
             {t("wifi.plan.network")}
-            <select value={target ?? ""} onChange={(e) => setTarget(e.target.value)} className="h-9 rounded-lg border border-line bg-raised px-3 text-[13px] text-fg outline-none">
+            <select value={target ?? ""} onChange={(e) => setTarget(e.target.value)} className="h-9 rounded-lg border border-line bg-raised px-3 text-[0.8125rem] text-fg outline-none">
               {[...snapW.networks]
                 .sort((a, b) => Number(b.connected) - Number(a.connected) || b.rssi - a.rssi)
                 .map((n) => (
@@ -278,7 +278,7 @@ export function Plan() {
             </select>
           </label>
           {(["w", "d"] as const).map((k) => (
-            <label key={k} className="grid gap-1 text-[11px] text-muted">
+            <label key={k} className="grid gap-1 text-[0.6875rem] text-muted">
               {t(`wifi.plan.${k}`)}
               <input
                 type="number"
@@ -292,7 +292,7 @@ export function Plan() {
                   const aspect = plan.image ? plan.d / plan.w : null;
                   update(aspect && k === "w" ? { ...plan, w: v, d: Math.round(v * aspect * 4) / 4 } : { ...plan, [k]: v });
                 }}
-                className="num h-9 w-24 rounded-lg border border-line bg-raised px-3 text-[13px] text-fg outline-none"
+                className="num h-9 w-24 rounded-lg border border-line bg-raised px-3 text-[0.8125rem] text-fg outline-none"
               />
             </label>
           ))}
@@ -313,7 +313,7 @@ export function Plan() {
             {plan.image ? t("wifi.plan.imageChange") : t("wifi.plan.image")}
           </Button>
           {plan.image && (
-            <label className="grid gap-1 text-[11px] text-muted">
+            <label className="grid gap-1 text-[0.6875rem] text-muted">
               {t("wifi.plan.imageOpacity")}
               <input type="range" min={0.15} max={1} step={0.05} value={plan.imageOpacity ?? 0.6} onChange={(e) => update({ ...plan, imageOpacity: Number(e.target.value) })} className="h-9 w-28 accent-[var(--color-accent)]" />
             </label>
@@ -325,7 +325,7 @@ export function Plan() {
               <button
                 key={id}
                 onClick={() => setTool(id)}
-                className={`flex h-8 items-center gap-1.5 rounded-md px-3 text-[12px] ${tool === id ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}
+                className={`flex h-8 items-center gap-1.5 rounded-md px-3 text-[0.75rem] ${tool === id ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}
                 data-testid={`plan-tool-${id}`}
               >
                 <Icon size={13} />
@@ -353,7 +353,7 @@ export function Plan() {
               {t("wifi.plan.clear")}
             </Button>
           )}
-          <span className="text-[12px] text-muted">{t(`wifi.plan.toolHint.${tool}`)}</span>
+          <span className="text-[0.75rem] text-muted">{t(`wifi.plan.toolHint.${tool}`)}</span>
         </div>
       </div>
 
@@ -468,7 +468,7 @@ export function Plan() {
           {tool === "measure" && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
               {phoneLive && (
-                <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+                <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]">
                   {(["laptop", "phone"] as const).map((s) => (
                     <button key={s} onClick={() => setSource(s)} className={`rounded-md px-2.5 py-1 ${source === s ? "bg-raised text-fg" : "text-muted"}`}>
                       {t(`wifi.plan.source.${s}`)}
@@ -479,7 +479,7 @@ export function Plan() {
               <Button variant="primary" icon={<LocateFixed size={15} />} disabled={!cursor || busy || !target} onClick={take} data-testid="plan-measure">
                 {busy ? t("wifi.plan.measuring") : t("wifi.plan.measure")}
               </Button>
-              <span className="text-[12px] text-muted">{cursor ? t("wifi.plan.here", { x: cursor.x, y: cursor.y }) : t("wifi.plan.pick")}</span>
+              <span className="text-[0.75rem] text-muted">{cursor ? t("wifi.plan.here", { x: cursor.x, y: cursor.y }) : t("wifi.plan.pick")}</span>
             </div>
           )}
           {tool === "router" && plan.router && (
@@ -491,11 +491,11 @@ export function Plan() {
 
         <div className="grid content-start gap-3">
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="flex items-center gap-2 text-[13px] font-medium">
+            <div className="flex items-center gap-2 text-[0.8125rem] font-medium">
               <Crosshair size={15} className="text-accent" />
               {t("wifi.plan.whereTitle")}
             </div>
-            <p className="mt-1 text-[12px] leading-relaxed text-muted">
+            <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">
               {plan.router
                 ? t("wifi.plan.routerManual", { x: plan.router.x, y: plan.router.y })
                 : plan.points.length < 3
@@ -506,17 +506,17 @@ export function Plan() {
               {fit && walls.length > 0 && !plan.router && ` ${t("wifi.plan.wallLoss", { db: fit.wall })}`}
             </p>
             {rings.length > 0 ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-muted">{t("wifi.plan.rings", { count: rings.length })}</p>
+              <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{t("wifi.plan.rings", { count: rings.length })}</p>
             ) : (
-              routerAt && <p className="mt-2 text-[11px] leading-relaxed text-muted">{t("wifi.plan.ringsHint")}</p>
+              routerAt && <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{t("wifi.plan.ringsHint")}</p>
             )}
           </div>
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="flex items-center gap-2 text-[13px] font-medium">
+            <div className="flex items-center gap-2 text-[0.8125rem] font-medium">
               <MapPinned size={15} className="text-accent" />
               {t("wifi.plan.heatTitle")}
               {walk.length >= 2 && (
-                <div className="ml-auto flex rounded-lg border border-line p-0.5 text-[11px] font-normal">
+                <div className="ml-auto flex rounded-lg border border-line p-0.5 text-[0.6875rem] font-normal">
                   {(["laptop", "phone"] as const).map((l) => (
                     <button key={l} onClick={() => setLayer(l)} className={`rounded-md px-2 py-0.5 ${layer === l ? "bg-raised text-fg" : "text-muted"}`} data-testid={`plan-layer-${l}`}>
                       {t(`wifi.plan.source.${l}`)}
@@ -525,10 +525,10 @@ export function Plan() {
                 </div>
               )}
             </div>
-            <p className="mt-1 text-[12px] leading-relaxed text-muted">
+            <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">
               {weakest ? t("wifi.plan.weakest", { x: weakest.x, y: weakest.y, rssi: Math.round(weakest.rssi) }) : t("wifi.plan.heatHint")}
             </p>
-            <div className="mt-3 flex items-center gap-2 text-[10px] text-muted">
+            <div className="mt-3 flex items-center gap-2 text-[0.625rem] text-muted">
               −88
               <span className="h-2 flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${colour(-88)}, ${colour(-68)}, ${colour(-48)})` }} />
               −48 dBm
@@ -536,8 +536,8 @@ export function Plan() {
           </div>
           {phoneLive && (
             <div className="rounded-card border border-[#5ed6d0]/40 bg-surface p-4" data-testid="plan-phone-panel">
-              <div className="text-[13px] font-medium text-[#5ed6d0]">{t("wifi.plan.phone.title")}</div>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("wifi.plan.phone.text")}</p>
+              <div className="text-[0.8125rem] font-medium text-[#5ed6d0]">{t("wifi.plan.phone.title")}</div>
+              <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("wifi.plan.phone.text")}</p>
               <div className="mt-3 grid gap-2">
                 <Button onClick={() => calibrate(key)} data-testid="plan-phone-calibrate">
                   {calibrated ? t("wifi.plan.phone.recalibrate") : t("wifi.plan.phone.calibrate")}
@@ -556,7 +556,7 @@ export function Plan() {
                   {phoneBusy ? t("wifi.plan.phone.listening") : t("wifi.plan.phone.remember", { count: phonePlaces.length })}
                 </Button>
                 {phonePlaces.length > 0 && (
-                  <button className="text-left text-[11px] text-muted hover:text-risk" onClick={() => forgetPhonePlaces(key)}>
+                  <button className="text-left text-[0.6875rem] text-muted hover:text-risk" onClick={() => forgetPhonePlaces(key)}>
                     {t("wifi.plan.phone.forget")}
                   </button>
                 )}
@@ -572,19 +572,19 @@ export function Plan() {
                   {recording ? t("wifi.plan.phone.walkStop", { count: walk.length }) : t("wifi.plan.phone.walkStart")}
                 </Button>
                 {walk.length > 0 && !recording && (
-                  <button className="text-left text-[11px] text-muted hover:text-risk" onClick={() => clearWalk(key)}>
+                  <button className="text-left text-[0.6875rem] text-muted hover:text-risk" onClick={() => clearWalk(key)}>
                     {t("wifi.plan.phone.walkClear", { count: walk.length })}
                   </button>
                 )}
               </div>
-              {phonePos && <p className="mt-2 text-[11px] text-muted" data-testid="plan-phone-accuracy">{t("wifi.plan.phone.accuracy", { m: phonePos.spread })}</p>}
-              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              {phonePos && <p className="mt-2 text-[0.6875rem] text-muted" data-testid="plan-phone-accuracy">{t("wifi.plan.phone.accuracy", { m: phonePos.spread })}</p>}
+              <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">
                 {!calibrated ? t("wifi.plan.phone.needCalibrate") : phonePlaces.length < 3 ? t("wifi.plan.phone.needPlaces", { count: 3 - phonePlaces.length }) : t("wifi.plan.phone.tracking")}
               </p>
             </div>
           )}
           <Whereami planKey={key} cursor={cursor} />
-          <p className="text-[11px] leading-relaxed text-muted">{t("wifi.plan.honest")}</p>
+          <p className="text-[0.6875rem] leading-relaxed text-muted">{t("wifi.plan.honest")}</p>
         </div>
       </div>
     </div>

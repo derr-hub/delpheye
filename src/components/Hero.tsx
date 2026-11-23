@@ -36,7 +36,7 @@ export function Hero({
   const { t } = useTranslation();
   return (
     <div className="flex min-h-full flex-col items-center justify-center py-8 text-center" data-testid={testid}>
-      <div className="relative mb-8 flex h-[132px] w-[132px] items-center justify-center">
+      <div className="relative mb-8 flex h-[8.25rem] w-[8.25rem] items-center justify-center">
         {/* A soft glow of the accent behind the emblem. */}
         <div className="absolute inset-[-40px] rounded-full bg-accent/15 blur-3xl" />
         {[0, 1].map((k) => (
@@ -56,10 +56,10 @@ export function Hero({
         </div>
       </div>
 
-      <motion.h2 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="font-display text-[26px] font-semibold tracking-tight">
+      <motion.h2 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="font-display text-[1.625rem] font-semibold tracking-tight">
         {title}
       </motion.h2>
-      <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mt-2 max-w-[56ch] text-[14px] leading-relaxed text-muted">
+      <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mt-2 max-w-[56ch] text-[0.875rem] leading-relaxed text-muted">
         {text}
       </motion.p>
       {children}
@@ -68,7 +68,7 @@ export function Hero({
       </motion.div>
       {error && <div className="mt-4 max-w-[60ch]">{error}</div>}
 
-      <div className="mt-10 grid w-full max-w-[780px] gap-3 sm:grid-cols-3">
+      <div className="mt-10 grid w-full max-w-[48.75rem] gap-3 sm:grid-cols-3">
         {features.map((f, i) => (
           <motion.div
             key={f.title}
@@ -80,12 +80,12 @@ export function Hero({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
               <f.icon size={16} />
             </span>
-            <div className="mt-3 text-[13px] font-medium">{f.title}</div>
-            <div className="mt-1 text-[12px] leading-relaxed text-muted">{f.text}</div>
+            <div className="mt-3 text-[0.8125rem] font-medium">{f.title}</div>
+            <div className="mt-1 text-[0.75rem] leading-relaxed text-muted">{f.text}</div>
           </motion.div>
         ))}
       </div>
-      <div className="mt-5 flex items-center gap-1.5 text-[11px] text-muted">
+      <div className="mt-5 flex items-center gap-1.5 text-[0.6875rem] text-muted">
         <ShieldCheck size={13} className="text-safe" />
         {t("hero.safe")}
       </div>

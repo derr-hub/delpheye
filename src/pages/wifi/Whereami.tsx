@@ -116,19 +116,19 @@ export function Whereami({ planKey, cursor }: { planKey: string; cursor: { x: nu
 
   return (
     <div className="rounded-card border border-line bg-surface p-4" data-testid="wifi-whereami">
-      <div className="flex items-center gap-2 text-[13px] font-medium">
+      <div className="flex items-center gap-2 text-[0.8125rem] font-medium">
         <Fingerprint size={15} className="text-[#F5A35C]" />
         {t("wifi.where.title")}
       </div>
       {guess ? (
         <div className="mt-2">
-          <div className="font-display text-[18px] font-semibold" data-testid="whereami-guess">
+          <div className="font-display text-[1.125rem] font-semibold" data-testid="whereami-guess">
             {guess.confidence === "unsure" ? t("wifi.where.unsure") : t("wifi.where.here", { name: guess.place.name })}
           </div>
-          <div className="text-[11px] text-muted">{t(`wifi.where.confidence.${guess.confidence}`, { db: guess.d.toFixed(1) })}</div>
+          <div className="text-[0.6875rem] text-muted">{t(`wifi.where.confidence.${guess.confidence}`, { db: guess.d.toFixed(1) })}</div>
         </div>
       ) : (
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("wifi.where.intro")}</p>
+        <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("wifi.where.intro")}</p>
       )}
       <form
         className="mt-3 flex gap-2"
@@ -142,18 +142,18 @@ export function Whereami({ planKey, cursor }: { planKey: string; cursor: { x: nu
           onChange={(e) => setName(e.target.value)}
           placeholder={t("wifi.where.placeholder")}
           maxLength={30}
-          className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-[13px] outline-none placeholder:text-muted/60 focus:border-accent/60"
+          className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-[0.8125rem] outline-none placeholder:text-muted/60 focus:border-accent/60"
         />
         <Button type="submit" disabled={!name.trim() || busy}>
           {busy && <Loader2 size={13} className="animate-spin" />}
           {busy ? t("wifi.where.listening") : t("wifi.where.remember")}
         </Button>
       </form>
-      <p className="mt-2 text-[11px] leading-relaxed text-muted">{t("wifi.where.how")}</p>
+      <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{t("wifi.where.how")}</p>
       {places.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {places.map((p) => (
-            <li key={p.name} className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] ${guess?.place.name === p.name && guess.confidence !== "unsure" ? "bg-[#F5A35C]/20 text-[#F5A35C]" : "bg-raised"}`}>
+            <li key={p.name} className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.6875rem] ${guess?.place.name === p.name && guess.confidence !== "unsure" ? "bg-[#F5A35C]/20 text-[#F5A35C]" : "bg-raised"}`}>
               {p.name}
               <button onClick={() => setPlaces(planKey, places.filter((x) => x !== p))} className="text-muted hover:text-risk" aria-label={t("wifi.where.forget")}>
                 <Trash2 size={11} />

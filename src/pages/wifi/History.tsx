@@ -67,12 +67,12 @@ export function History() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex rounded-lg border border-line bg-surface p-0.5">
           {[1, 7, 30].map((d) => (
-            <button key={d} onClick={() => setDays(d)} className={`rounded-md px-3 py-1 text-[12px] ${days === d ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
+            <button key={d} onClick={() => setDays(d)} className={`rounded-md px-3 py-1 text-[0.75rem] ${days === d ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
               {t("wifi.history.days", { count: d })}
             </button>
           ))}
         </div>
-        <span className="flex items-center gap-1.5 text-[11px] text-muted">
+        <span className="flex items-center gap-1.5 text-[0.6875rem] text-muted">
           <Clock size={12} />
           {t("wifi.history.how")}
         </span>
@@ -83,14 +83,14 @@ export function History() {
           <Loader2 className="animate-spin text-accent" />
         </div>
       ) : rows.length < 2 ? (
-        <div className="rounded-card border border-dashed border-line p-6 text-center text-[13px] leading-relaxed text-muted" data-testid="wifi-history-empty">
+        <div className="rounded-card border border-dashed border-line p-6 text-center text-[0.8125rem] leading-relaxed text-muted" data-testid="wifi-history-empty">
           {t("wifi.history.empty", { count: rows.length })}
         </div>
       ) : (
         <>
           <div className="rounded-card border border-line bg-surface p-4">
-            <div className="mb-1 text-[13px] font-medium">{t("wifi.history.byHour")}</div>
-            <p className="mb-3 text-[11px] text-muted">{t("wifi.history.byHourHint", { records: rows.length, days: daysSeen })}</p>
+            <div className="mb-1 text-[0.8125rem] font-medium">{t("wifi.history.byHour")}</div>
+            <p className="mb-3 text-[0.6875rem] text-muted">{t("wifi.history.byHourHint", { records: rows.length, days: daysSeen })}</p>
             <div className="grid grid-cols-24 gap-1" style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}>
               {hours.map((h, i) => (
                 <div key={i} className="grid gap-1 text-center">
@@ -99,11 +99,11 @@ export function History() {
                     title={h.own === null ? "—" : `${i}:00 · ${Math.round(h.own)} dBm · ${Math.round(h.total ?? 0)}`}
                     style={{ background: h.own === null ? "var(--color-raised)" : heat(load(h.own)), opacity: h.samples ? 1 : 0.35 }}
                   />
-                  <span className="num text-[9px] text-muted">{i}</span>
+                  <span className="num text-[0.5625rem] text-muted">{i}</span>
                 </div>
               ))}
             </div>
-            {busiest >= 0 && <p className="mt-3 text-[12px] text-muted">{t("wifi.history.busiest", { hour: busiest })}</p>}
+            {busiest >= 0 && <p className="mt-3 text-[0.75rem] text-muted">{t("wifi.history.busiest", { hour: busiest })}</p>}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -113,18 +113,18 @@ export function History() {
                 const list = channels.filter((c) => c.band === b).sort((x, y) => x.avg - y.avg);
                 return (
                   <div key={b} className="rounded-card border border-line bg-surface p-4">
-                    <div className="mb-2 text-[13px] font-medium" style={{ color: BAND_COLORS[b] }}>
+                    <div className="mb-2 text-[0.8125rem] font-medium" style={{ color: BAND_COLORS[b] }}>
                       {t("wifi.history.channels", { band: b })}
                     </div>
                     <ul className="grid gap-1.5">
                       {list.map((c, i) => (
-                        <li key={c.channel} className="flex items-center gap-3 text-[12px]">
+                        <li key={c.channel} className="flex items-center gap-3 text-[0.75rem]">
                           <span className="num w-10">{c.channel}</span>
                           <span className="h-2 flex-1 overflow-hidden rounded-full bg-raised">
                             <span className="block h-full rounded-full" style={{ width: `${Math.max(4, load(c.avg) * 100)}%`, background: heat(load(c.avg)) }} />
                           </span>
-                          <span className="num w-24 text-right text-[11px] text-muted">{t("wifi.history.nets", { n: c.avgNets.toFixed(1) })}</span>
-                          {i === 0 && <span className="rounded bg-safe/15 px-1.5 text-[10px] text-safe">{t("wifi.history.best")}</span>}
+                          <span className="num w-24 text-right text-[0.6875rem] text-muted">{t("wifi.history.nets", { n: c.avgNets.toFixed(1) })}</span>
+                          {i === 0 && <span className="rounded bg-safe/15 px-1.5 text-[0.625rem] text-safe">{t("wifi.history.best")}</span>}
                         </li>
                       ))}
                     </ul>

@@ -51,7 +51,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
   const fresh = unread(alerts);
 
   return (
-    <nav className="shell flex w-[212px] shrink-0 flex-col bg-bg p-3">
+    <nav className="shell flex w-[13.25rem] shrink-0 flex-col bg-bg p-3">
       <ul className="flex flex-col gap-1">
         {PAGES.map(({ id, icon: Icon }) => {
           const active = id === page;
@@ -61,7 +61,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
                 onClick={() => onChange(id)}
                 data-testid={`nav-${id}`}
                 aria-current={active ? "page" : undefined}
-                className={`reveal relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[13px] transition-colors duration-150 ${
+                className={`reveal relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[0.8125rem] transition-colors duration-150 ${
                   active ? "text-fg" : "text-muted hover:bg-surface hover:text-fg"
                 }`}
               >
@@ -77,7 +77,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
                 <Icon size={17} className={`relative ${active ? "text-accent" : ""}`} />
                 <span className="relative">{t(`nav.${id}`)}</span>
                 {id === "watcher" && fresh > 0 && (
-                  <span className="num relative ml-auto rounded-full bg-warn px-1.5 text-[10px] font-semibold text-bg" data-testid="watcher-badge">
+                  <span className="num relative ml-auto rounded-full bg-warn px-1.5 text-[0.625rem] font-semibold text-bg" data-testid="watcher-badge">
                     {fresh}
                   </span>
                 )}
@@ -90,13 +90,13 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
       <div className="mt-auto" />
       <UpdateChip />
       {elevated && (
-        <div className="mb-2 flex items-center gap-2 px-3 text-[12px] text-accent" data-testid="admin-chip">
+        <div className="mb-2 flex items-center gap-2 px-3 text-[0.75rem] text-accent" data-testid="admin-chip">
           <ShieldCheck size={15} />
           {t("app.admin")}
         </div>
       )}
       <div className="flex items-center gap-1.5">
-      <div className="flex flex-1 rounded-lg border border-line p-0.5 text-[12px]">
+      <div className="flex flex-1 rounded-lg border border-line p-0.5 text-[0.75rem]">
         {(["uk", "en"] as const).map((code) => (
           <button
             key={code}

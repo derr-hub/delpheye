@@ -50,12 +50,19 @@ body,
   height: 100%;
 }
 
+/* The main window scales with its size: everything is in rem, so a maximized window on a big
+   screen grows the whole interface in proportion instead of stretching it into empty space.
+   At the usual window size it stays exactly 16px. */
+html.fluid {
+  font-size: clamp(16px, 10px + 0.375vw, 19.5px);
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 0.875rem;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   user-select: none;

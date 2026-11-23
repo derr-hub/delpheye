@@ -140,10 +140,10 @@ export default function Room3D({ facing, highlight, result, labels }: { facing: 
   // Wall names drawn as HTML around the scene, in the same clockwise order.
   const pos = ["left-1/2 top-1 -translate-x-1/2", "right-1 top-1/2 -translate-y-1/2", "bottom-1 left-1/2 -translate-x-1/2", "left-1 top-1/2 -translate-y-1/2"];
   return (
-    <div className="relative h-[300px] w-full overflow-hidden rounded-xl bg-[#0d1218]">
+    <div className="relative h-[18.75rem] w-full overflow-hidden rounded-xl bg-[#0d1218]">
       <div ref={host} className="absolute inset-0" />
       {labels.map((l, k) => (
-        <span key={k} className={`pointer-events-none absolute rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-[#c8d3de] ${pos[k]}`}>
+        <span key={k} className={`pointer-events-none absolute rounded bg-black/50 px-1.5 py-0.5 text-[0.625rem] text-[#c8d3de] ${pos[k]}`}>
           {l}
         </span>
       ))}

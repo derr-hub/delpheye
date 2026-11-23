@@ -94,7 +94,7 @@ function Lines({ days, series, unit, max, min = 0, testid }: { days: string[]; s
   return (
     <div ref={ref} className="relative" data-testid={testid}>
       {series.length > 1 && (
-        <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+        <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.6875rem] text-muted">
           {series.map((s) => (
             <span key={s.key} className="flex items-center gap-1.5">
               <span className="h-[3px] w-3 rounded-full" style={{ background: s.color }} />
@@ -117,13 +117,13 @@ function Lines({ days, series, unit, max, min = 0, testid }: { days: string[]; s
         {ticks.map((v) => (
           <g key={v}>
             <line x1={PAD.l} x2={w - PAD.r} y1={y(v)} y2={y(v)} stroke="var(--color-line)" strokeDasharray={v === min ? undefined : "3 4"} />
-            <text x={PAD.l - 6} y={y(v) + 3.5} textAnchor="end" className="fill-muted text-[10px]">
+            <text x={PAD.l - 6} y={y(v) + 3.5} textAnchor="end" className="fill-muted text-[0.625rem]">
               {Math.round(v)}
             </text>
           </g>
         ))}
         {labelAt.map((i) => (
-          <text key={i} x={x(i)} y={H - 4} textAnchor={i === 0 ? "start" : i === days.length - 1 ? "end" : "middle"} className="fill-muted text-[10px]">
+          <text key={i} x={x(i)} y={H - 4} textAnchor={i === 0 ? "start" : i === days.length - 1 ? "end" : "middle"} className="fill-muted text-[0.625rem]">
             {fmtDay(days[i])}
           </text>
         ))}
@@ -143,7 +143,7 @@ function Lines({ days, series, unit, max, min = 0, testid }: { days: string[]; s
       </svg>
       {hover !== null && (
         <div
-          className="pointer-events-none absolute z-10 min-w-[130px] rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11px] shadow-lg"
+          className="pointer-events-none absolute z-10 min-w-[8.125rem] rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[0.6875rem] shadow-lg"
           style={{ left: Math.min(Math.max(0, x(hover) + 10), w - 150), top: series.length > 1 ? 24 : 4 }}
         >
           <div className="mb-0.5 text-muted">{fmtDay(days[hover])}</div>
@@ -177,7 +177,7 @@ function Crashes({ days, rows }: { days: string[]; rows: { day: string; d: Day |
   const fmtDay = (d: string) => new Intl.DateTimeFormat(i18n.language.startsWith("uk") ? "uk-UA" : "en-US", { day: "numeric", month: "short" }).format(new Date(d));
   return (
     <div ref={ref} className="relative" data-testid="history-crashes">
-      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.6875rem] text-muted">
         {kinds.map(([k, c]) => (
           <span key={k} className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-[2px]" style={{ background: c }} />
@@ -206,7 +206,7 @@ function Crashes({ days, rows }: { days: string[]; rows: { day: string; d: Day |
         })}
       </svg>
       {hover !== null && rows[hover].d && (
-        <div className="pointer-events-none absolute z-10 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11px] shadow-lg" style={{ left: Math.min((hover / days.length) * w + 10, w - 150), top: 20 }}>
+        <div className="pointer-events-none absolute z-10 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[0.6875rem] shadow-lg" style={{ left: Math.min((hover / days.length) * w + 10, w - 150), top: 20 }}>
           <div className="mb-0.5 text-muted">{fmtDay(days[hover])}</div>
           {kinds.map(([k]) => (rows[hover].d![k] ? <div key={k}>{t(`history.crash.${k}`)}: {rows[hover].d![k]}</div> : null))}
           {!kinds.some(([k]) => rows[hover].d![k]) && <div className="text-muted">{t("history.noCrashes")}</div>}
@@ -219,10 +219,10 @@ function Crashes({ days, rows }: { days: string[]; rows: { day: string; d: Day |
 function Panel({ icon, title, note, children }: { icon: React.ReactNode; title: string; note?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-card border border-line bg-surface p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-[13px] font-medium">
+      <h3 className="mb-3 flex items-center gap-2 text-[0.8125rem] font-medium">
         <span className="text-accent">{icon}</span>
         {title}
-        {note && <span className="ml-auto text-[11px] font-normal text-muted">{note}</span>}
+        {note && <span className="ml-auto text-[0.6875rem] font-normal text-muted">{note}</span>}
       </h3>
       {children}
     </section>
@@ -245,7 +245,7 @@ export function HistoryTab() {
   const rows = useMemo(() => (data ? fill(data, range) : []), [data, range]);
   if (!data)
     return (
-      <div className="flex items-center justify-center gap-2 py-20 text-[13px] text-muted">
+      <div className="flex items-center justify-center gap-2 py-20 text-[0.8125rem] text-muted">
         <Loader2 size={16} className="animate-spin" />
         {t("history.loading")}
       </div>
@@ -263,8 +263,8 @@ export function HistoryTab() {
   return (
     <div className="grid gap-4 pb-6" data-testid="history-tab">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-muted">{t("history.lead")}</p>
-        <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+        <p className="min-w-0 flex-1 text-[0.75rem] leading-relaxed text-muted">{t("history.lead")}</p>
+        <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]">
           {RANGES.map((r) => (
             <button key={r} onClick={() => setRange(r)} className={`rounded-md px-3 py-1 ${range === r ? "bg-raised text-fg" : "text-muted hover:text-fg"}`} data-testid={`history-range-${r}`}>
               {t("history.days", { count: r })}
@@ -283,17 +283,17 @@ export function HistoryTab() {
           ] as const
         ).map(([Icon, label, value, sub]) => (
           <div key={label} className="rounded-card border border-line bg-surface p-4">
-            <div className="flex items-center gap-2 text-[12px] text-muted">
+            <div className="flex items-center gap-2 text-[0.75rem] text-muted">
               <Icon size={14} />
               {label}
             </div>
-            <div className="num mt-1 text-[22px] font-semibold">{value}</div>
-            <div className="text-[11px] text-muted">{sub}</div>
+            <div className="num mt-1 text-[1.375rem] font-semibold">{value}</div>
+            <div className="text-[0.6875rem] text-muted">{sub}</div>
           </div>
         ))}
       </div>
 
-      {watched.length < 2 && <div className="rounded-card border border-accent/30 bg-accent/5 px-4 py-3 text-[12px] leading-relaxed text-fg">{t("history.young")}</div>}
+      {watched.length < 2 && <div className="rounded-card border border-accent/30 bg-accent/5 px-4 py-3 text-[0.75rem] leading-relaxed text-fg">{t("history.young")}</div>}
 
       <Panel icon={<Thermometer size={15} />} title={t("history.temps")} note={t("history.perDay")}>
         <Lines

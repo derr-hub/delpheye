@@ -24,13 +24,13 @@ function Intro({ error }: { error: string | null }) {
         { icon: Package, title: t("hero.cleanup.f3"), text: t("hero.cleanup.f3t") },
       ]}
       action={
-        <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={scan} data-testid="scan">
+        <Button variant="primary" className="!h-11 !px-8 text-[0.875rem]" onClick={scan} data-testid="scan">
           {t("cleanup.scan")}
         </Button>
       }
       error={
         error && (
-          <p className="text-[12px] text-risk" role="alert">
+          <p className="text-[0.75rem] text-risk" role="alert">
             {KNOWN_ERRORS.includes(error) ? t(`cleanup.error.${error}`) : t("cleanup.error.other", { message: error })}
           </p>
         )
@@ -45,13 +45,13 @@ function Working({ progress, cleaning }: { progress: Progress | null; cleaning: 
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
       <Ring value={percent} color={cleaning ? "var(--color-safe)" : "var(--color-accent)"} size={168}>
-        <span className="font-display text-[36px] font-semibold leading-none">
+        <span className="font-display text-[2.25rem] font-semibold leading-none">
           <AnimatedNumber value={percent} />
-          <span className="text-[16px] text-muted">%</span>
+          <span className="text-[1rem] text-muted">%</span>
         </span>
       </Ring>
-      <div className="mt-6 font-display text-[18px] font-semibold">{t(cleaning ? "cleanup.cleaning" : "cleanup.scanning")}</div>
-      <div className="mt-1 text-[13px] text-muted">
+      <div className="mt-6 font-display text-[1.125rem] font-semibold">{t(cleaning ? "cleanup.cleaning" : "cleanup.scanning")}</div>
+      <div className="mt-1 text-[0.8125rem] text-muted">
         {progress ? (
           <>
             {t(cleaning ? "cleanup.freedSoFar" : "cleanup.foundSoFar")} <AnimatedBytes value={progress.bytes} />
@@ -61,7 +61,7 @@ function Working({ progress, cleaning }: { progress: Progress | null; cleaning: 
         )}
       </div>
       {/* Fixed height: the line must not make the layout jump as paths come and go. */}
-      <div className="num mt-3 h-4 w-[70%] truncate text-[11px] text-muted/70">{progress?.path ?? ""}</div>
+      <div className="num mt-3 h-4 w-[70%] truncate text-[0.6875rem] text-muted/70">{progress?.path ?? ""}</div>
       <Button variant="quiet" className="mt-5" onClick={cancel} data-testid="cancel">
         {t("cleanup.cancel")}
       </Button>
@@ -81,7 +81,7 @@ function Done({ result }: { result: CleanReport }) {
   ].filter(Boolean);
 
   return (
-    <div className="mx-auto flex min-h-full max-w-[540px] flex-col items-center justify-center py-4 text-center" data-testid="done">
+    <div className="mx-auto flex min-h-full max-w-[33.75rem] flex-col items-center justify-center py-4 text-center" data-testid="done">
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -92,21 +92,21 @@ function Done({ result }: { result: CleanReport }) {
           <motion.path d="M5 12.5l4.5 4.5L19 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.15, duration: 0.35 }} />
         </svg>
       </motion.div>
-      <h2 className="font-display text-[26px] font-semibold" data-testid="done-title">
+      <h2 className="font-display text-[1.625rem] font-semibold" data-testid="done-title">
         {result.freedBytes > 0 ? t("cleanup.doneTitle", { value: fmt.bytes(result.freedBytes) }) : t("cleanup.doneNothing")}
       </h2>
-      <p className="mt-1 text-[13px] text-muted">
+      <p className="mt-1 text-[0.8125rem] text-muted">
         {t("cleanup.doneDeleted", { value: fmt.int(result.deletedFiles) })} · {t("cleanup.doneTook", { value: fmt.duration(result.durationMs) })}
         {result.cancelled && ` · ${t("cleanup.doneCancelled")}`}
       </p>
 
       {result.categories.length > 0 && (
-        <ul className="mt-5 w-full rounded-card border border-line bg-surface px-5 py-2 text-left text-[13px]">
+        <ul className="mt-5 w-full rounded-card border border-line bg-surface px-5 py-2 text-left text-[0.8125rem]">
           {result.categories.map((c) => (
             <li key={c.id} className="flex items-center gap-3 border-b border-line/60 py-2 last:border-b-0">
               <span className="min-w-0 flex-1 truncate">{names.category(c)}</span>
               {c.skippedFiles > 0 && (
-                <span className="num shrink-0 text-[11px] text-warn">{t("journal.skipped", { value: fmt.int(c.skippedFiles) })}</span>
+                <span className="num shrink-0 text-[0.6875rem] text-warn">{t("journal.skipped", { value: fmt.int(c.skippedFiles) })}</span>
               )}
               <span className="num shrink-0 text-muted">{fmt.bytes(c.freedBytes)}</span>
             </li>
@@ -114,7 +114,7 @@ function Done({ result }: { result: CleanReport }) {
         </ul>
       )}
       {skipped > 0 && (
-        <p className="mt-3 w-full rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-3 text-left text-[12px] leading-relaxed text-muted" data-testid="skipped">
+        <p className="mt-3 w-full rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-3 text-left text-[0.75rem] leading-relaxed text-muted" data-testid="skipped">
           <span className="text-warn">{t("cleanup.skipped", { value: fmt.int(skipped) })}</span>
           <br />
           {reasons.join(" · ")}

@@ -119,7 +119,7 @@ export function TimeRings({ root, onOpen, onUp }: { root: Ring; onOpen: (id: num
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_260px] items-center gap-6" data-testid="time-rings">
-      <div className="relative mx-auto w-full max-w-[420px]" onMouseLeave={() => setHover(null)}>
+      <div className="relative mx-auto w-full max-w-[26.25rem]" onMouseLeave={() => setHover(null)}>
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="block w-full" role="img" aria-label={t("disk.ringsLabel", { name: root.name })}>
           <AnimatePresence mode="popLayout">
             <motion.g key={root.id} initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.28, ease: "easeOut" }} style={{ transformOrigin: "50% 50%" }}>
@@ -151,14 +151,14 @@ export function TimeRings({ root, onOpen, onUp }: { root: Ring; onOpen: (id: num
           </AnimatePresence>
           <g className={onUp ? "cursor-pointer" : ""} onClick={() => onUp?.()} data-testid="ring-center">
             <circle cx={C} cy={C} r={CORE} fill="var(--color-raised)" stroke={ageColor(root.mark)} strokeWidth={3} />
-            <text x={C} y={C - 10} textAnchor="middle" className="fill-[var(--color-fg)] font-display text-[15px] font-semibold">
+            <text x={C} y={C - 10} textAnchor="middle" className="fill-[var(--color-fg)] font-display text-[0.9375rem] font-semibold">
               {root.name.length > 16 ? `${root.name.slice(0, 15)}…` : root.name}
             </text>
-            <text x={C} y={C + 12} textAnchor="middle" className="num fill-[var(--color-muted)] text-[13px]">
+            <text x={C} y={C + 12} textAnchor="middle" className="num fill-[var(--color-muted)] text-[0.8125rem]">
               {fmt.bytes(root.size)}
             </text>
             {onUp && (
-              <text x={C} y={C + 32} textAnchor="middle" className="fill-[var(--color-accent)] text-[11px]">
+              <text x={C} y={C + 32} textAnchor="middle" className="fill-[var(--color-accent)] text-[0.6875rem]">
                 ↑ {t("disk.up")}
               </text>
             )}
@@ -166,14 +166,14 @@ export function TimeRings({ root, onOpen, onUp }: { root: Ring; onOpen: (id: num
         </svg>
         {hover && (
           <div
-            className="pointer-events-none absolute z-10 min-w-[170px] rounded-lg border border-line bg-raised px-3 py-2 text-[12px] shadow-xl"
+            className="pointer-events-none absolute z-10 min-w-[10.625rem] rounded-lg border border-line bg-raised px-3 py-2 text-[0.75rem] shadow-xl"
             style={{ left: Math.min(hover.x + 14, 260), top: hover.y + 14 }}
           >
             {(() => {
               const info = describe(hover.arc);
               return (
                 <>
-                  <div className="max-w-[220px] truncate font-medium">{info.name}</div>
+                  <div className="max-w-[13.75rem] truncate font-medium">{info.name}</div>
                   <div className="num mt-0.5 text-muted">
                     {fmt.bytes(info.size)} · {fmt.int((info.size / Math.max(root.size, 1)) * 100)}%
                   </div>
@@ -187,10 +187,10 @@ export function TimeRings({ root, onOpen, onUp }: { root: Ring; onOpen: (id: num
 
       <div className="space-y-4">
         <div>
-          <div className="text-[13px] font-medium">{t("disk.layersTitle")}</div>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("disk.layersHint")}</p>
+          <div className="text-[0.8125rem] font-medium">{t("disk.layersTitle")}</div>
+          <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("disk.layersHint")}</p>
         </div>
-        <ul className="space-y-1.5 text-[12px]" data-testid="age-legend">
+        <ul className="space-y-1.5 text-[0.75rem]" data-testid="age-legend">
           {AGE_STEPS.map((step, i) => (
             <li key={step.key} className="flex items-center gap-2.5">
               <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: step.color }} />
@@ -209,7 +209,7 @@ export function TimeRings({ root, onOpen, onUp }: { root: Ring; onOpen: (id: num
             byAge[i] > 0 ? <span key={step.key} style={{ width: `${(byAge[i] / total) * 100}%`, background: step.color }} /> : null,
           )}
         </div>
-        <p className="text-[12px] leading-relaxed" data-testid="old-share">
+        <p className="text-[0.75rem] leading-relaxed" data-testid="old-share">
           {t("disk.oldShare", { size: fmt.bytes(old), share: fmt.int((old / total) * 100) })}
         </p>
       </div>

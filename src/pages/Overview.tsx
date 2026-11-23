@@ -104,7 +104,7 @@ function StatusNotes({ notes, securityRun }: ReturnType<typeof useStatusNotes>) 
     <ul className="mt-2 space-y-0.5" data-testid="health-notes">
       {notes.map((n) => (
         <li key={n.text}>
-          <button onClick={n.open} className="group flex w-full items-start gap-2 rounded-md py-0.5 text-left text-[12px] leading-relaxed text-muted hover:text-fg">
+          <button onClick={n.open} className="group flex w-full items-start gap-2 rounded-md py-0.5 text-left text-[0.75rem] leading-relaxed text-muted hover:text-fg">
             <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${TONE_DOT[n.tone]}`} />
             <span className={n.tone === "good" ? "" : "text-fg/90"}>{n.text}</span>
           </button>
@@ -112,7 +112,7 @@ function StatusNotes({ notes, securityRun }: ReturnType<typeof useStatusNotes>) 
       ))}
       {!securityRun && (
         <li>
-          <button onClick={() => go("security")} className="flex items-start gap-2 py-0.5 text-left text-[12px] text-muted/70 hover:text-fg">
+          <button onClick={() => go("security")} className="flex items-start gap-2 py-0.5 text-left text-[0.75rem] text-muted/70 hover:text-fg">
             <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-muted/50" />
             {t("overview.status.securityNotRun")}
           </button>
@@ -161,27 +161,27 @@ export function Overview() {
       {/* Health */}
       <Card className="col-span-6 flex items-center gap-7">
         <Ring value={score} color={LEVEL_COLOR[level]}>
-          <span className="font-display text-[40px] font-semibold leading-none">
+          <span className="font-display text-[2.5rem] font-semibold leading-none">
             <AnimatedNumber value={score} />
           </span>
-          <span className="mt-1 text-[11px] text-muted">/ 100</span>
+          <span className="mt-1 text-[0.6875rem] text-muted">/ 100</span>
         </Ring>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] text-muted">{t("overview.health")}</div>
-          <div className="font-display text-[26px] font-semibold" style={{ color: LEVEL_COLOR[level] }}>
+          <div className="text-[0.8125rem] text-muted">{t("overview.health")}</div>
+          <div className="font-display text-[1.625rem] font-semibold" style={{ color: LEVEL_COLOR[level] }}>
             {t(LEVEL_KEY[level])}
           </div>
           <StatusNotes {...status} />
           <button
             onClick={checkSlowdown}
             data-testid="slowdown-open"
-            className="reveal mt-3 inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-[12px] text-fg transition-colors hover:bg-raised"
+            className="reveal mt-3 inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-[0.75rem] text-fg transition-colors hover:bg-raised"
           >
             <Snail size={14} className="text-accent" />
             {t("slowdown.button")}
           </button>
         </div>
-        <dl className="grid shrink-0 grid-cols-[auto_auto] gap-x-6 gap-y-2 text-[13px]">
+        <dl className="grid shrink-0 grid-cols-[auto_auto] gap-x-6 gap-y-2 text-[0.8125rem]">
           <dt className="text-muted">{info?.hostName || "—"}</dt>
           <dd className="text-right">
             {info ? `${info.osName} ${info.osVersion}` : "—"}
@@ -196,12 +196,12 @@ export function Overview() {
       {/* CPU */}
       <Card className="col-span-2" title={t("overview.cpu")} icon={<Cpu size={15} />} to="monitoring">
         <div className="flex items-baseline gap-1">
-          <span className="font-display text-[32px] font-semibold leading-none">
+          <span className="font-display text-[2rem] font-semibold leading-none">
             <AnimatedNumber value={m.cpuUsage} />
           </span>
           <span className="text-muted">%</span>
           {clock ? (
-            <span className="num ml-auto text-[12px] text-muted" title={t("overview.realClock")}>
+            <span className="num ml-auto text-[0.75rem] text-muted" title={t("overview.realClock")}>
               {fmt.frequency(clock)}
             </span>
           ) : null}
@@ -220,11 +220,11 @@ export function Overview() {
             </div>
           ))}
         </div>
-        <div className="mt-3 truncate text-[12px] text-muted" title={info?.cpuBrand}>
+        <div className="mt-3 truncate text-[0.75rem] text-muted" title={info?.cpuBrand}>
           {info?.cpuBrand}
         </div>
         {info && (
-          <div className="text-[12px] text-muted">
+          <div className="text-[0.75rem] text-muted">
             {t("overview.cores", { physical: info.physicalCores, logical: info.logicalCores })}
           </div>
         )}
@@ -233,18 +233,18 @@ export function Overview() {
       {/* Memory */}
       <Card className="col-span-2" title={t("overview.memory")} icon={<MemoryStick size={15} />}>
         <div className="flex items-baseline gap-1">
-          <span className="font-display text-[32px] font-semibold leading-none">
+          <span className="font-display text-[2rem] font-semibold leading-none">
             <AnimatedNumber value={memPct} />
           </span>
           <span className="text-muted">%</span>
-          <span className="num ml-auto text-[12px] text-muted">
+          <span className="num ml-auto text-[0.75rem] text-muted">
             {fmt.bytes(m.memUsed)} {t("overview.of", { value: fmt.bytes(m.memTotal) })}
           </span>
         </div>
         <div className="mt-3">
           <Sparkline data={history.mem} max={100} height={58} color={loadColor(memPct)} />
         </div>
-        <div className="mt-[18px] flex items-center justify-between text-[12px] text-muted">
+        <div className="mt-[18px] flex items-center justify-between text-[0.75rem] text-muted">
           <span>{t("overview.swap")}</span>
           <span className="num">
             {fmt.bytes(m.swapUsed)} {t("overview.of", { value: fmt.bytes(m.swapTotal) })}
@@ -259,21 +259,21 @@ export function Overview() {
       <Card className="col-span-2" title={t("overview.network")} icon={<Network size={15} />} to="network">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="flex items-center gap-1 text-[12px] text-muted">
+            <div className="flex items-center gap-1 text-[0.75rem] text-muted">
               <ArrowDown size={13} className="text-accent" /> {t("overview.download")}
             </div>
-            <div className="num mt-1 text-[18px]">
+            <div className="num mt-1 text-[1.125rem]">
               {fmt.bytes(m.netRx)}
-              <span className="text-[12px] text-muted">{t("units.perSec")}</span>
+              <span className="text-[0.75rem] text-muted">{t("units.perSec")}</span>
             </div>
           </div>
           <div>
-            <div className="flex items-center gap-1 text-[12px] text-muted">
+            <div className="flex items-center gap-1 text-[0.75rem] text-muted">
               <ArrowUp size={13} className="text-safe" /> {t("overview.upload")}
             </div>
-            <div className="num mt-1 text-[18px]">
+            <div className="num mt-1 text-[1.125rem]">
               {fmt.bytes(m.netTx)}
-              <span className="text-[12px] text-muted">{t("units.perSec")}</span>
+              <span className="text-[0.75rem] text-muted">{t("units.perSec")}</span>
             </div>
           </div>
         </div>
@@ -290,15 +290,15 @@ export function Overview() {
             const usedPct = d.total ? ((d.total - d.available) / d.total) * 100 : 0;
             return (
               <li key={d.mount}>
-                <div className="mb-1.5 flex items-baseline gap-2 text-[13px]">
+                <div className="mb-1.5 flex items-baseline gap-2 text-[0.8125rem]">
                   <span className="num font-medium">{d.mount.replace(/\\$/, "")}</span>
                   <span className="truncate text-muted">{d.name}</span>
-                  <span className="text-[11px] text-muted">
+                  <span className="text-[0.6875rem] text-muted">
                     {[d.kind !== "Unknown" ? d.kind : null, d.fileSystem, d.removable ? t("overview.removable") : null]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
-                  <span className="num ml-auto shrink-0 text-[12px] text-muted">
+                  <span className="num ml-auto shrink-0 text-[0.75rem] text-muted">
                     {t("overview.free", { value: fmt.bytes(d.available) })} · {fmt.bytes(d.total)}
                   </span>
                 </div>
@@ -308,7 +308,7 @@ export function Overview() {
           })}
         </ul>
         <button
-          className="group mt-auto flex items-center gap-2.5 border-t border-line/70 pt-3.5 text-left text-[13px] text-muted transition-colors duration-150 hover:text-fg"
+          className="group mt-auto flex items-center gap-2.5 border-t border-line/70 pt-3.5 text-left text-[0.8125rem] text-muted transition-colors duration-150 hover:text-fg"
           style={{ marginTop: "auto" }}
           onClick={() => go("cleanup")}
           data-testid="reclaim-cta"
@@ -323,14 +323,14 @@ export function Overview() {
 
       {/* Top processes */}
       <Card className="col-span-3" title={t("overview.topProcesses")} icon={<ListTree size={15} />} to="processes">
-        <ul className="space-y-2.5 text-[13px]">
+        <ul className="space-y-2.5 text-[0.8125rem]">
           {m.topProcesses.map((p) => (
             <li key={p.name} className="flex items-center gap-3">
               <span className="min-w-0 flex-1 truncate">
                 {p.name}
-                {p.count > 1 && <span className="ml-2 text-[11px] text-muted">{t("overview.procCount", { count: p.count })}</span>}
+                {p.count > 1 && <span className="ml-2 text-[0.6875rem] text-muted">{t("overview.procCount", { count: p.count })}</span>}
               </span>
-              <span className="num w-14 text-right text-[12px] text-muted">{p.cpu.toFixed(1)}%</span>
+              <span className="num w-14 text-right text-[0.75rem] text-muted">{p.cpu.toFixed(1)}%</span>
               <span className="num w-20 text-right">{fmt.bytes(p.memory)}</span>
             </li>
           ))}

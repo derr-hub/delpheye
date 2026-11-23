@@ -114,7 +114,7 @@ function Row({ node, open, onToggle, tree }: { node: Node; open: boolean; onTogg
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={() => useProcesses.setState({ selected: selected ? null : key })}
-      className={`grid ${COLUMNS} h-[40px] items-stretch border-b border-line/40 text-[13px] transition-colors duration-100 ${selected ? "bg-accent/[0.09]" : "hover:bg-raised/50"}`}
+      className={`grid ${COLUMNS} h-[2.5rem] items-stretch border-b border-line/40 text-[0.8125rem] transition-colors duration-100 ${selected ? "bg-accent/[0.09]" : "hover:bg-raised/50"}`}
     >
       <div className="flex min-w-0 items-center gap-2 pr-2" style={{ paddingLeft: 12 + (tree ? node.depth * 18 : 0) }}>
         {tree && (
@@ -139,22 +139,22 @@ function Row({ node, open, onToggle, tree }: { node: Node; open: boolean; onTogg
         <div className="min-w-0 flex-1 leading-tight">
           <div className="flex items-center gap-1.5">
             <span className="truncate">{displayName(p)}</span>
-            {grouped && <span className="num shrink-0 rounded-full bg-raised px-1.5 text-[10px] text-muted" title={t("processes.groupHint")}>{node.total.count}</span>}
+            {grouped && <span className="num shrink-0 rounded-full bg-raised px-1.5 text-[0.625rem] text-muted" title={t("processes.groupHint")}>{node.total.count}</span>}
             {p.impostor && <ShieldAlert size={13} className="shrink-0 text-risk" />}
           </div>
-          {secondary && <div className="truncate text-[11px] text-muted">{secondary}</div>}
+          {secondary && <div className="truncate text-[0.6875rem] text-muted">{secondary}</div>}
         </div>
       </div>
-      <div className="num flex items-center justify-end pr-3 text-[12px]" style={heat(v.cpu / 25)}>
+      <div className="num flex items-center justify-end pr-3 text-[0.75rem]" style={heat(v.cpu / 25)}>
         {v.cpu >= 0.1 ? `${v.cpu.toFixed(1)}%` : <span className="text-muted/60">0%</span>}
       </div>
-      <div className="num flex items-center justify-end pr-3 text-[12px]" style={heat(v.memory / (totalMemory * 0.1))}>
+      <div className="num flex items-center justify-end pr-3 text-[0.75rem]" style={heat(v.memory / (totalMemory * 0.1))}>
         {v.memory > 0 ? fmt.bytes(v.memory) : <span className="text-muted/60" title={t("processes.hiddenMemory")}>—</span>}
       </div>
-      <div className="num flex items-center justify-end pr-3 text-[12px]" style={heat(v.disk / (20 * 1024 * 1024))}>
+      <div className="num flex items-center justify-end pr-3 text-[0.75rem]" style={heat(v.disk / (20 * 1024 * 1024))}>
         {v.disk >= 1024 ? `${fmt.bytes(v.disk)}/${t("processes.perSecond")}` : <span className="text-muted/60">0</span>}
       </div>
-      <div className="num flex items-center justify-end pr-3 text-[12px]">{v.net > 0 ? v.net : <span className="text-muted/60">—</span>}</div>
+      <div className="num flex items-center justify-end pr-3 text-[0.75rem]">{v.net > 0 ? v.net : <span className="text-muted/60">—</span>}</div>
     </motion.div>
   );
 }
@@ -211,7 +211,7 @@ function Table() {
   const header = (key: SortKey, label: string, icon: ReactNode, align = "justify-end") => (
     <button
       onClick={() => useProcesses.setState({ sort: { key, desc: sort.key === key ? !sort.desc : key !== "name" } })}
-      className={`flex items-center gap-1.5 px-3 ${align} text-[11px] uppercase tracking-wider transition-colors ${sort.key === key ? "text-fg" : "text-muted hover:text-fg"}`}
+      className={`flex items-center gap-1.5 px-3 ${align} text-[0.6875rem] uppercase tracking-wider transition-colors ${sort.key === key ? "text-fg" : "text-muted hover:text-fg"}`}
       aria-sort={sort.key === key ? (sort.desc ? "descending" : "ascending") : "none"}
     >
       {icon}
@@ -230,7 +230,7 @@ function Table() {
         {header("net", t("processes.col.net"), <Network size={12} />)}
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-10 text-center text-[13px] text-muted">{listing ? t("processes.empty") : t("processes.loading")}</p>
+        <p className="px-5 py-10 text-center text-[0.8125rem] text-muted">{listing ? t("processes.empty") : t("processes.loading")}</p>
       ) : (
         rows.map(({ node, open }) => (
           <Row
@@ -295,15 +295,15 @@ function Consumers() {
             <button className="group flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1 text-left hover:bg-raised/60" onClick={() => useProcesses.setState({ selected: keyOf(g.main) })}>
               <ProcIcon proc={g.main} size={16} />
               <span className="min-w-0 flex-1">
-                <span className="flex items-baseline gap-1.5 text-[12px]">
+                <span className="flex items-baseline gap-1.5 text-[0.75rem]">
                   <span className="truncate">{displayName(g.main)}</span>
-                  {g.count > 1 && <span className="shrink-0 text-[10px] text-muted">{t("overview.procCount", { count: g.count })}</span>}
+                  {g.count > 1 && <span className="shrink-0 text-[0.625rem] text-muted">{t("overview.procCount", { count: g.count })}</span>}
                 </span>
                 <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-raised">
                   <motion.span className={`block h-full rounded-full ${metric === "cpu" ? "bg-accent" : "bg-[#3987e5]"}`} initial={false} animate={{ width: `${Math.max(1, (g[metric] / max) * 100)}%` }} transition={{ type: "spring", stiffness: 45, damping: 16, mass: 1.2 }} />
                 </span>
               </span>
-              <span className="num w-16 shrink-0 text-right text-[12px]">{metric === "cpu" ? `${g.cpu.toFixed(1)}%` : fmt.bytes(g.memory)}</span>
+              <span className="num w-16 shrink-0 text-right text-[0.75rem]">{metric === "cpu" ? `${g.cpu.toFixed(1)}%` : fmt.bytes(g.memory)}</span>
             </button>
           </motion.li>
         ))}
@@ -313,7 +313,7 @@ function Consumers() {
   if (!top) return null;
   return (
     <section className="rounded-card border border-line bg-surface p-5" data-testid="consumers">
-      <p className="mb-4 max-w-[95ch] text-[14px] leading-relaxed">
+      <p className="mb-4 max-w-[95ch] text-[0.875rem] leading-relaxed">
         {t(top.count > 1 ? "processes.headlineMany" : "processes.headline", { name: displayName(top.main), value: fmt.bytes(top.memory), count: top.count })}{" "}
         <span className="text-muted">
           {busiest && busiest.cpu >= 5 ? t("processes.headlineCpu", { name: displayName(busiest.main), value: busiest.cpu.toFixed(0) }) : t("processes.headlineIdle")}
@@ -321,14 +321,14 @@ function Consumers() {
       </p>
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <h3 className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[0.6875rem] uppercase tracking-wider text-muted">
             <Cpu size={12} />
             {t("processes.topCpu")}
           </h3>
           {list(byCpu, "cpu")}
         </div>
         <div>
-          <h3 className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[0.6875rem] uppercase tracking-wider text-muted">
             <MemoryStick size={12} />
             {t("processes.topMemory")}
           </h3>
@@ -353,7 +353,7 @@ function Toolbar() {
   }, [listing]);
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="flex rounded-lg border border-line p-0.5 text-[12px]" role="tablist">
+      <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]" role="tablist">
         {(["tree", "list"] as const).map((id) => (
           <button
             key={id}
@@ -375,13 +375,13 @@ function Toolbar() {
             key={id}
             onClick={() => useProcesses.setState({ filter: id })}
             data-testid={`proc-filter-${id}`}
-            className={`h-8 rounded-full px-3 text-[12px] transition-colors ${filter === id ? "bg-accent/15 text-accent" : "text-muted hover:bg-raised hover:text-fg"}`}
+            className={`h-8 rounded-full px-3 text-[0.75rem] transition-colors ${filter === id ? "bg-accent/15 text-accent" : "text-muted hover:bg-raised hover:text-fg"}`}
           >
             {t(`processes.filter.${id}`)} <span className="num opacity-70">{counts[id]}</span>
           </button>
         ))}
       </div>
-      <label className="ml-auto flex h-8 w-64 items-center gap-2 rounded-lg border border-line bg-bg/40 px-2.5 text-[12px] focus-within:border-accent/60">
+      <label className="ml-auto flex h-8 w-64 items-center gap-2 rounded-lg border border-line bg-bg/40 px-2.5 text-[0.75rem] focus-within:border-accent/60">
         <Search size={14} className="text-muted" />
         <input
           value={query}
@@ -488,7 +488,7 @@ function Drawer({ proc }: { proc: Proc }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 460, opacity: 0 }}
       transition={{ type: "spring", stiffness: 340, damping: 34 }}
-      className="fixed bottom-3 right-3 top-[48px] z-30 flex w-[430px] flex-col overflow-hidden rounded-2xl border border-line bg-surface/[0.97] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+      className="fixed bottom-3 right-3 top-[48px] z-30 flex w-[26.875rem] flex-col overflow-hidden rounded-2xl border border-line bg-surface/[0.97] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl"
       data-testid="proc-drawer"
     >
       <header className="flex items-start gap-3.5 border-b border-line px-5 pb-4 pt-5">
@@ -496,12 +496,12 @@ function Drawer({ proc }: { proc: Proc }) {
           <ProcIcon proc={proc} size={32} layoutId={`proc-icon-${key}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-display text-[18px] font-semibold leading-tight">{displayName(proc)}</h2>
-          <p className="truncate text-[12px] text-muted">{proc.window ?? proc.name}</p>
+          <h2 className="truncate font-display text-[1.125rem] font-semibold leading-tight">{displayName(proc)}</h2>
+          <p className="truncate text-[0.75rem] text-muted">{proc.window ?? proc.name}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className={`rounded-full px-2 py-0.5 text-[11px] ${LEVEL_TONE[proc.level]}`}>{t(`processes.level.${proc.level}`)}</span>
-            <span className="rounded-full bg-raised px-2 py-0.5 text-[11px] text-muted">{t(`processes.kind.${proc.kind}`)}</span>
-            {proc.impostor && <span className="rounded-full bg-risk/10 px-2 py-0.5 text-[11px] text-risk">{t("processes.impostor")}</span>}
+            <span className={`rounded-full px-2 py-0.5 text-[0.6875rem] ${LEVEL_TONE[proc.level]}`}>{t(`processes.level.${proc.level}`)}</span>
+            <span className="rounded-full bg-raised px-2 py-0.5 text-[0.6875rem] text-muted">{t(`processes.kind.${proc.kind}`)}</span>
+            {proc.impostor && <span className="rounded-full bg-risk/10 px-2 py-0.5 text-[0.6875rem] text-risk">{t("processes.impostor")}</span>}
           </div>
         </div>
         <button onClick={() => useProcesses.setState({ selected: null })} className="rounded-lg p-1.5 text-muted hover:bg-raised hover:text-fg" aria-label={t("processes.close")}>
@@ -509,7 +509,7 @@ function Drawer({ proc }: { proc: Proc }) {
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4 text-[13px]">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4 text-[0.8125rem]">
         <div className="grid grid-cols-3 gap-2">
           {(
             [
@@ -519,15 +519,15 @@ function Drawer({ proc }: { proc: Proc }) {
             ] as const
           ).map(([id, value, data, max, color]) => (
             <div key={id} className="rounded-xl bg-raised/50 px-3 pb-1.5 pt-2.5">
-              <div className="text-[11px] text-muted">{t(`processes.col.${id}`)}</div>
-              <div className="num text-[15px]">{value}</div>
+              <div className="text-[0.6875rem] text-muted">{t(`processes.col.${id}`)}</div>
+              <div className="num text-[0.9375rem]">{value}</div>
               {data ? <Sparkline data={[...data]} color={color} max={max} height={24} points={40} /> : <div className="h-6" />}
             </div>
           ))}
         </div>
 
         {proc.impostor && (
-          <div className="flex gap-2.5 rounded-xl border border-risk/25 bg-risk/[0.06] px-3.5 py-3 text-[12px] leading-relaxed">
+          <div className="flex gap-2.5 rounded-xl border border-risk/25 bg-risk/[0.06] px-3.5 py-3 text-[0.75rem] leading-relaxed">
             <ShieldAlert size={16} className="mt-0.5 shrink-0 text-risk" />
             <span>
               {t("processes.impostorText")}{" "}
@@ -539,20 +539,20 @@ function Drawer({ proc }: { proc: Proc }) {
         )}
 
         <section>
-          <h3 className="mb-1.5 text-[11px] uppercase tracking-wider text-muted">{t("processes.what")}</h3>
+          <h3 className="mb-1.5 text-[0.6875rem] uppercase tracking-wider text-muted">{t("processes.what")}</h3>
           <p className="leading-relaxed" data-testid="proc-what">{what}</p>
         </section>
         <section>
-          <h3 className="mb-1.5 text-[11px] uppercase tracking-wider text-muted">{t("processes.ifEnded")}</h3>
+          <h3 className="mb-1.5 text-[0.6875rem] uppercase tracking-wider text-muted">{t("processes.ifEnded")}</h3>
           <p className={`leading-relaxed ${proc.level === "critical" ? "text-risk" : proc.level === "windows" ? "text-warn" : "text-muted"}`}>{end}</p>
         </section>
 
-        <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 text-[12px]">
+        <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 text-[0.75rem]">
           <Fact label={t("processes.fact.publisher")}>{proc.company ?? "—"}</Fact>
           <Fact label={t("processes.fact.signature")}>{signature}</Fact>
           <Fact label={t("processes.fact.file")}>
             {proc.exe ? (
-              <span className="num select-text text-[11px]">{proc.exe}</span>
+              <span className="num select-text text-[0.6875rem]">{proc.exe}</span>
             ) : (
               <span className="text-muted">{t("processes.fact.noPath")}</span>
             )}
@@ -577,12 +577,12 @@ function Drawer({ proc }: { proc: Proc }) {
             <Fact label={t("processes.fact.children")}>
               <div className="flex flex-wrap gap-1">
                 {children.slice(0, 8).map((c) => (
-                  <button key={keyOf(c)} className="flex items-center gap-1 rounded-md bg-raised px-1.5 py-0.5 text-[11px] hover:bg-line" onClick={() => useProcesses.setState({ selected: keyOf(c) })}>
+                  <button key={keyOf(c)} className="flex items-center gap-1 rounded-md bg-raised px-1.5 py-0.5 text-[0.6875rem] hover:bg-line" onClick={() => useProcesses.setState({ selected: keyOf(c) })}>
                     <ProcIcon proc={c} size={12} />
                     {displayName(c)}
                   </button>
                 ))}
-                {children.length > 8 && <span className="px-1 text-[11px] text-muted">{t("processes.more", { count: children.length - 8 })}</span>}
+                {children.length > 8 && <span className="px-1 text-[0.6875rem] text-muted">{t("processes.more", { count: children.length - 8 })}</span>}
               </div>
             </Fact>
           )}
@@ -601,7 +601,7 @@ function Drawer({ proc }: { proc: Proc }) {
             ) : established.length + listen.length === 0 ? (
               <span className="text-muted">{t("processes.fact.noNetwork")}</span>
             ) : (
-              <ul className="num space-y-0.5 text-[11px]">
+              <ul className="num space-y-0.5 text-[0.6875rem]">
                 {established.slice(0, 8).map((c, i) => (
                   <li key={`e${i}`} className="flex gap-1.5">
                     <span className="text-safe">↔</span>
@@ -620,7 +620,7 @@ function Drawer({ proc }: { proc: Proc }) {
           {detail?.cmd && (
             <Fact label={t("processes.fact.cmd")}>
               <button className="text-left" onClick={() => setShowCmd(!showCmd)}>
-                <span className={`num select-text text-[11px] ${showCmd ? "" : "line-clamp-2"}`}>{detail.cmd}</span>
+                <span className={`num select-text text-[0.6875rem] ${showCmd ? "" : "line-clamp-2"}`}>{detail.cmd}</span>
               </button>
             </Fact>
           )}
@@ -628,7 +628,7 @@ function Drawer({ proc }: { proc: Proc }) {
       </div>
 
       <footer className="space-y-2 border-t border-line px-5 py-3.5">
-        {result && <p className={`text-[12px] ${result.ok ? "text-safe" : "text-risk"}`}>{resultText(result.message, t)}</p>}
+        {result && <p className={`text-[0.75rem] ${result.ok ? "text-safe" : "text-risk"}`}>{resultText(result.message, t)}</p>}
         <div className="flex flex-wrap gap-2">
           <Button variant="danger" icon={<Square size={13} />} disabled={!canEnd || ending !== null} onClick={() => setConfirm("one")} data-testid="proc-end">
             {t("processes.end")}
@@ -647,13 +647,13 @@ function Drawer({ proc }: { proc: Proc }) {
             {t("processes.searchWeb")}
           </Button>
         </div>
-        {!canEnd && <p className="text-[11px] text-muted">{t(`processes.cannotEnd.${proc.level}`)}</p>}
+        {!canEnd && <p className="text-[0.6875rem] text-muted">{t(`processes.cannotEnd.${proc.level}`)}</p>}
       </footer>
 
       <Modal open={confirm !== null} onClose={() => setConfirm(null)}>
-        <h2 className="font-display text-[18px] font-semibold">{t(confirm === "tree" ? "processes.confirmTreeTitle" : "processes.confirmTitle", { name: displayName(proc), count: descendants + 1 })}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{end}</p>
-        {confirm === "tree" && <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("processes.confirmTreeText", { count: descendants })}</p>}
+        <h2 className="font-display text-[1.125rem] font-semibold">{t(confirm === "tree" ? "processes.confirmTreeTitle" : "processes.confirmTitle", { name: displayName(proc), count: descendants + 1 })}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{end}</p>
+        {confirm === "tree" && <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("processes.confirmTreeText", { count: descendants })}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <Button autoFocus onClick={() => setConfirm(null)}>
             {t("cleanup.cancel")}
@@ -694,8 +694,8 @@ export function Processes() {
   return (
     <div className="flex flex-col gap-4 pb-2">
       <Consumers />
-      {listing && !listing.elevated && <p className="px-1 text-[12px] text-muted">{t("processes.adminHint")}</p>}
-      {error && <p className="px-1 text-[12px] text-risk">{error}</p>}
+      {listing && !listing.elevated && <p className="px-1 text-[0.75rem] text-muted">{t("processes.adminHint")}</p>}
+      {error && <p className="px-1 text-[0.75rem] text-risk">{error}</p>}
       <Toolbar />
       <Table />
       <AnimatePresence>{proc && <Drawer key="drawer" proc={proc} />}</AnimatePresence>

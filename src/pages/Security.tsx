@@ -58,15 +58,15 @@ const OUTCOME_TONE: Record<HardeningTest["outcome"], string> = { pass: "text-saf
 
 export function SeverityBadge({ severity }: { severity: Severity }) {
   const { t } = useTranslation();
-  return <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] ${SEVERITY_TONE[severity]}`}>{t(`security.severity.${severity}`)}</span>;
+  return <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] ${SEVERITY_TONE[severity]}`}>{t(`security.severity.${severity}`)}</span>;
 }
 
 function ReputationBadge({ value }: { value: Reputation | "pending" }) {
   const { t } = useTranslation();
-  if (value === "pending") return <span className="text-[11px] text-muted">{t("security.rep.pending")}</span>;
+  if (value === "pending") return <span className="text-[0.6875rem] text-muted">{t("security.rep.pending")}</span>;
   const tone = value.verdict === "malicious" ? "bg-risk/10 text-risk" : value.verdict === "known" ? "bg-safe/10 text-safe" : "bg-raised text-muted";
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] ${tone}`} data-testid="rep-badge">
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-[0.6875rem] ${tone}`} data-testid="rep-badge">
       {t(`security.rep.${value.verdict}`, { pct: value.detectionPct ?? 0, source: value.maliciousSource ?? "" })}
     </span>
   );
@@ -82,9 +82,9 @@ function ActionButton({ finding, action, label, icon }: { finding: Finding; acti
         {label}
       </Button>
       <Modal open={confirming} onClose={() => setConfirming(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{label}?</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(`security.confirm.${action}`, { name: finding.title })}</p>
-        <p className="num mt-3 break-all rounded-lg border border-line bg-bg/50 px-3 py-2 text-[11px]">{finding.file ?? finding.key ?? finding.detail}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{label}?</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t(`security.confirm.${action}`, { name: finding.title })}</p>
+        <p className="num mt-3 break-all rounded-lg border border-line bg-bg/50 px-3 py-2 text-[0.6875rem]">{finding.file ?? finding.key ?? finding.detail}</p>
         <div className="mt-6 flex justify-end gap-2">
           <Button autoFocus onClick={() => setConfirming(false)}>
             {t("cleanup.cancel")}
@@ -125,12 +125,12 @@ function FindingRow({ finding }: { finding: Finding }) {
       >
         <SeverityBadge severity={finding.severity} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-medium">{finding.title}</div>
-          <div className="truncate text-[12px] text-muted">{t(`security.kind.${finding.kind}.title`)}</div>
+          <div className="truncate text-[0.875rem] font-medium">{finding.title}</div>
+          <div className="truncate text-[0.75rem] text-muted">{t(`security.kind.${finding.kind}.title`)}</div>
         </div>
         {rep && <ReputationBadge value={rep} />}
         {result && (
-          <span className={`text-[11px] ${result.done ? "text-safe" : "text-risk"}`}>
+          <span className={`text-[0.6875rem] ${result.done ? "text-safe" : "text-risk"}`}>
             {result.done ? t(`security.done.${result.action}`) : t(`security.fail.${result.reason}`, { defaultValue: t("security.fail.failed") })}
           </span>
         )}
@@ -141,18 +141,18 @@ function FindingRow({ finding }: { finding: Finding }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-            <div className="space-y-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[12px]">
+            <div className="space-y-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[0.75rem]">
               <p className="max-w-[85ch] leading-relaxed">{t(`security.kind.${finding.kind}.why`)}</p>
               {reason && <p className="max-w-[85ch] leading-relaxed text-muted">{reason}</p>}
               <dl className="grid grid-cols-[120px_1fr] gap-x-4 gap-y-1.5">
                 <dt className="text-muted">{t("security.evidence")}</dt>
-                <dd className="num select-text break-all text-[11px]">{finding.detail || "—"}</dd>
+                <dd className="num select-text break-all text-[0.6875rem]">{finding.detail || "—"}</dd>
                 <dt className="text-muted">{t("security.where")}</dt>
-                <dd className="num select-text break-all text-[11px]">{finding.location}</dd>
+                <dd className="num select-text break-all text-[0.6875rem]">{finding.location}</dd>
               </dl>
               <p className="text-muted">{t(`security.kind.${finding.kind}.todo`)}</p>
               {rep && rep !== "pending" && rep.hashes && (
-                <p className="num break-all text-[11px] text-muted">SHA-256 {rep.hashes.sha256}</p>
+                <p className="num break-all text-[0.6875rem] text-muted">SHA-256 {rep.hashes.sha256}</p>
               )}
               <div className="flex flex-wrap gap-2">
                 {finding.file && (
@@ -190,13 +190,13 @@ function AreaSection({ area, findings }: { area: Area; findings: Finding[] }) {
   const info = findings.filter((f) => f.severity === "info");
   return (
     <section data-testid={`area-${area}`}>
-      <h2 className="mb-2 flex items-baseline justify-between px-1 text-[11px] uppercase tracking-wider text-muted">
+      <h2 className="mb-2 flex items-baseline justify-between px-1 text-[0.6875rem] uppercase tracking-wider text-muted">
         {t(`security.area.${area}`)}
         <span className="normal-case tracking-normal">{important.length ? t("security.count", { count: important.length }) : t("security.clean")}</span>
       </h2>
       <div className="overflow-hidden rounded-card border border-line bg-surface">
         {important.length === 0 && (
-          <div className="flex items-start gap-3 px-5 py-3.5 text-[12px] text-muted">
+          <div className="flex items-start gap-3 px-5 py-3.5 text-[0.75rem] text-muted">
             <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-safe" />
             <span className="leading-relaxed">{t(`security.checked.${area}`)}</span>
           </div>
@@ -206,7 +206,7 @@ function AreaSection({ area, findings }: { area: Area; findings: Finding[] }) {
         ))}
         {info.length > 0 && (
           <>
-            <button className="flex w-full items-center gap-2 border-t border-line/60 px-5 py-2.5 text-left text-[12px] text-muted hover:text-fg" onClick={() => setShowInfo(!showInfo)}>
+            <button className="flex w-full items-center gap-2 border-t border-line/60 px-5 py-2.5 text-left text-[0.75rem] text-muted hover:text-fg" onClick={() => setShowInfo(!showInfo)}>
               <Info size={14} />
               {t(showInfo ? "security.hideInfo" : "security.showInfo", { count: info.length })}
             </button>
@@ -227,8 +227,8 @@ function ReputationCard() {
     <div className="flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-3.5">
       <Globe size={18} className="shrink-0 text-accent" />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium">{t("security.repTitle")}</div>
-        <p className="text-[12px] leading-relaxed text-muted">{t("security.repText")}</p>
+        <div className="text-[0.8125rem] font-medium">{t("security.repTitle")}</div>
+        <p className="text-[0.75rem] leading-relaxed text-muted">{t("security.repText")}</p>
       </div>
       {reputationOn && files.length > 0 && (
         <Button onClick={() => checkReputation(files)} data-testid="check-rep-all">
@@ -237,8 +237,8 @@ function ReputationCard() {
       )}
       <Switch on={reputationOn} onChange={() => (reputationOn ? setReputationOn(false) : setConfirming(true))} label={t("security.repTitle")} />
       <Modal open={confirming} onClose={() => setConfirming(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("security.repConfirmTitle")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("security.repConfirmText")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("security.repConfirmTitle")}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("security.repConfirmText")}</p>
         <div className="mt-6 flex justify-end gap-2">
           <Button autoFocus onClick={() => setConfirming(false)}>
             {t("cleanup.cancel")}
@@ -285,11 +285,11 @@ function TestList({ tests, group }: { tests: HardeningTest[]; group: "test" | "b
             <button className="flex w-full items-start gap-3.5 px-5 py-3 text-left transition-colors hover:bg-raised/40" onClick={() => setOpen(isOpen ? null : test.id)} aria-expanded={isOpen}>
               <Icon size={18} className={`mt-0.5 shrink-0 ${OUTCOME_TONE[test.outcome]}`} />
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 text-[14px] font-medium">
+                <div className="flex flex-wrap items-center gap-2 text-[0.875rem] font-medium">
                   {t(`${base}.${test.id}.name`)}
-                  {detail && <span className="truncate text-[12px] font-normal text-muted">{detail}</span>}
+                  {detail && <span className="truncate text-[0.75rem] font-normal text-muted">{detail}</span>}
                 </div>
-                <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`${base}.${test.id}.${test.outcome}`, { defaultValue: t(`security.outcome.${test.outcome}`) })}</p>
+                <p className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`${base}.${test.id}.${test.outcome}`, { defaultValue: t(`security.outcome.${test.outcome}`) })}</p>
               </div>
               <motion.span animate={{ rotate: isOpen ? 180 : 0 }} className="mt-1 shrink-0 text-muted">
                 <ChevronDown size={16} />
@@ -298,13 +298,13 @@ function TestList({ tests, group }: { tests: HardeningTest[]; group: "test" | "b
             <AnimatePresence initial={false}>
               {isOpen && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="grid gap-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[12px] leading-relaxed md:grid-cols-2">
+                  <div className="grid gap-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[0.75rem] leading-relaxed md:grid-cols-2">
                     <div>
-                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{t("security.whyTitle")}</div>
+                      <div className="mb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">{t("security.whyTitle")}</div>
                       {t(`${base}.${test.id}.why`)}
                     </div>
                     <div>
-                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{t("security.howTitle")}</div>
+                      <div className="mb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">{t("security.howTitle")}</div>
                       {t(`${base}.${test.id}.how`)}
                       {test.fix && test.outcome !== "pass" && (
                         <div className="mt-3">
@@ -334,14 +334,14 @@ function ExtensionRow({ e }: { e: Extension }) {
   return (
     <li className={`border-b border-line last:border-b-0 ${e.enabled === false ? "opacity-60" : ""}`} data-testid="extension">
       <button className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-raised/40" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] ${RISK_TONE[e.risk]}`}>{t(`security.ext.risk.${e.risk}`)}</span>
+        <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] ${RISK_TONE[e.risk]}`}>{t(`security.ext.risk.${e.risk}`)}</span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 truncate text-[14px] font-medium">
+          <div className="flex items-center gap-2 truncate text-[0.875rem] font-medium">
             {e.name}
-            {e.known && <span className="rounded bg-safe/10 px-1.5 py-0.5 text-[10px] font-normal text-safe">{t("security.ext.known")}</span>}
-            {e.enabled === false && <span className="rounded bg-raised px-1.5 py-0.5 text-[10px] font-normal text-muted">{t("security.ext.off")}</span>}
+            {e.known && <span className="rounded bg-safe/10 px-1.5 py-0.5 text-[0.625rem] font-normal text-safe">{t("security.ext.known")}</span>}
+            {e.enabled === false && <span className="rounded bg-raised px-1.5 py-0.5 text-[0.625rem] font-normal text-muted">{t("security.ext.off")}</span>}
           </div>
-          <div className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-muted">
+          <div className="mt-0.5 flex flex-wrap gap-1 text-[0.6875rem] text-muted">
             <span>
               {BROWSER_NAMES[e.browser]} · {e.profile}
             </span>
@@ -361,7 +361,7 @@ function ExtensionRow({ e }: { e: Extension }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="space-y-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[12px] leading-relaxed">
+            <div className="space-y-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[0.75rem] leading-relaxed">
               <p>{t(`security.ext.riskText.${e.risk}`)}</p>
               <ul className="grid gap-1.5">
                 {e.allSites && (
@@ -397,7 +397,7 @@ function ExtensionRow({ e }: { e: Extension }) {
                 >
                   {t("security.ext.copy")}
                 </Button>
-                <span className="num select-text text-[11px] text-muted">{page}</span>
+                <span className="num select-text text-[0.6875rem] text-muted">{page}</span>
                 {e.path && (
                   <Button icon={<FolderOpen size={14} />} onClick={() => revealItemInDir(e.path).catch(console.error)}>
                     {t("disk.reveal")}
@@ -424,14 +424,14 @@ function BrowserSection({ list }: { list: Extension[] }) {
           <ExtensionRow key={`${e.browser}-${e.profile}-${e.id}`} e={e} />
         ))}
         {!shown.length && (
-          <li className="flex items-center gap-3 px-5 py-3.5 text-[12px] text-muted">
+          <li className="flex items-center gap-3 px-5 py-3.5 text-[0.75rem] text-muted">
             <CheckCircle2 size={16} className="text-safe" />
             {t("security.ext.allLow")}
           </li>
         )}
       </ul>
       {list.length > shown.length || all ? (
-        <button className="px-1 text-[12px] text-accent hover:underline" onClick={() => setAll(!all)}>
+        <button className="px-1 text-[0.75rem] text-accent hover:underline" onClick={() => setAll(!all)}>
           {all ? t("security.ext.hideLow") : t("security.ext.showAll", { count: list.length })}
         </button>
       ) : null}
@@ -441,7 +441,7 @@ function BrowserSection({ list }: { list: Extension[] }) {
 
 function Empty({ text }: { text: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-card border border-line bg-surface px-5 py-3.5 text-[12px] text-muted">
+    <div className="flex items-start gap-3 rounded-card border border-line bg-surface px-5 py-3.5 text-[0.75rem] text-muted">
       <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-safe" />
       <span className="leading-relaxed">{text}</span>
     </div>
@@ -454,7 +454,7 @@ function NetworkSection({ open, publicNets }: { open: OpenPort[]; publicNets: st
   return (
     <div className="space-y-3">
       {publicNets.length > 0 && (
-        <div className="flex items-start gap-3 rounded-card border border-warn/30 bg-warn/[0.06] px-5 py-3 text-[12px] leading-relaxed">
+        <div className="flex items-start gap-3 rounded-card border border-warn/30 bg-warn/[0.06] px-5 py-3 text-[0.75rem] leading-relaxed">
           <Wifi size={16} className="mt-0.5 shrink-0 text-warn" />
           <span>{t("security.net.public", { names: publicNets.join(", ") })}</span>
         </div>
@@ -466,14 +466,14 @@ function NetworkSection({ open, publicNets }: { open: OpenPort[]; publicNets: st
           {open.map((o) => (
             <li key={o.port} className="border-b border-line last:border-b-0" data-testid="open-port">
               <button className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-raised/40" onClick={() => setShow(show === o.port ? null : o.port)}>
-                <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] ${RISK_TONE[o.risk]}`}>{t(`security.net.risk.${o.risk}`)}</span>
-                <span className="num w-20 shrink-0 truncate text-[13px] font-medium" title={o.ports.join(", ")}>
+                <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[0.6875rem] ${RISK_TONE[o.risk]}`}>{t(`security.net.risk.${o.risk}`)}</span>
+                <span className="num w-20 shrink-0 truncate text-[0.8125rem] font-medium" title={o.ports.join(", ")}>
                   :{o.port}
-                  {o.ports.length > 1 && <span className="text-[11px] font-normal text-muted"> +{o.ports.length - 1}</span>}
+                  {o.ports.length > 1 && <span className="text-[0.6875rem] font-normal text-muted"> +{o.ports.length - 1}</span>}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px]">{o.service ? t(`security.net.svc.${o.service}.name`) : o.name}</div>
-                  <div className="truncate text-[11px] text-muted">
+                  <div className="truncate text-[0.8125rem]">{o.service ? t(`security.net.svc.${o.service}.name`) : o.name}</div>
+                  <div className="truncate text-[0.6875rem] text-muted">
                     {o.name}
                     {o.windows ? ` · ${t("security.net.windows")}` : ""}
                   </div>
@@ -481,17 +481,17 @@ function NetworkSection({ open, publicNets }: { open: OpenPort[]; publicNets: st
                 <ChevronDown size={16} className={`shrink-0 text-muted transition-transform ${show === o.port ? "rotate-180" : ""}`} />
               </button>
               {show === o.port && (
-                <div className="space-y-2 border-t border-line/60 bg-bg/40 px-5 py-3 text-[12px] leading-relaxed">
+                <div className="space-y-2 border-t border-line/60 bg-bg/40 px-5 py-3 text-[0.75rem] leading-relaxed">
                   <p>{o.service ? t(`security.net.svc.${o.service}.text`) : o.windows ? t("security.net.windowsText") : t("security.net.unknownText", { name: o.name })}</p>
-                  {o.ports.length > 1 && <p className="num text-[11px] text-muted">{t("security.net.ports", { list: o.ports.join(", ") })}</p>}
-                  {o.exe && <p className="num break-all text-[11px] text-muted">{o.exe}</p>}
+                  {o.ports.length > 1 && <p className="num text-[0.6875rem] text-muted">{t("security.net.ports", { list: o.ports.join(", ") })}</p>}
+                  {o.exe && <p className="num break-all text-[0.6875rem] text-muted">{o.exe}</p>}
                 </div>
               )}
             </li>
           ))}
         </ul>
       )}
-      <p className="px-1 text-[11px] leading-relaxed text-muted">{t("security.net.hint")}</p>
+      <p className="px-1 text-[0.6875rem] leading-relaxed text-muted">{t("security.net.hint")}</p>
     </div>
   );
 }
@@ -515,11 +515,11 @@ function PasswordsSection() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
       <div className="rounded-card border border-line bg-surface p-5">
-        <h3 className="flex items-center gap-2 text-[14px] font-medium">
+        <h3 className="flex items-center gap-2 text-[0.875rem] font-medium">
           <KeyRound size={16} className="text-accent" />
           {t("security.pw.title")}
         </h3>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("security.pw.lead")}</p>
+        <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("security.pw.lead")}</p>
         <form
           className="mt-4 flex gap-2"
           onSubmit={(e) => {
@@ -534,7 +534,7 @@ function PasswordsSection() {
               onChange={(e) => setPw(e.target.value)}
               autoComplete="off"
               placeholder={t("security.pw.placeholder")}
-              className="h-10 w-full rounded-lg border border-line bg-bg px-3 pr-9 text-[13px] outline-none focus:border-accent"
+              className="h-10 w-full rounded-lg border border-line bg-bg px-3 pr-9 text-[0.8125rem] outline-none focus:border-accent"
               data-testid="pw-input"
             />
             <button type="button" onClick={() => setShow(!show)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-fg" aria-label={t("router.showPassword")}>
@@ -546,7 +546,7 @@ function PasswordsSection() {
           </Button>
         </form>
         <button
-          className="mt-3 flex items-center gap-1.5 text-[12px] text-accent hover:underline disabled:opacity-50"
+          className="mt-3 flex items-center gap-1.5 text-[0.75rem] text-accent hover:underline disabled:opacity-50"
           disabled={busy}
           onClick={async () => {
             try {
@@ -562,11 +562,11 @@ function PasswordsSection() {
         </button>
         {result && (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-xl border border-line bg-bg/40 p-4" data-testid="pw-result">
-            <div className="text-[11px] text-muted">{result.label}</div>
-            <div className={`mt-1 text-[15px] font-semibold ${result.leaked ? "text-risk" : result.leaked === 0 ? "text-safe" : "text-muted"}`}>
+            <div className="text-[0.6875rem] text-muted">{result.label}</div>
+            <div className={`mt-1 text-[0.9375rem] font-semibold ${result.leaked ? "text-risk" : result.leaked === 0 ? "text-safe" : "text-muted"}`}>
               {result.leaked === null ? t("security.pw.offline") : result.leaked ? t("security.pw.leaked", { count: result.leaked }) : t("security.pw.clean")}
             </div>
-            <div className="mt-3 flex items-center gap-2 text-[12px]">
+            <div className="mt-3 flex items-center gap-2 text-[0.75rem]">
               <span className="text-muted">{t("security.pw.strength")}</span>
               <div className="flex flex-1 gap-1">
                 {[0, 1, 2, 3].map((k) => (
@@ -576,7 +576,7 @@ function PasswordsSection() {
               <span>{t(`security.pw.level.${result.strength}`)}</span>
             </div>
             {result.weak.length > 0 && (
-              <ul className="mt-2 list-disc pl-5 text-[12px] text-muted">
+              <ul className="mt-2 list-disc pl-5 text-[0.75rem] text-muted">
                 {result.weak.map((w) => (
                   <li key={w}>{t(`security.pw.weak.${w}`)}</li>
                 ))}
@@ -585,16 +585,16 @@ function PasswordsSection() {
           </motion.div>
         )}
       </div>
-      <div className="grid content-start gap-3 text-[12px] leading-relaxed">
+      <div className="grid content-start gap-3 text-[0.75rem] leading-relaxed">
         <div className="rounded-card border border-line bg-surface p-4">
-          <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium">
+          <div className="mb-1 flex items-center gap-1.5 text-[0.8125rem] font-medium">
             <ShieldCheck size={14} className="text-safe" />
             {t("security.pw.privacyTitle")}
           </div>
           <p className="text-muted">{t("security.pw.privacy")}</p>
         </div>
         <div className="rounded-card border border-line bg-surface p-4">
-          <div className="mb-1 text-[13px] font-medium">{t("security.pw.tipsTitle")}</div>
+          <div className="mb-1 text-[0.8125rem] font-medium">{t("security.pw.tipsTitle")}</div>
           <p className="text-muted">{t("security.pw.tips")}</p>
         </div>
       </div>
@@ -644,17 +644,17 @@ function Shield() {
       <div className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full blur-3xl" style={{ background: color, opacity: 0.12 }} />
       <div className="relative flex flex-wrap items-center gap-6">
         <Ring value={score} color={color} size={124} stroke={9}>
-          <span className="font-display text-[34px] font-semibold leading-none" data-testid="shield-score">
+          <span className="font-display text-[2.125rem] font-semibold leading-none" data-testid="shield-score">
             {score}
           </span>
-          <span className="text-[11px] text-muted">/ 100</span>
+          <span className="text-[0.6875rem] text-muted">/ 100</span>
         </Ring>
         <div className="min-w-0 flex-1">
-          <div className="text-[12px] uppercase tracking-wider text-muted">{t("security.shield.label")}</div>
-          <div className="font-display text-[24px] font-semibold" style={{ color }} data-testid="security-verdict">
+          <div className="text-[0.75rem] uppercase tracking-wider text-muted">{t("security.shield.label")}</div>
+          <div className="font-display text-[1.5rem] font-semibold" style={{ color }} data-testid="security-verdict">
             {t(key)}
           </div>
-          <p className="mt-1 max-w-[70ch] text-[12px] leading-relaxed text-muted">
+          <p className="mt-1 max-w-[70ch] text-[0.75rem] leading-relaxed text-muted">
             {t("security.summary", { high, medium: report.findings.filter((f) => f.severity === "medium").length, low: report.findings.filter((f) => f.severity === "low").length, seconds: (report.durationMs / 1000).toFixed(1) })}
           </p>
         </div>
@@ -691,13 +691,13 @@ function SectionCards({ active, onPick }: { active: Section; onPick: (s: Section
                 <Icon size={16} />
               </span>
               {score !== null && (
-                <span className="num text-[13px] font-semibold" style={{ color }}>
+                <span className="num text-[0.8125rem] font-semibold" style={{ color }}>
                   {score}
                 </span>
               )}
             </div>
-            <div className="text-[13px] font-medium leading-tight">{t(`security.section.${s}.title`)}</div>
-            <div className="text-[11px] leading-snug text-muted">
+            <div className="text-[0.8125rem] font-medium leading-tight">{t(`security.section.${s}.title`)}</div>
+            <div className="text-[0.6875rem] leading-snug text-muted">
               {s === "passwords" ? t("security.section.passwords.status") : issues ? t("security.section.issues", { count: issues }) : t("security.section.ok")}
             </div>
             {score !== null && (
@@ -748,8 +748,8 @@ export function Security() {
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
         <motion.div className="h-20 w-20 rounded-full border-[5px] border-raised border-t-accent" animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }} />
-        <div className="mt-6 font-display text-[18px] font-semibold">{t("security.scanning")}</div>
-        <p className="mt-1 text-[12px] text-muted">{t("security.scanningHint")}</p>
+        <div className="mt-6 font-display text-[1.125rem] font-semibold">{t("security.scanning")}</div>
+        <p className="mt-1 text-[0.75rem] text-muted">{t("security.scanningHint")}</p>
       </div>
     );
   }
@@ -765,11 +765,11 @@ export function Security() {
           { icon: HardDriveDownload, title: t("hero.security.f5"), text: t("hero.security.f5t") },
         ]}
         action={
-          <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={scan} data-testid="security-scan">
+          <Button variant="primary" className="!h-11 !px-8 text-[0.875rem]" onClick={scan} data-testid="security-scan">
             {t("security.scan")}
           </Button>
         }
-        error={error && <p className="text-[12px] text-risk">{t("cleanup.error.other", { message: error })}</p>}
+        error={error && <p className="text-[0.75rem] text-risk">{t("cleanup.error.other", { message: error })}</p>}
       />
     );
   }
@@ -778,7 +778,7 @@ export function Security() {
   const Icon = SECTION_ICON[shown ?? active];
   const scores = sectionScores(report);
   const toggle = (
-    <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+    <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]">
       {(["3d", "cards"] as const).map((v) => (
         <button key={v} onClick={() => setView(v)} className={`rounded-md px-2.5 py-1 ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`} data-testid={`security-view-${v}`}>
           {t(`security.view.${v}`)}
@@ -800,12 +800,13 @@ export function Security() {
           style={{ "--color-fg": "#e6e9ee", "--color-muted": "#8b95a5", "--color-line": "#2a313b", "--color-surface": "#171b21", "--color-raised": "#1f242c", "--color-bg": "#0f1216", "--color-accent": "#4cc2ff" } as CSSProperties}
         >
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgb(76_194_255/0.12),transparent_60%)]" />
-          <div className="absolute left-5 top-4 z-10 max-w-[280px]">
-            <div className="text-[11px] uppercase tracking-wider text-muted">{t("security.shield.label")}</div>
-            <div className="font-display text-[22px] font-semibold" style={{ color: report.findings.some((f) => f.severity === "high") ? "var(--color-risk)" : toneOf(shieldScore(report)) }} data-testid="security-verdict">
+          {/* Beside the shield on a wide window; above it on a narrower one, so the two never overlap. */}
+          <div className="relative z-10 max-w-[22rem] px-5 pt-4 xl:absolute xl:left-5 xl:top-4 xl:max-w-[17.5rem] xl:p-0">
+            <div className="text-[0.6875rem] uppercase tracking-wider text-muted">{t("security.shield.label")}</div>
+            <div className="font-display text-[1.375rem] font-semibold" style={{ color: report.findings.some((f) => f.severity === "high") ? "var(--color-risk)" : toneOf(shieldScore(report)) }} data-testid="security-verdict">
               {t(report.findings.some((f) => f.severity === "high") ? "security.shield.bad" : shieldScore(report) >= 85 ? "security.shield.good" : shieldScore(report) >= 60 ? "security.shield.fair" : "security.shield.poor")}
             </div>
-            <p className="mt-1 text-[12px] leading-relaxed text-muted">{zoom ? t("security.view.back") : t("security.view.hint")}</p>
+            <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{zoom ? t("security.view.back") : t("security.view.hint")}</p>
           </div>
           <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
             {toggle}
@@ -814,11 +815,11 @@ export function Security() {
             </Button>
           </div>
           {zoom && (
-            <button onClick={() => setZoom(null)} className="absolute bottom-4 left-5 z-10 flex items-center gap-1.5 rounded-full border border-line bg-surface/90 px-3 py-1.5 text-[12px] backdrop-blur hover:bg-raised" data-testid="shield-back">
+            <button onClick={() => setZoom(null)} className="absolute bottom-4 left-5 z-10 flex items-center gap-1.5 rounded-full border border-line bg-surface/90 px-3 py-1.5 text-[0.75rem] backdrop-blur hover:bg-raised" data-testid="shield-back">
               ← {t("security.view.whole")}
             </button>
           )}
-          <div className="h-[470px]">
+          <div className="h-[29.375rem]">
             <Suspense fallback={<div className="flex h-full items-center justify-center text-muted">…</div>}>
               <Shield3D
                 parts={SECTIONS.map((s) => ({
@@ -842,7 +843,7 @@ export function Security() {
       {!report.elevated && (
         <div className="flex items-center gap-4 rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-2.5">
           <ShieldAlert size={16} className="shrink-0 text-warn" />
-          <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-muted">{declined ? t("cleanup.adminDeclined") : t("security.adminText")}</p>
+          <p className="min-w-0 flex-1 text-[0.75rem] leading-relaxed text-muted">{declined ? t("cleanup.adminDeclined") : t("security.adminText")}</p>
           <Button onClick={async () => setDeclined(!(await relaunchElevated()))}>{t("cleanup.adminAction")}</Button>
         </div>
       )}
@@ -856,8 +857,8 @@ export function Security() {
               <Icon size={18} />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-[18px] font-semibold">{t(`security.section.${shown}.title`)}</h2>
-              <p className="max-w-[90ch] text-[12px] leading-relaxed text-muted">{t(`security.section.${shown}.lead`)}</p>
+              <h2 className="font-display text-[1.125rem] font-semibold">{t(`security.section.${shown}.title`)}</h2>
+              <p className="max-w-[90ch] text-[0.75rem] leading-relaxed text-muted">{t(`security.section.${shown}.lead`)}</p>
             </div>
           </div>
 
@@ -875,7 +876,7 @@ export function Security() {
           {shown === "backup" && (
             <>
               <TestList tests={report.backup.tests} group="backup" />
-              <button className="flex items-center gap-1.5 px-1 text-[12px] text-accent hover:underline" onClick={() => go("journal")}>
+              <button className="flex items-center gap-1.5 px-1 text-[0.75rem] text-accent hover:underline" onClick={() => go("journal")}>
                 {t("security.backup.toRestore")} <ArrowRight size={13} className="nudge" />
               </button>
             </>
@@ -886,7 +887,7 @@ export function Security() {
         )}
       </AnimatePresence>
 
-      <p className="flex items-start gap-2 px-1 text-[11px] leading-relaxed text-muted/80">
+      <p className="flex items-start gap-2 px-1 text-[0.6875rem] leading-relaxed text-muted/80">
         <AlertTriangle size={13} className="mt-0.5 shrink-0" />
         {t("security.disclaimer")}
       </p>

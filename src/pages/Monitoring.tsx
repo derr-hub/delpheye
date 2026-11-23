@@ -83,7 +83,7 @@ function useNumber() {
 
 function Reading({ label, value, hint }: { label: string; value: string | null; hint?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 text-[13px]" title={hint}>
+    <div className="flex items-baseline justify-between gap-3 text-[0.8125rem]" title={hint}>
       <span className="text-muted">{label}</span>
       <span className="num">{value ?? "—"}</span>
     </div>
@@ -96,7 +96,7 @@ function AdminBanner({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-4 rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-3">
       <ShieldAlert size={18} className="shrink-0 text-warn" />
-      <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-muted">{declined ? t("cleanup.adminDeclined") : text}</p>
+      <p className="min-w-0 flex-1 text-[0.75rem] leading-relaxed text-muted">{declined ? t("cleanup.adminDeclined") : text}</p>
       <Button onClick={async () => setDeclined(!(await relaunchElevated()))}>{t("cleanup.adminAction")}</Button>
     </div>
   );
@@ -146,12 +146,12 @@ function CpuCard({ hw, frame }: { hw: Hardware; frame: Frame }) {
           <Icon size={19} />
         </motion.div>
         <div className="min-w-0">
-          <div className="font-display text-[18px] font-semibold leading-tight">{t(`monitor.throttle.${state}`)}</div>
-          <p className="mt-0.5 text-[11px] leading-snug text-muted">{hint}</p>
+          <div className="font-display text-[1.125rem] font-semibold leading-tight">{t(`monitor.throttle.${state}`)}</div>
+          <p className="mt-0.5 text-[0.6875rem] leading-snug text-muted">{hint}</p>
         </div>
       </div>
       <div className="mb-3">
-        <div className="mb-1 flex justify-between gap-2 text-[11px] text-muted">
+        <div className="mb-1 flex justify-between gap-2 text-[0.6875rem] text-muted">
           <span>{busy && th?.speed !== null && th?.speed !== undefined ? t("monitor.speed", { speed: th.speed }) : t("monitor.speedIdle")}</span>
           {th?.peakMhz ? <span className="num shrink-0">{t("monitor.best", { value: (th.peakMhz / 1000).toFixed(2) })}</span> : null}
         </div>
@@ -169,7 +169,7 @@ function CpuCard({ hw, frame }: { hw: Hardware; frame: Frame }) {
         <Reading label={t("monitor.load")} value={load !== null ? num(load, "Load") : null} />
       </div>
       {th && th.session.busy >= 30 && (
-        <p className="mt-3 text-[11px] leading-relaxed text-muted" data-testid="throttle-session">
+        <p className="mt-3 text-[0.6875rem] leading-relaxed text-muted" data-testid="throttle-session">
           {t("monitor.sessionLine", { busy: dur(th.session.busy), full: dur(th.session.full), power: dur(th.session.power), thermal: dur(th.session.thermal) })}
         </p>
       )}
@@ -190,9 +190,9 @@ function GpuCard({ hw }: { hw: Hardware }) {
   return (
     <Card title={hw.name} icon={<MonitorCog size={15} />}>
       <div className="mb-3 flex items-baseline gap-1">
-        <span className="font-display text-[30px] font-semibold leading-none">{temp ? Math.round(temp.value) : "—"}</span>
+        <span className="font-display text-[1.875rem] font-semibold leading-none">{temp ? Math.round(temp.value) : "—"}</span>
         <span className="text-muted">°C</span>
-        {hotspot && <span className="num ml-auto text-[12px] text-muted">{t("monitor.hotspot", { value: Math.round(hotspot.value) })}</span>}
+        {hotspot && <span className="num ml-auto text-[0.75rem] text-muted">{t("monitor.hotspot", { value: Math.round(hotspot.value) })}</span>}
       </div>
       <div className="space-y-1.5">
         <Reading label={t("monitor.load")} value={load ? num(load.value, "Load") : null} />
@@ -213,7 +213,7 @@ function MemoryCard({ hw }: { hw: Hardware }) {
   return (
     <Card title={t("monitor.memory")} icon={<MemoryStick size={15} />}>
       <div className="mb-3 flex items-baseline gap-1">
-        <span className="font-display text-[30px] font-semibold leading-none">{load ? Math.round(load.value) : "—"}</span>
+        <span className="font-display text-[1.875rem] font-semibold leading-none">{load ? Math.round(load.value) : "—"}</span>
         <span className="text-muted">%</span>
       </div>
       <div className="space-y-1.5">
@@ -235,7 +235,7 @@ function BatteryCard({ hw }: { hw: Hardware }) {
   return (
     <Card title={t("monitor.battery")} icon={<Battery size={15} />}>
       <div className="mb-3 flex items-baseline gap-1">
-        <span className="font-display text-[30px] font-semibold leading-none">{charge ? Math.round(charge.value) : "—"}</span>
+        <span className="font-display text-[1.875rem] font-semibold leading-none">{charge ? Math.round(charge.value) : "—"}</span>
         <span className="text-muted">%</span>
       </div>
       <div className="space-y-1.5">
@@ -256,7 +256,7 @@ function FansCard({ frame }: { frame: Frame }) {
   return (
     <Card title={t("monitor.fans")} icon={<Fan size={15} />}>
       {fans.length === 0 ? (
-        <p className="text-[12px] leading-relaxed text-muted">{t(frame.elevated ? "monitor.noFansElevated" : "monitor.noFans")}</p>
+        <p className="text-[0.75rem] leading-relaxed text-muted">{t(frame.elevated ? "monitor.noFansElevated" : "monitor.noFans")}</p>
       ) : (
         <ul className="space-y-1.5">
           {fans.map(({ hw, s }) => (
@@ -282,13 +282,13 @@ function DisksCard({ frame }: { frame: Frame }) {
           const storage = frame.hardware.find((h) => h.type === "Storage" && (h.name.includes(disk.name) || disk.name.includes(h.name)));
           const temp = find(storage, "Temperature", "Temperature");
           return (
-            <li key={disk.name} className="text-[13px]">
+            <li key={disk.name} className="text-[0.8125rem]">
               <div className="flex items-center gap-2">
                 <Icon size={14} className={LEVEL_TONE[level]} />
                 <span className="min-w-0 flex-1 truncate">{disk.name}</span>
-                <span className="num text-[12px] text-muted">{fmt.bytes(disk.size)}</span>
+                <span className="num text-[0.75rem] text-muted">{fmt.bytes(disk.size)}</span>
               </div>
-              <div className="pl-[22px] text-[12px] text-muted">
+              <div className="pl-[22px] text-[0.75rem] text-muted">
                 {t(`monitor.diskHealth.${disk.health}`)}
                 {temp && ` · ${Math.round(temp.value)} °C`}
               </div>
@@ -332,12 +332,12 @@ function AllSensors({ frame }: { frame: Frame }) {
         .filter((hw) => hw.sensors.length > 0)
         .map((hw) => (
           <div key={hw.id} className="border-b border-line last:border-b-0">
-            <button className="flex w-full items-center gap-3 px-5 py-3 text-left text-[13px] hover:bg-raised/40" onClick={() => setOpen(open === hw.id ? null : hw.id)} aria-expanded={open === hw.id}>
+            <button className="flex w-full items-center gap-3 px-5 py-3 text-left text-[0.8125rem] hover:bg-raised/40" onClick={() => setOpen(open === hw.id ? null : hw.id)} aria-expanded={open === hw.id}>
               <span className="min-w-0 flex-1 truncate font-medium">
                 {hw.name}
-                {hw.parent && <span className="ml-2 text-[11px] font-normal text-muted">{hw.parent}</span>}
+                {hw.parent && <span className="ml-2 text-[0.6875rem] font-normal text-muted">{hw.parent}</span>}
               </span>
-              <span className="text-[11px] text-muted">{t("monitor.sensorCount", { count: hw.sensors.length })}</span>
+              <span className="text-[0.6875rem] text-muted">{t("monitor.sensorCount", { count: hw.sensors.length })}</span>
               <motion.span animate={{ rotate: open === hw.id ? 180 : 0 }} className="text-muted">
                 <ChevronDown size={15} />
               </motion.span>
@@ -345,7 +345,7 @@ function AllSensors({ frame }: { frame: Frame }) {
             <AnimatePresence initial={false}>
               {open === hw.id && (
                 <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                  <table className="w-full border-t border-line/60 bg-bg/40 text-[12px]">
+                  <table className="w-full border-t border-line/60 bg-bg/40 text-[0.75rem]">
                     <tbody>
                       {hw.sensors.map((s) => (
                         <tr key={s.id} className="border-b border-line/40 last:border-b-0">
@@ -378,11 +378,11 @@ function SensorsTab() {
   }, [frame, history]);
 
   if (status?.sensors.problem === "missing" || status?.sensors.problem === "failed") {
-    return <p className="rounded-card border border-line bg-surface px-5 py-4 text-[13px] text-muted">{t(`monitor.problem.${status.sensors.problem}`)}</p>;
+    return <p className="rounded-card border border-line bg-surface px-5 py-4 text-[0.8125rem] text-muted">{t(`monitor.problem.${status.sensors.problem}`)}</p>;
   }
   if (!frame) {
     return (
-      <div className="flex flex-col items-center py-16 text-[13px] text-muted">
+      <div className="flex flex-col items-center py-16 text-[0.8125rem] text-muted">
         <motion.div className="mb-4 h-10 w-10 rounded-full border-4 border-raised border-t-accent" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
         {t("monitor.starting")}
       </div>
@@ -410,7 +410,7 @@ function SensorsTab() {
       {temps.length > 0 && (
         <Card title={t("monitor.tempChart")} icon={<Gauge size={15} />}>
           <LineChart series={temps} format={(v) => `${Math.round(v)}°`} label={t("monitor.tempChart")} minRange={10} height={190} />
-          <p className="mt-1 text-right text-[11px] text-muted">{t("monitor.lastMinutes")}</p>
+          <p className="mt-1 text-right text-[0.6875rem] text-muted">{t("monitor.lastMinutes")}</p>
         </Card>
       )}
       {fanSeries.length > 0 && (
@@ -419,7 +419,7 @@ function SensorsTab() {
         </Card>
       )}
 
-      <h2 className="px-1 pt-2 text-[11px] uppercase tracking-wider text-muted">{t("monitor.allSensors")}</h2>
+      <h2 className="px-1 pt-2 text-[0.6875rem] uppercase tracking-wider text-muted">{t("monitor.allSensors")}</h2>
       <AllSensors frame={frame} />
     </div>
   );
@@ -450,15 +450,15 @@ function VerdictBox({ v }: { v: NonNullable<Incident["verdict"]> }) {
   return (
     <span className="mt-1.5 block rounded-lg border border-line bg-bg/40 px-3 py-2" data-testid="crash-verdict">
       <span className="flex flex-wrap items-center gap-2">
-        <span className="text-[12px] font-medium text-fg">{t(`monitor.verdict.cause.${v.cause}.title`)}</span>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] ${CONFIDENCE_TONE[v.confidence]}`}>{t(`monitor.verdict.confidence.${v.confidence}`)}</span>
+        <span className="text-[0.75rem] font-medium text-fg">{t(`monitor.verdict.cause.${v.cause}.title`)}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[0.625rem] ${CONFIDENCE_TONE[v.confidence]}`}>{t(`monitor.verdict.confidence.${v.confidence}`)}</span>
       </span>
       {v.facts.length > 0 && (
-        <span className="mt-1 block text-[11px] text-muted">
+        <span className="mt-1 block text-[0.6875rem] text-muted">
           {v.facts.map(([k, val]) => t(`monitor.verdict.fact.${k}`, { value: k === "lastSeen" ? time(val) : k === "whea" ? t(`monitor.whea.${val}`) : val })).join(" · ")}
         </span>
       )}
-      <span className="mt-1 block text-[11px] leading-relaxed">{t(`monitor.verdict.cause.${v.cause}.todo`)}</span>
+      <span className="mt-1 block text-[0.6875rem] leading-relaxed">{t(`monitor.verdict.cause.${v.cause}.todo`)}</span>
     </span>
   );
 }
@@ -476,7 +476,7 @@ function IncidentLine({ e }: { e: Incident }) {
     text = (
       <>
         <span className="text-fg">{e.code ? stop(e.code) : t("monitor.stop.unknownName")}</span>
-        {e.code && <span className="num ml-1.5 text-[11px]">{e.code}</span>}
+        {e.code && <span className="num ml-1.5 text-[0.6875rem]">{e.code}</span>}
         <span className="block">{e.code && i18n.exists(`monitor.stop.${e.code}.text`) ? t(`monitor.stop.${e.code}.text`) : t("monitor.stop.unknownText")}</span>
       </>
     );
@@ -485,7 +485,7 @@ function IncidentLine({ e }: { e: Incident }) {
       <>
         {t(`monitor.whea.${e.cause ?? "other"}`)}
         {e.cause !== "boot-record" && <> · {t(e.code === "fatal" ? "monitor.wheaFatal" : "monitor.wheaCorrected")}</>}
-        {e.detail && <span className="num ml-1.5 text-[11px]">{e.cause === "boot-record" ? `· ${t("monitor.failedAt", { time: e.detail.slice(11, 16) })}` : e.detail}</span>}
+        {e.detail && <span className="num ml-1.5 text-[0.6875rem]">{e.cause === "boot-record" ? `· ${t("monitor.failedAt", { time: e.detail.slice(11, 16) })}` : e.detail}</span>}
       </>
     );
   else {
@@ -494,7 +494,7 @@ function IncidentLine({ e }: { e: Incident }) {
   }
   return (
     <li className="grid grid-cols-[150px_1fr] gap-3 py-1.5">
-      <span className="num text-[11px] text-muted">{when}</span>
+      <span className="num text-[0.6875rem] text-muted">{when}</span>
       <span className="leading-relaxed">
         {text}
         {e.verdict && <VerdictBox v={e.verdict} />}
@@ -523,12 +523,12 @@ function CheckRow({ check }: { check: Check }) {
       <button className="flex w-full gap-3.5 px-5 py-3 text-left transition-colors hover:bg-raised/40" onClick={() => setOpen(!open)} aria-expanded={open}>
         <Icon size={18} className={`mt-0.5 shrink-0 ${LEVEL_TONE[check.level]}`} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[14px] font-medium">
+          <div className="flex items-center gap-2 text-[0.875rem] font-medium">
             {t(`monitor.check.${check.id}`)}
-            {check.subject && <span className="truncate text-[12px] font-normal text-muted">{check.subject}</span>}
-            <span className={`ml-auto shrink-0 text-[11px] font-normal ${LEVEL_TONE[check.level]}`}>{t(`monitor.level.${check.level}`)}</span>
+            {check.subject && <span className="truncate text-[0.75rem] font-normal text-muted">{check.subject}</span>}
+            <span className={`ml-auto shrink-0 text-[0.6875rem] font-normal ${LEVEL_TONE[check.level]}`}>{t(`monitor.level.${check.level}`)}</span>
           </div>
-          <ul className="mt-0.5 space-y-0.5 text-[12px] leading-relaxed text-muted">
+          <ul className="mt-0.5 space-y-0.5 text-[0.75rem] leading-relaxed text-muted">
             {check.reasons.map((reason) => (
               <li key={reason}>{t(`monitor.reason.${reason}`, values)}</li>
             ))}
@@ -541,16 +541,16 @@ function CheckRow({ check }: { check: Check }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="overflow-hidden">
-            <div className="space-y-3.5 border-t border-line/60 bg-bg/40 py-3.5 pl-[52px] pr-5 text-[12px]" data-testid={`check-detail-${check.id}`}>
+            <div className="space-y-3.5 border-t border-line/60 bg-bg/40 py-3.5 pl-[52px] pr-5 text-[0.75rem]" data-testid={`check-detail-${check.id}`}>
               {hasExplain && (
                 <section>
-                  <h4 className="mb-1 text-[11px] uppercase tracking-wider text-muted">{t("monitor.whatItMeans")}</h4>
+                  <h4 className="mb-1 text-[0.6875rem] uppercase tracking-wider text-muted">{t("monitor.whatItMeans")}</h4>
                   <p className="max-w-[95ch] leading-relaxed">{t(`monitor.explain.${check.id}.what`)}</p>
                 </section>
               )}
               {events.length > 0 && (
                 <section>
-                  <h4 className="mb-1 text-[11px] uppercase tracking-wider text-muted">{t("monitor.whatHappened", { count: events.length })}</h4>
+                  <h4 className="mb-1 text-[0.6875rem] uppercase tracking-wider text-muted">{t("monitor.whatHappened", { count: events.length })}</h4>
                   {check.id === "shutdowns" && <p className="mb-1 text-muted">{causeSummary(events, t)}</p>}
                   <ul className="divide-y divide-line/40">
                     {(all ? events : events.slice(0, 6)).map((e, i) => (
@@ -566,7 +566,7 @@ function CheckRow({ check }: { check: Check }) {
               )}
               {hasExplain && (
                 <section>
-                  <h4 className="mb-1 text-[11px] uppercase tracking-wider text-muted">{t("monitor.whatToDo")}</h4>
+                  <h4 className="mb-1 text-[0.6875rem] uppercase tracking-wider text-muted">{t("monitor.whatToDo")}</h4>
                   <p className="max-w-[95ch] leading-relaxed">{t(`monitor.explain.${check.id}.todo`)}</p>
                 </section>
               )}
@@ -617,9 +617,9 @@ function PhaseBar({ points, plan }: { points: Point[]; plan: StressPlan }) {
           );
         })}
       </div>
-      <div className="mt-1.5 flex text-[11px] text-muted">
+      <div className="mt-1.5 flex text-[0.6875rem] text-muted">
         {parts.map((p) => (
-          <span key={p.phase} className="min-w-[48px]" style={{ width: `${(p.seconds / total) * 100}%` }}>
+          <span key={p.phase} className="min-w-[3rem]" style={{ width: `${(p.seconds / total) * 100}%` }}>
             {t(`monitor.phase.${p.phase}`)}
           </span>
         ))}
@@ -638,8 +638,8 @@ function Toggle({ on, onClick, icon, title, hint, testid }: { on: boolean; onCli
     >
       <span className={`mt-0.5 ${on ? "text-accent" : "text-muted"}`}>{icon}</span>
       <span className="min-w-0">
-        <span className="block text-[13px] font-medium">{title}</span>
-        <span className="block text-[11px] leading-snug text-muted">{hint}</span>
+        <span className="block text-[0.8125rem] font-medium">{title}</span>
+        <span className="block text-[0.6875rem] leading-snug text-muted">{hint}</span>
       </span>
     </button>
   );
@@ -667,7 +667,7 @@ function StressSetup() {
         />
       </div>
       {o.gpu !== null && gpus.length > 1 && (
-        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+        <div className="flex flex-wrap items-center gap-2 text-[0.75rem]">
           <span className="text-muted">{t("monitor.stress.whichGpu")}</span>
           {gpus.map((g) => (
             <button
@@ -682,7 +682,7 @@ function StressSetup() {
           ))}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-2 text-[12px]">
+      <div className="flex flex-wrap items-center gap-2 text-[0.75rem]">
         <span className="text-muted">{t("monitor.stress.duration")}</span>
         {[3, 10, 30].map((m) => (
           <button
@@ -694,10 +694,10 @@ function StressSetup() {
             {t("monitor.stress.minutes", { count: m })}
           </button>
         ))}
-        <span className="text-[11px] text-muted/80">{t(o.minutes === 3 ? "monitor.stress.quick" : o.minutes === 10 ? "monitor.stress.normal" : "monitor.stress.long")}</span>
+        <span className="text-[0.6875rem] text-muted/80">{t(o.minutes === 3 ? "monitor.stress.quick" : o.minutes === 10 ? "monitor.stress.normal" : "monitor.stress.long")}</span>
       </div>
-      {!(o.cpu && !o.ram && o.gpu === null && o.minutes === 3) && <p className="text-[11px] leading-relaxed text-muted">{t("monitor.stress.notProfile")}</p>}
-      {nothing && <p className="text-[12px] text-warn">{t("monitor.stress.pickSomething")}</p>}
+      {!(o.cpu && !o.ram && o.gpu === null && o.minutes === 3) && <p className="text-[0.6875rem] leading-relaxed text-muted">{t("monitor.stress.notProfile")}</p>}
+      {nothing && <p className="text-[0.75rem] text-warn">{t("monitor.stress.pickSomething")}</p>}
       <Button variant="primary" icon={<Play size={15} />} onClick={runStress} disabled={nothing} data-testid="stress-start">
         {t("monitor.stressStart")}
       </Button>
@@ -708,8 +708,8 @@ function StressSetup() {
 function Tile({ label, value, bad }: { label: string; value: string; bad?: boolean }) {
   return (
     <div className="rounded-lg bg-raised/60 px-2 py-2 text-center">
-      <div className="text-[11px] text-muted">{label}</div>
-      <div className={`num text-[16px] ${bad ? "text-risk" : ""}`}>{value}</div>
+      <div className="text-[0.6875rem] text-muted">{label}</div>
+      <div className={`num text-[1rem] ${bad ? "text-risk" : ""}`}>{value}</div>
     </div>
   );
 }
@@ -738,13 +738,13 @@ function StressCard() {
     <Card title={t("monitor.stressTitleAny")} icon={<Gauge size={15} />}>
       {!stress.running && !stress.report && (
         <div className="space-y-3">
-          <p className="max-w-[90ch] text-[13px] leading-relaxed text-muted">{t("monitor.stressIntroAny")}</p>
-          <p className="flex gap-2 text-[12px] leading-relaxed text-warn">
+          <p className="max-w-[90ch] text-[0.8125rem] leading-relaxed text-muted">{t("monitor.stressIntroAny")}</p>
+          <p className="flex gap-2 text-[0.75rem] leading-relaxed text-warn">
             <AlertTriangle size={14} className="mt-[3px] shrink-0" />
             {t("monitor.stressWarning")}
           </p>
           <StressSetup />
-          {stress.error && <p className="text-[12px] text-risk">{t("monitor.stressError", { message: stress.error })}</p>}
+          {stress.error && <p className="text-[0.75rem] text-risk">{t("monitor.stressError", { message: stress.error })}</p>}
         </div>
       )}
       {(stress.running || stress.report) && (
@@ -775,7 +775,7 @@ function StressCard() {
           ) : (
             stress.report && (
               <div className="space-y-3" data-testid="stress-report">
-                {!stress.report.completed && <p className="text-[12px] text-warn">{t("monitor.stressStopped")}</p>}
+                {!stress.report.completed && <p className="text-[0.75rem] text-warn">{t("monitor.stressStopped")}</p>}
                 <CheckList checks={stress.report.checks} />
                 <Button icon={<Play size={15} />} onClick={() => useMonitor.setState((s) => ({ stress: { ...s.stress, report: null, points: [] } }))} data-testid="stress-again">
                   {t("monitor.stressAgain")}
@@ -792,10 +792,10 @@ function StressCard() {
 function Delta({ now, before, unit, worseWhenHigher = true }: { now: number; before: number | null | undefined; unit: string; worseWhenHigher?: boolean }) {
   if (before === undefined || before === null) return null;
   const diff = Math.round((now - before) * 10) / 10;
-  if (Math.abs(diff) < 1) return <span className="text-[11px] text-muted">=</span>;
+  if (Math.abs(diff) < 1) return <span className="text-[0.6875rem] text-muted">=</span>;
   const worse = worseWhenHigher ? diff > 0 : diff < 0;
   return (
-    <span className={`num text-[11px] ${worse ? "text-warn" : "text-safe"}`}>
+    <span className={`num text-[0.6875rem] ${worse ? "text-warn" : "text-safe"}`}>
       {diff > 0 ? "+" : ""}
       {diff}
       {unit}
@@ -828,43 +828,43 @@ function CoolingCard() {
     : [];
 
   return (
-    <Card title={t("monitor.cooling.title")} icon={<Flame size={15} />} aside={current ? <span className="text-[11px] text-muted">{t(`monitor.cooling.source.${current.source}`)}</span> : undefined}>
+    <Card title={t("monitor.cooling.title")} icon={<Flame size={15} />} aside={current ? <span className="text-[0.6875rem] text-muted">{t(`monitor.cooling.source.${current.source}`)}</span> : undefined}>
       {!current ? (
-        <p className="max-w-[80ch] text-[13px] leading-relaxed text-muted">{t("monitor.cooling.empty")}</p>
+        <p className="max-w-[80ch] text-[0.8125rem] leading-relaxed text-muted">{t("monitor.cooling.empty")}</p>
       ) : (
         <div className="space-y-4" data-testid="cooling-profile">
-          <p className="max-w-[90ch] text-[12px] leading-relaxed text-muted">{t("monitor.cooling.intro")}</p>
+          <p className="max-w-[90ch] text-[0.75rem] leading-relaxed text-muted">{t("monitor.cooling.intro")}</p>
           <div className="grid grid-cols-3 gap-3">
             {tiles.map(([key, value, delta]) => (
               <div key={key} className="rounded-xl bg-raised/50 px-3.5 py-3">
-                <div className="text-[11px] text-muted">{t(`monitor.cooling.${key}`)}</div>
+                <div className="text-[0.6875rem] text-muted">{t(`monitor.cooling.${key}`)}</div>
                 <div className="mt-0.5 flex items-baseline gap-2">
-                  <span className="num text-[18px]">{value}</span>
+                  <span className="num text-[1.125rem]">{value}</span>
                   {delta}
                 </div>
-                <div className="mt-1 text-[11px] leading-snug text-muted/80">{t(`monitor.cooling.hint.${key}`)}</div>
+                <div className="mt-1 text-[0.6875rem] leading-snug text-muted/80">{t(`monitor.cooling.hint.${key}`)}</div>
               </div>
             ))}
           </div>
           {same.length >= 2 ? (
             <div>
-              <h3 className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted">
+              <h3 className="mb-2 flex items-center gap-1.5 text-[0.6875rem] uppercase tracking-wider text-muted">
                 <History size={13} />
                 {t("monitor.cooling.history", { count: same.length, since: date(same[0].at) })}
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="mb-1 text-[11px] text-muted">{t("monitor.cooling.plateau")}</div>
+                  <div className="mb-1 text-[0.6875rem] text-muted">{t("monitor.cooling.plateau")}</div>
                   <LineChart series={[{ id: "plateau", name: t("monitor.cooling.plateau"), color: SERIES_COLORS[1], values: same.map((r) => r.plateau) }]} format={(v) => `${Math.round(v)}°`} points={Math.max(2, same.length)} minRange={10} label={t("monitor.cooling.plateau")} height={110} markers />
                 </div>
                 <div>
-                  <div className="mb-1 text-[11px] text-muted">{t("monitor.cooling.sustained")}</div>
+                  <div className="mb-1 text-[0.6875rem] text-muted">{t("monitor.cooling.sustained")}</div>
                   <LineChart series={[{ id: "sustained", name: t("monitor.cooling.sustained"), color: SERIES_COLORS[0], values: same.filter((r) => r.sustained !== null).map((r) => r.sustained!) }]} format={(v) => `${Math.round(v)}%`} points={Math.max(2, same.length)} minRange={20} label={t("monitor.cooling.sustained")} height={110} markers />
                 </div>
               </div>
             </div>
           ) : (
-            <p className="text-[12px] text-muted">{t("monitor.cooling.oneRun")}</p>
+            <p className="text-[0.75rem] text-muted">{t("monitor.cooling.oneRun")}</p>
           )}
         </div>
       )}
@@ -887,8 +887,8 @@ function StabilityTab() {
       <div className="flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-4">
         <Icon size={28} className={overall ? LEVEL_TONE[overall] : "text-muted"} />
         <div className="min-w-0 flex-1">
-          <div className="font-display text-[20px] font-semibold">{quick ? t(`monitor.overall.${overall}`) : t("monitor.checking")}</div>
-          <div className="text-[12px] text-muted">{t("monitor.quickHint", { days: quick?.logDays ?? 90 })}</div>
+          <div className="font-display text-[1.25rem] font-semibold">{quick ? t(`monitor.overall.${overall}`) : t("monitor.checking")}</div>
+          <div className="text-[0.75rem] text-muted">{t("monitor.quickHint", { days: quick?.logDays ?? 90 })}</div>
         </div>
         <Button onClick={runQuick} disabled={quickLoading}>
           {t("monitor.recheck")}
@@ -901,7 +901,7 @@ function StabilityTab() {
           if (!checks.length) return null;
           return (
             <section key={group.key}>
-              <h2 className="mb-2 px-1 text-[11px] uppercase tracking-wider text-muted">{t(`monitor.group.${group.key}`)}</h2>
+              <h2 className="mb-2 px-1 text-[0.6875rem] uppercase tracking-wider text-muted">{t(`monitor.group.${group.key}`)}</h2>
               <CheckList checks={checks} />
             </section>
           );
@@ -920,7 +920,7 @@ export function Monitoring() {
   }, []);
   return (
     <div className="flex flex-col gap-4 pb-2">
-      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[13px]" role="tablist">
+      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[0.8125rem]" role="tablist">
         {(["sensors", "stability", "history"] as const).map((id) => (
           <button
             key={id}

@@ -95,7 +95,7 @@ export function ThemeMenu() {
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 480, damping: 34 }}
             style={{ transformOrigin: "bottom center" }}
-            className="absolute bottom-10 left-1/2 z-50 w-[176px] -translate-x-1/2 rounded-xl border border-line bg-surface p-1 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.5)]"
+            className="absolute bottom-10 left-1/2 z-50 w-[11rem] -translate-x-1/2 rounded-xl border border-line bg-surface p-1 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.5)]"
             role="menu"
             data-testid="theme-menu"
           >
@@ -105,7 +105,7 @@ export function ThemeMenu() {
                 role="menuitemradio"
                 aria-checked={pref === p}
                 onClick={() => pick(p)}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12px] ${pref === p ? "bg-accent/10 text-fg" : "text-muted hover:bg-raised hover:text-fg"}`}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[0.75rem] ${pref === p ? "bg-accent/10 text-fg" : "text-muted hover:bg-raised hover:text-fg"}`}
                 data-testid={`theme-${p}`}
               >
                 <span className={pref === p ? "text-accent" : ""}>

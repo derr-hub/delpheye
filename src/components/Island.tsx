@@ -79,7 +79,7 @@ export function Island() {
         onClick={() => setOpen(!open)}
         data-testid="island"
         aria-expanded={open}
-        className="reveal flex h-[26px] items-center gap-2 overflow-hidden rounded-full border border-line bg-surface/80 px-3 text-[11px] text-muted shadow-sm hover:text-fg"
+        className="reveal flex h-[26px] items-center gap-2 overflow-hidden rounded-full border border-line bg-surface/80 px-3 text-[0.6875rem] text-muted shadow-sm hover:text-fg"
       >
         <AnimatePresence mode="popLayout" initial={false}>
           {activity ? (
@@ -133,7 +133,7 @@ export function Island() {
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={SPRING}
               style={{ transformOrigin: "top center" }}
-              className="w-[400px] rounded-2xl border border-line bg-surface/95 p-4 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl"
+              className="w-[25rem] rounded-2xl border border-line bg-surface/95 p-4 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl"
               data-testid="island-panel"
             >
               {activity && (
@@ -142,7 +142,7 @@ export function Island() {
                     go(activity.page);
                     setOpen(false);
                   }}
-                  className="mb-3 flex w-full items-center gap-2 rounded-xl bg-accent/10 px-3 py-2 text-left text-[12px] text-accent hover:bg-accent/15"
+                  className="mb-3 flex w-full items-center gap-2 rounded-xl bg-accent/10 px-3 py-2 text-left text-[0.75rem] text-accent hover:bg-accent/15"
                 >
                   <Loader2 size={13} className="animate-spin" />
                   {activity.label}
@@ -155,7 +155,7 @@ export function Island() {
                     go("privacy");
                     setOpen(false);
                   }}
-                  className="mb-3 flex w-full items-center gap-2 rounded-xl bg-risk/10 px-3 py-2 text-left text-[12px] text-risk hover:bg-risk/15"
+                  className="mb-3 flex w-full items-center gap-2 rounded-xl bg-risk/10 px-3 py-2 text-left text-[0.75rem] text-risk hover:bg-risk/15"
                 >
                   {sensors.map(({ kind, use }) => {
                     const Icon = SENSOR_ICONS[kind];
@@ -177,15 +177,15 @@ export function Island() {
                   ] as const
                 ).map(([label, value, data, color]) => (
                   <div key={label} className="rounded-xl bg-raised/50 px-3 pb-1 pt-2">
-                    <div className="flex items-baseline justify-between text-[11px] text-muted">
+                    <div className="flex items-baseline justify-between text-[0.6875rem] text-muted">
                       {label}
-                      <span className="num text-[13px] text-fg">{value}</span>
+                      <span className="num text-[0.8125rem] text-fg">{value}</span>
                     </div>
                     <Sparkline data={[...data]} color={color} max={100} height={34} />
                   </div>
                 ))}
               </div>
-              <dl className="mt-3 grid grid-cols-[1fr_auto] gap-y-1.5 text-[12px]">
+              <dl className="mt-3 grid grid-cols-[1fr_auto] gap-y-1.5 text-[0.75rem]">
                 <dt className="text-muted">{t("island.cpuState")}</dt>
                 <dd>{throttle ? t(`monitor.throttle.${throttle.state}`) : "—"}{temp !== null ? ` · ${temp} °C` : ""}</dd>
                 <dt className="text-muted">{t("island.network")}</dt>
@@ -207,7 +207,7 @@ export function Island() {
                   setOpen(false);
                   checkSlowdown();
                 }}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent/10 py-1.5 text-[12px] text-accent hover:bg-accent/15"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent/10 py-1.5 text-[0.75rem] text-accent hover:bg-accent/15"
               >
                 {t("slowdown.button")}
               </button>
@@ -224,7 +224,7 @@ export function Island() {
                       go(page);
                       setOpen(false);
                     }}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line py-1.5 text-[12px] text-muted hover:bg-raised hover:text-fg"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line py-1.5 text-[0.75rem] text-muted hover:bg-raised hover:text-fg"
                   >
                     <Icon size={13} />
                     {t(`nav.${page}`)}

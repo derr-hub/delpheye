@@ -217,7 +217,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
       const r = radius(m);
       const pts = new THREE.EllipseCurve(0, 0, r, r).getPoints(128).map((p) => new THREE.Vector3(p.x, 0.02, p.y));
       air.add(new THREE.LineLoop(keep(new THREE.BufferGeometry().setFromPoints(pts)), keep(new THREE.LineBasicMaterial({ color: "#2d4a63", transparent: true, opacity: 0.8 }))));
-      addLabel(`${m} ${t("wifi.m")}`, new THREE.Vector3(r * 0.71, 0.05, r * 0.71), "num text-[10px] text-[#5d7a92]");
+      addLabel(`${m} ${t("wifi.m")}`, new THREE.Vector3(r * 0.71, 0.05, r * 0.71), "num text-[0.625rem] text-[#5d7a92]");
     }
     for (let k = 0; k < 12; k++) {
       const a = (k / 12) * Math.PI * 2;
@@ -232,7 +232,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
     for (const band of ["2.4", "5", "6"] as Band[]) {
       const pts = new THREE.EllipseCurve(0, 0, maxR * 0.98, maxR * 0.98).getPoints(160).map((p) => new THREE.Vector3(p.x, LAYER[band], p.y));
       air.add(new THREE.LineLoop(keep(new THREE.BufferGeometry().setFromPoints(pts)), keep(new THREE.LineBasicMaterial({ color: BAND_COLORS[band], transparent: true, opacity: 0.16 }))));
-      const label = addLabel(`${band.replace(".", ",")} ${t("wifi.ghz")}`, new THREE.Vector3(-maxR * 0.98, LAYER[band], 0), "rounded px-1.5 py-0.5 text-[11px] font-medium");
+      const label = addLabel(`${band.replace(".", ",")} ${t("wifi.ghz")}`, new THREE.Vector3(-maxR * 0.98, LAYER[band], 0), "rounded px-1.5 py-0.5 text-[0.6875rem] font-medium");
       label.el.style.color = BAND_COLORS[band];
       label.el.style.background = "rgba(8,11,16,0.7)";
     }
@@ -309,7 +309,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
           }
           air.add(group);
           const label = document.createElement("div");
-          label.className = "pointer-events-none absolute whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] backdrop-blur-sm transition-opacity";
+          label.className = "pointer-events-none absolute whitespace-nowrap rounded-md px-1.5 py-0.5 text-[0.6875rem] backdrop-blur-sm transition-opacity";
           labelHost.appendChild(label);
           n = { data: b, group, orb, hit, wave, stem, foot, halo, angle, target, size, flash: 0, phase: Math.random() * 3, alive: 0, dying: false, label };
           nodes.set(b.bssid, n);
@@ -353,7 +353,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
           const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: "#7fd6ff", transparent: true, opacity: 0.35 }));
           air.add(dot, line);
           const label = document.createElement("div");
-          label.className = "pointer-events-none absolute whitespace-nowrap rounded px-1 text-[10px] text-[#bfe9ff] transition-opacity";
+          label.className = "pointer-events-none absolute whitespace-nowrap rounded px-1 text-[0.625rem] text-[#bfe9ff] transition-opacity";
           label.style.background = "rgba(8,11,16,0.6)";
           labelHost.appendChild(label);
           d = { mac: c.mac, name: "", angle: hash(c.mac) * Math.PI * 2, r: 0, dot, line, label };
@@ -396,7 +396,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
       const aptLabels: { el: HTMLDivElement; pos: THREE.Vector3 }[] = [];
       const label = (text: string, pos: THREE.Vector3, colour: string) => {
         const el = document.createElement("div");
-        el.className = "pointer-events-none absolute whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium";
+        el.className = "pointer-events-none absolute whitespace-nowrap rounded px-1.5 py-0.5 text-[0.6875rem] font-medium";
         el.style.color = colour;
         el.style.background = "rgba(8,11,16,0.7)";
         el.textContent = text;
@@ -866,12 +866,12 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
 
   return (
     <div className="grid gap-3" data-testid="wifi-echo">
-      <div className="relative h-[600px] overflow-hidden rounded-card border border-line">
+      <div className="relative h-[37.5rem] overflow-hidden rounded-card border border-line">
         <div ref={mount} className="absolute inset-0" />
         <div ref={labels} className="pointer-events-none absolute inset-0 overflow-hidden" />
 
         {!home && (
-          <div className="absolute left-3 top-3 grid gap-1.5 rounded-xl border border-white/5 bg-black/40 p-3 text-[11px] backdrop-blur-md">
+          <div className="absolute left-3 top-3 grid gap-1.5 rounded-xl border border-white/5 bg-black/40 p-3 text-[0.6875rem] backdrop-blur-md">
             <div className="flex gap-1 rounded-lg bg-black/30 p-0.5">
               {(["band", "security", "gen"] as ColorMode[]).map((m) => (
                 <button key={m} onClick={() => setMode(m)} className={`rounded-md px-2 py-0.5 ${mode === m ? "bg-[#4CC2FF]/25 text-[#cfeeff]" : "text-[#8ea3b6] hover:text-white"}`} data-testid={`echo-mode-${m}`}>
@@ -879,7 +879,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
                 </button>
               ))}
             </div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-[#7d93a8]">{t("wifi.echo.layers")}</div>
+            <div className="mt-1 text-[0.625rem] uppercase tracking-wider text-[#7d93a8]">{t("wifi.echo.layers")}</div>
             {counts.map(([b, c]) => (
               <label key={b} className="flex cursor-pointer items-center gap-2 text-[#c8d3de]">
                 <input type="checkbox" checked={bands[b]} onChange={() => setBands({ ...bands, [b]: !bands[b] })} className="accent-[#4CC2FF]" />
@@ -930,20 +930,20 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
               className={`flex h-8 items-center justify-center gap-1.5 rounded-lg border border-white/5 px-2 backdrop-blur-md transition-colors disabled:opacity-35 ${on ? "bg-[#4CC2FF]/20 text-[#9fdcff]" : "bg-black/40 text-[#aab6c4] hover:text-white"}`}
             >
               <Icon size={14} />
-              {Icon === Building2 && <span className="text-[11px]">{label}</span>}
+              {Icon === Building2 && <span className="text-[0.6875rem]">{label}</span>}
             </button>
           ))}
         </div>
 
         {home && (
-          <div className="absolute left-3 top-3 max-w-[300px] rounded-xl border border-white/5 bg-black/45 p-3 text-[11px] leading-relaxed text-[#c8d3de] backdrop-blur-md" data-testid="echo-apartment-legend">
-            <div className="mb-1 text-[12px] font-medium text-white">{t("wifi.echo.apartment")}</div>
+          <div className="absolute left-3 top-3 max-w-[18.75rem] rounded-xl border border-white/5 bg-black/45 p-3 text-[0.6875rem] leading-relaxed text-[#c8d3de] backdrop-blur-md" data-testid="echo-apartment-legend">
+            <div className="mb-1 text-[0.75rem] font-medium text-white">{t("wifi.echo.apartment")}</div>
             {t("wifi.echo.apartmentText")}
           </div>
         )}
 
         {!home && hover && !shown && (
-          <div className="pointer-events-none absolute z-10 rounded-lg border border-white/10 bg-black/70 px-2.5 py-1.5 text-[11px] text-[#dce6ef] backdrop-blur-md" style={{ left: hoverAt.x + 14, top: hoverAt.y + 10 }}>
+          <div className="pointer-events-none absolute z-10 rounded-lg border border-white/10 bg-black/70 px-2.5 py-1.5 text-[0.6875rem] text-[#dce6ef] backdrop-blur-md" style={{ left: hoverAt.x + 14, top: hoverAt.y + 10 }}>
             <div className="font-medium">{nameOf(hover, t("wifi.hidden"))}</div>
             <div className="num text-[#8ea3b6]">
               {hover.rssi} dBm · {hover.band} {t("wifi.ghz")} · {t("wifi.channelN", { n: hover.channel })} · ~{hover.distanceM < 10 ? hover.distanceM.toFixed(1) : Math.round(hover.distanceM)} {t("wifi.m")}
@@ -953,12 +953,12 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
         )}
 
         {!home && shown && (
-          <div className="absolute bottom-3 right-3 w-[270px] rounded-xl border border-white/10 bg-black/65 p-4 text-[12px] text-[#dce6ef] backdrop-blur-md" data-testid="echo-card">
+          <div className="absolute bottom-3 right-3 w-[16.875rem] rounded-xl border border-white/10 bg-black/65 p-4 text-[0.75rem] text-[#dce6ef] backdrop-blur-md" data-testid="echo-card">
             <button onClick={() => setSelected(null)} className="absolute right-2 top-2 text-[#8ea3b6] hover:text-white" aria-label={t("wifi.echo.close")}>
               <X size={14} />
             </button>
-            <div className="pr-5 text-[14px] font-semibold">{nameOf(shown, t("wifi.hidden"))}</div>
-            <div className="num text-[11px] text-[#8ea3b6]">{shown.bssid}</div>
+            <div className="pr-5 text-[0.875rem] font-semibold">{nameOf(shown, t("wifi.hidden"))}</div>
+            <div className="num text-[0.6875rem] text-[#8ea3b6]">{shown.bssid}</div>
             <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               <dt className="text-[#8ea3b6]">{t("wifi.col.signal")}</dt>
               <dd className="num">{shown.rssi} dBm</dd>
@@ -991,7 +991,7 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
           </div>
         )}
       </div>
-      <p className="flex gap-2 text-[12px] leading-relaxed text-muted">
+      <p className="flex gap-2 text-[0.75rem] leading-relaxed text-muted">
         <Info size={14} className="mt-0.5 shrink-0 text-accent" />
         {home ? t("wifi.echo.apartmentHonest") : t("wifi.echo.honest")}
       </p>

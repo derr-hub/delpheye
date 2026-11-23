@@ -24,7 +24,7 @@ export function UpdateChip() {
             exit={{ opacity: 0 }}
             onClick={() => setOpen(true)}
             data-testid="update-available"
-            className="reveal mb-2 flex w-full items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-left text-[12px] text-accent hover:bg-accent/15"
+            className="reveal mb-2 flex w-full items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-left text-[0.75rem] text-accent hover:bg-accent/15"
           >
             <ArrowUpCircle size={15} />
             <span className="min-w-0 flex-1 truncate">{t("update.available", { version: next })}</span>
@@ -39,7 +39,7 @@ export function UpdateChip() {
             disabled={phase === "checking"}
             title={error ?? undefined}
             data-testid="update-check"
-            className="mb-2 flex items-center gap-1.5 px-3 text-left text-[11px] text-muted/80 hover:text-fg"
+            className="mb-2 flex items-center gap-1.5 px-3 text-left text-[0.6875rem] text-muted/80 hover:text-fg"
           >
             {phase === "checking" && <Loader2 size={11} className="animate-spin" />}
             <span className="num">v{version ?? "…"}</span>
@@ -49,16 +49,16 @@ export function UpdateChip() {
       </AnimatePresence>
 
       <Modal open={open} onClose={() => phase !== "downloading" && setOpen(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("update.title", { version: next })}</h2>
-        <p className="mt-1 text-[12px] text-muted">{t("update.current", { version })}</p>
-        {notes && <div className="mt-3 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-lg border border-line bg-bg/50 px-3 py-2 text-[12px] leading-relaxed">{notesFor(notes, i18n.language)}</div>}
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">{t("update.how")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("update.title", { version: next })}</h2>
+        <p className="mt-1 text-[0.75rem] text-muted">{t("update.current", { version })}</p>
+        {notes && <div className="mt-3 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-lg border border-line bg-bg/50 px-3 py-2 text-[0.75rem] leading-relaxed">{notesFor(notes, i18n.language)}</div>}
+        <p className="mt-3 text-[0.75rem] leading-relaxed text-muted">{t("update.how")}</p>
         {phase === "downloading" && (
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-raised">
             <motion.div className="h-full rounded-full bg-accent" animate={{ width: `${Math.round(progress * 100)}%` }} />
           </div>
         )}
-        {phase === "error" && <p className="mt-3 text-[12px] text-risk">{t("update.error", { message: error })}</p>}
+        {phase === "error" && <p className="mt-3 text-[0.75rem] text-risk">{t("update.error", { message: error })}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <Button onClick={() => setOpen(false)} disabled={phase === "downloading"}>
             {t("update.later")}

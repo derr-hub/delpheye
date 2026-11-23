@@ -64,7 +64,7 @@ function Gauge({ rssi }: { rssi: number }) {
     [-67, GAUGE_MAX, "var(--color-safe)"],
   ];
   return (
-    <svg viewBox="0 0 300 170" className="w-full max-w-[360px]">
+    <svg viewBox="0 0 300 170" className="w-full max-w-[22.5rem]">
       {zones.map(([a, b, c]) => (
         <path key={a} d={arc(a, b)} stroke={c} strokeWidth={14} fill="none" opacity={0.85} />
       ))}
@@ -166,7 +166,7 @@ export function Hunt({ initial }: { initial?: string | null }) {
           <select
             value={target ?? ""}
             onChange={(e) => setTarget(e.target.value)}
-            className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-[13px] text-fg outline-none"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-[0.8125rem] text-fg outline-none"
             data-testid="hunt-target"
           >
             {[...snap.networks]
@@ -199,11 +199,11 @@ export function Hunt({ initial }: { initial?: string | null }) {
           </div>
           <Gauge rssi={rssi ?? GAUGE_MIN} />
           <div className="mt-1 text-center">
-            <div className="num font-display text-[40px] font-semibold leading-none" data-testid="hunt-value">
+            <div className="num font-display text-[2.5rem] font-semibold leading-none" data-testid="hunt-value">
               {rssi ?? "—"}
-              <span className="ml-1 text-[16px] text-muted">dBm</span>
+              <span className="ml-1 text-[1rem] text-muted">dBm</span>
             </div>
-            <div className="mt-1 text-[13px]" style={{ color: LEVEL_COLOR[level] }}>
+            <div className="mt-1 text-[0.8125rem]" style={{ color: LEVEL_COLOR[level] }}>
               {rssi !== null ? `${percent(rssi)}% · ${t(`wifi.signal.${level}`)}` : t("wifi.hunt.noSignal")}
             </div>
           </div>
@@ -213,7 +213,7 @@ export function Hunt({ initial }: { initial?: string | null }) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className={`mt-3 flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] ${trend > 0 ? "bg-risk/15 text-risk" : trend < 0 ? "bg-accent/15 text-accent" : "bg-raised text-muted"}`}
+              className={`mt-3 flex items-center gap-2 rounded-full px-4 py-1.5 text-[0.8125rem] ${trend > 0 ? "bg-risk/15 text-risk" : trend < 0 ? "bg-accent/15 text-accent" : "bg-raised text-muted"}`}
               data-testid="hunt-trend"
             >
               <TrendIcon size={15} />
@@ -223,9 +223,9 @@ export function Hunt({ initial }: { initial?: string | null }) {
         </div>
         <div className="mt-4">
           <Sparkline data={samples.map((s) => s.rssi + 100)} color={LEVEL_COLOR[level]} max={70} height={54} points={live ? 90 : 30} />
-          <p className="mt-2 text-[11px] leading-relaxed text-muted">{live ? t("wifi.hunt.liveHint") : t("wifi.hunt.scanHint")}</p>
+          <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{live ? t("wifi.hunt.liveHint") : t("wifi.hunt.scanHint")}</p>
           {net && (
-            <p className="mt-1 text-[11px] text-muted">
+            <p className="mt-1 text-[0.6875rem] text-muted">
               {t("wifi.hunt.distance", { m: net.distanceM < 10 ? net.distanceM.toFixed(1) : Math.round(net.distanceM) })}
             </p>
           )}
@@ -233,11 +233,11 @@ export function Hunt({ initial }: { initial?: string | null }) {
       </div>
 
       <div className="rounded-card border border-line bg-surface p-5">
-        <h3 className="flex items-center gap-2 text-[14px] font-medium">
+        <h3 className="flex items-center gap-2 text-[0.875rem] font-medium">
           <Footprints size={16} className="text-accent" />
           {t("wifi.hunt.surveyTitle")}
         </h3>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("wifi.hunt.surveyText")}</p>
+        <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("wifi.hunt.surveyText")}</p>
         <form
           className="mt-3 flex gap-2"
           onSubmit={(e) => {
@@ -249,7 +249,7 @@ export function Hunt({ initial }: { initial?: string | null }) {
             value={room}
             onChange={(e) => setRoom(e.target.value)}
             placeholder={t("wifi.hunt.roomPlaceholder")}
-            className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-[13px] outline-none placeholder:text-muted/60 focus:border-accent/60"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-raised px-3 text-[0.8125rem] outline-none placeholder:text-muted/60 focus:border-accent/60"
             maxLength={40}
             data-testid="hunt-room"
           />
@@ -263,11 +263,11 @@ export function Hunt({ initial }: { initial?: string | null }) {
               const lv = signalLevel(r.rssi);
               return (
                 <li key={r.room} className="group flex items-center gap-3">
-                  <span className="w-28 truncate text-[12px]">{r.room}</span>
+                  <span className="w-28 truncate text-[0.75rem]">{r.room}</span>
                   <span className="h-2 flex-1 overflow-hidden rounded-full bg-raised">
                     <motion.span className="block h-full rounded-full" style={{ background: LEVEL_COLOR[lv] }} initial={{ width: 0 }} animate={{ width: `${percent(r.rssi)}%` }} />
                   </span>
-                  <span className="num w-16 text-right text-[11px] text-muted">{r.rssi} dBm</span>
+                  <span className="num w-16 text-right text-[0.6875rem] text-muted">{r.rssi} dBm</span>
                   <button
                     onClick={() => {
                       const next = rooms.filter((x) => x !== r);
@@ -284,10 +284,10 @@ export function Hunt({ initial }: { initial?: string | null }) {
             })}
           </ul>
         ) : (
-          <p className="mt-4 rounded-lg border border-dashed border-line px-3 py-4 text-center text-[12px] text-muted">{t("wifi.hunt.surveyEmpty")}</p>
+          <p className="mt-4 rounded-lg border border-dashed border-line px-3 py-4 text-center text-[0.75rem] text-muted">{t("wifi.hunt.surveyEmpty")}</p>
         )}
         {surveyed.length >= 2 && (
-          <p className="mt-3 text-[12px] leading-relaxed text-muted">
+          <p className="mt-3 text-[0.75rem] leading-relaxed text-muted">
             {signalLevel(surveyed[surveyed.length - 1].rssi) === "weak" || signalLevel(surveyed[surveyed.length - 1].rssi) === "bad"
               ? t("wifi.hunt.deadZone", { room: surveyed[surveyed.length - 1].room })
               : t("wifi.hunt.allCovered")}

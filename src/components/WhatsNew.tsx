@@ -66,7 +66,7 @@ export function WhatsNew() {
     if (seen !== version && fresh.length && (seen !== null || onboarded)) setOpen(true);
   }, [version]);
   return (
-    <Modal open={open} onClose={() => setOpen(false)} width="max-w-[620px]">
+    <Modal open={open} onClose={() => setOpen(false)} width="max-w-[38.75rem]">
       <div data-testid="whats-new">
         <div className="flex items-center gap-3">
           <motion.span
@@ -78,8 +78,8 @@ export function WhatsNew() {
             <Gift size={22} />
           </motion.span>
           <div>
-            <h2 className="font-display text-[19px] font-semibold">{t("whatsnew.title", { version })}</h2>
-            <p className="text-[12px] text-muted">{t("whatsnew.lead")}</p>
+            <h2 className="font-display text-[1.1875rem] font-semibold">{t("whatsnew.title", { version })}</h2>
+            <p className="text-[0.75rem] text-muted">{t("whatsnew.lead")}</p>
           </div>
         </div>
         <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
@@ -106,11 +106,11 @@ export function WhatsNew() {
                 <it.icon size={16} />
               </motion.span>
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1 text-[13px] font-medium">
+                <span className="flex items-center gap-1 text-[0.8125rem] font-medium">
                   {t(`whatsnew.items.${it.id}.title`)}
                   {it.page && <ArrowRight size={12} className="nudge text-muted" />}
                 </span>
-                <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">{t(`whatsnew.items.${it.id}.text`)}</span>
+                <span className="mt-0.5 block text-[0.75rem] leading-relaxed text-muted">{t(`whatsnew.items.${it.id}.text`)}</span>
               </span>
             </motion.button>
           ))}

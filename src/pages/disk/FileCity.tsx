@@ -59,6 +59,7 @@ function plan(root: Ring, base: string): { lots: Lot[]; roads: Road[] } {
   const raw = kids.map((k) => Math.max(0.06, (k.size / total) * Math.PI * 2));
   const scale = (Math.PI * 2 * (1 - root.restSize / total)) / raw.reduce((a, b) => a + b, 0);
   const biggest = Math.max(1, ...kids.map((k) => k.size));
+  const widths = kids.map((k) => 0.2 + 1.1 * Math.sqrt(k.size / biggest));
   let a = 0;
   kids.forEach((k, i) => {
     const span = raw[i] * scale;
@@ -71,7 +72,8 @@ function plan(root: Ring, base: string): { lots: Lot[]; roads: Road[] } {
     const c = polar(mid, (R0 + R1) / 2);
     lots.push({ ring: k, path, role, district: i, kind: "district", x: c.x, z: c.z, w: 0, d: 0, h: 0.1, a0, a1, rot: 0 });
     // The branch road runs along the district's leading edge, as wide as the data it carries.
-    const width = 0.2 + 1.1 * Math.sqrt(k.size / biggest);
+    const width = widths[i];
+    const nextWidth = widths[(i + 1) % kids.length];
     roads.push({ district: i, angle: a0, width, life: life(k.mark) });
     // Inside the sector: a slice per thing in the district, towers standing from the plaza outwards.
     const things = (k.isDir ? k.children : [k]).filter((t) => t.size > 0);
@@ -89,26 +91,41 @@ function plan(root: Ring, base: string): { lots: Lot[]; roads: Road[] } {
       const tPath = k.isDir ? `${path}\\${t.name}` : path;
       const tRole = k.isDir ? roleOf(path, t.name) : role;
       // Towers: what is inside this thing (one level further), largest nearest the plaza.
-      const towers = (t.isDir ? t.children.filter((g) => g.size > 0) : []).slice(0, 14);
-      let list: [Ring, string, Role][] = towers.length > 1 ? towers.map((g) => [g, `${tPath}\\${g.name}`, roleOf(tPath, g.name)]) : [[t, tPath, tRole]];
-      // A wide slice with one thing in it becomes a block of several towers, so big districts look built up.
-      const wide = (b1 - b0) * ((R0 + R1) / 2);
-      if (list.length === 1 && wide > 2.5) list = Array.from({ length: Math.min(6, Math.round(wide / 2.2)) }, () => list[0]);
-      const weights = list.map(([g]) => Math.sqrt(g.size));
-      const wSum = weights.reduce((x, y) => x + y, 0) || 1;
-      const depth = R1 - R0 - 1.4;
-      let r = R0 + 0.9;
-      const am = (b0 + b1) / 2;
+      const towers = (t.isDir ? t.children.filter((g) => g.size > 0) : []).sort((x, y) => y.size - x.size).slice(0, 14);
+      const items: [Ring, string, Role][] = towers.length > 1 ? towers.map((g) => [g, `${tPath}\\${g.name}`, roleOf(tPath, g.name)]) : [[t, tPath, tRole]];
+      // A polar grid over the whole slice: columns across it, rows from the plaza to the outskirts,
+      // so a big district is a built-up block rather than one thin line of houses.
+      const r0 = R0 + 0.9;
+      const depth = R1 - 0.4 - r0;
+      const span = b1 - b0;
+      const cols = Math.max(1, Math.min(5, Math.round((span * (R0 + R1)) / 2 / 2.4)));
+      const rows = Math.max(Math.round(depth / 2.6), Math.ceil(items.length / cols));
+      const cells = cols * rows;
+      // Each thing gets cells in proportion to its size, the largest nearest the plaza.
+      const iSum = items.reduce((s, [g]) => s + g.size, 0) || 1;
+      const list: [Ring, string, Role][] = [];
+      for (const it of items) {
+        const c = Math.max(1, Math.round((it[0].size / iSum) * cells));
+        for (let m = 0; m < c && list.length < cells; m++) list.push(it);
+      }
+      const step = depth / rows;
       list.forEach(([g, gPath, gRole], n) => {
-        const seg = (weights[n] / wSum) * depth;
-        const rc = r + seg / 2;
-        r += seg;
-        const arc = (b1 - b0) * rc;
-        const w = Math.max(0.05, Math.min(arc * 0.78, 4.5));
-        const d = Math.max(0.05, Math.min(seg * 0.78, 4.5));
-        const h = Math.min(0.25 + Math.log10(1 + g.size / 1e6) * 0.7, 0.4 + Math.sqrt(w * d) * 1.5);
-        const p = polar(am, rc);
-        lots.push({ ring: g, path: gPath, role: gRole, district: i, kind: "building", x: p.x, z: p.z, w, d, h, a0: b0, a1: b1, rot: -am });
+        const row = Math.floor(n / cols);
+        const col = n % cols;
+        const rc = r0 + (row + 0.5) * step;
+        // The cell, clipped so nothing stands on this district's road or the next one's.
+        const lo = Math.max(b0 + (col * span) / cols, a0 + (width / 2 + 0.2) / rc);
+        const hi = Math.min(b0 + ((col + 1) * span) / cols, a1 + 0.024 - (nextWidth / 2 + 0.2) / rc);
+        if (hi - lo <= 0.002) return;
+        const ac = (lo + hi) / 2;
+        const w = Math.max(0.05, Math.min((hi - lo) * rc * 0.74, 3.2));
+        const d = Math.max(0.05, Math.min(step * 0.74, 3.2));
+        // A little variety in height, the same every time for the same spot.
+        const seed = Math.sin(n * 12.9898 + b0 * 78.233) * 43758.5453;
+        const jitter = 0.75 + 0.5 * (seed - Math.floor(seed));
+        const h = Math.min(0.25 + Math.log10(1 + g.size / 1e6) * 0.7, 0.4 + Math.sqrt(w * d) * 1.5) * jitter;
+        const p = polar(ac, rc);
+        lots.push({ ring: g, path: gPath, role: gRole, district: i, kind: "building", x: p.x, z: p.z, w, d, h, a0: b0, a1: b1, rot: -ac });
       });
     }
   });
@@ -160,7 +177,7 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x0b0f14, 55, 110);
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 300);
-    camera.position.set(0, 50, 46);
+    camera.position.set(0, 56, 54);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -202,14 +219,15 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
       const from = new THREE.Vector3(f.x, 0.03, f.z);
       const to = new THREE.Vector3(t2.x, 0.03, t2.z);
       const len = from.distanceTo(to);
-      const road = new THREE.Mesh(keep(new THREE.PlaneGeometry(r.width, len)), roadMat);
-      road.rotation.x = -Math.PI / 2;
-      road.rotation.z = -Math.atan2(to.x - from.x, to.z - from.z);
-      road.position.set((from.x + to.x) / 2, 0.025, (from.z + to.z) / 2);
+      // A flat slab whose length runs along +z, turned about the vertical to point from the plaza outwards.
+      const heading = Math.atan2(to.x - from.x, to.z - from.z);
+      const road = new THREE.Mesh(keep(new THREE.BoxGeometry(r.width, 0.02, len)), roadMat);
+      road.rotation.y = heading;
+      road.position.set((from.x + to.x) / 2, 0.02, (from.z + to.z) / 2);
       scene.add(road);
       // A thin centre line, brighter on livelier branches.
-      const centre = new THREE.Mesh(keep(new THREE.PlaneGeometry(0.05, len)), lineMat);
-      centre.rotation.copy(road.rotation);
+      const centre = new THREE.Mesh(keep(new THREE.BoxGeometry(0.05, 0.01, len)), lineMat);
+      centre.rotation.y = heading;
       centre.position.set(road.position.x, 0.04, road.position.z);
       scene.add(centre);
       traffic.push({ curve: [from, to], n: Math.max(1, Math.round(r.life * 9)), speed: 0.05 + r.life * 0.16, colour: new THREE.Color(ROLE_COLOURS[lots.find((l) => l.kind === "district" && l.district === r.district)?.role ?? "other"]) });
@@ -295,7 +313,7 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
     const shown = districts.filter((d) => d.a1 - d.a0 > 0.16).slice(0, 18);
     const labelEls = shown.map((d) => {
       const div = document.createElement("div");
-      div.className = "pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium";
+      div.className = "pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[0.6875rem] font-medium";
       div.style.background = "rgba(8,11,16,0.72)";
       div.style.color = "#e6e9ee";
       div.style.border = `1px solid ${ROLE_COLOURS[d.role]}66`;
@@ -432,12 +450,12 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
 
   return (
     <div className="relative overflow-hidden rounded-card border border-line bg-[#0b0f14] text-[#e6e9ee]" data-testid="file-city">
-      <div ref={host} className="h-[560px] w-full" />
+      <div ref={host} className="h-[35rem] w-full" />
       <div ref={labels} className="pointer-events-none absolute inset-0" />
 
       {/* The legend: how to read the city. */}
-      <div className={`absolute left-3 top-3 rounded-xl border border-white/10 bg-black/55 text-[11px] leading-relaxed backdrop-blur-md ${legend ? "w-[230px] p-3" : "p-1.5"}`}>
-        <button onClick={() => setLegend(!legend)} className="flex items-center gap-1.5 text-[12px] font-medium" aria-expanded={legend}>
+      <div className={`absolute left-3 top-3 rounded-xl border border-white/10 bg-black/55 text-[0.6875rem] leading-relaxed backdrop-blur-md ${legend ? "w-[14.375rem] p-3" : "p-1.5"}`}>
+        <button onClick={() => setLegend(!legend)} className="flex items-center gap-1.5 text-[0.75rem] font-medium" aria-expanded={legend}>
           <Info size={13} className="text-[#4cc2ff]" />
           {legend ? t("disk.city.legendTitle") : t("disk.city.legendShort")}
         </button>
@@ -465,7 +483,7 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
       </div>
 
       {onUp && (
-        <button onClick={onUp} className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-[12px] backdrop-blur-md hover:bg-black/70">
+        <button onClick={onUp} className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-[0.75rem] backdrop-blur-md hover:bg-black/70">
           <ArrowUp size={13} />
           {t("disk.city.up")}
         </button>
@@ -480,7 +498,7 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-3 right-3 w-[330px] rounded-xl border border-white/10 bg-black/70 p-4 text-[12px] backdrop-blur-md"
+            className="absolute bottom-3 right-3 w-[20.625rem] rounded-xl border border-white/10 bg-black/70 p-4 text-[0.75rem] backdrop-blur-md"
             data-testid="city-info"
           >
             {picked && (
@@ -490,14 +508,14 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
             )}
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: ROLE_COLOURS[info.role] }} />
-              <span className="truncate text-[14px] font-semibold">{info.ring.name}</span>
+              <span className="truncate text-[0.875rem] font-semibold">{info.ring.name}</span>
               {info.role === "critical" && <ShieldAlert size={14} className="shrink-0 text-[#ff8a80]" />}
             </div>
-            <div className="mt-1 flex items-start gap-1.5 text-[11px] text-white/55">
+            <div className="mt-1 flex items-start gap-1.5 text-[0.6875rem] text-white/55">
               <Route size={12} className="mt-0.5 shrink-0" />
               <span className="num break-all">{info.path}</span>
             </div>
-            <dl className="mt-3 grid grid-cols-[110px_1fr] gap-y-1 text-[12px]">
+            <dl className="mt-3 grid grid-cols-[110px_1fr] gap-y-1 text-[0.75rem]">
               <dt className="text-white/50">{t("disk.city.size")}</dt>
               <dd className="num">
                 {fmt.bytes(info.ring.size)} · {(share * 100).toFixed(share < 0.01 ? 2 : 1)}%
@@ -515,11 +533,11 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
               {t(`disk.city.todo.${info.role}`)}
             </p>
             {info.ring.isDir && info.ring.id >= 0 && (
-              <button onClick={() => onOpen(info.ring.id)} className="mt-3 w-full rounded-lg bg-white/10 py-1.5 text-[12px] hover:bg-white/15">
+              <button onClick={() => onOpen(info.ring.id)} className="mt-3 w-full rounded-lg bg-white/10 py-1.5 text-[0.75rem] hover:bg-white/15">
                 {t("disk.city.enter")}
               </button>
             )}
-            {!picked && <div className="mt-2 text-center text-[10px] text-white/40">{t("disk.city.clickHint", { lang: i18n.language })}</div>}
+            {!picked && <div className="mt-2 text-center text-[0.625rem] text-white/40">{t("disk.city.clickHint", { lang: i18n.language })}</div>}
           </motion.div>
         )}
       </AnimatePresence>

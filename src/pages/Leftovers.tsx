@@ -59,7 +59,7 @@ function useIdle() {
 function Badge({ level }: { level: Confidence }) {
   const { t } = useTranslation();
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] ${LEVEL_TONE[level]}`}>
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.6875rem] ${LEVEL_TONE[level]}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {t(`leftovers.level.${level}`)}
     </span>
@@ -73,11 +73,11 @@ function Notice() {
   if (!notice) return null;
   return (
     <div
-      className={`rounded-card border px-5 py-3 text-[12px] leading-relaxed ${notice.failed.length ? "border-warn/25 bg-warn/[0.06]" : "border-safe/25 bg-safe/[0.06]"}`}
+      className={`rounded-card border px-5 py-3 text-[0.75rem] leading-relaxed ${notice.failed.length ? "border-warn/25 bg-warn/[0.06]" : "border-safe/25 bg-safe/[0.06]"}`}
       data-testid="leftovers-notice"
     >
       <div className="flex items-center gap-3">
-        <span className="flex-1 text-[13px]">{t(`leftovers.notice.${notice.kind}`, { count: notice.count, size: fmt.bytes(notice.bytes) })}</span>
+        <span className="flex-1 text-[0.8125rem]">{t(`leftovers.notice.${notice.kind}`, { count: notice.count, size: fmt.bytes(notice.bytes) })}</span>
         <button className="text-muted hover:text-fg" onClick={() => useLeftovers.setState({ notice: null })}>
           {t("disk.dismiss")}
         </button>
@@ -109,13 +109,13 @@ function Intro() {
           { icon: ArchiveRestore, title: t("hero.leftovers.f3"), text: t("hero.leftovers.f3t") },
         ]}
         action={
-          <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={scan} data-testid="leftovers-scan">
+          <Button variant="primary" className="!h-11 !px-8 text-[0.875rem]" onClick={scan} data-testid="leftovers-scan">
             {t("cleanup.scan")}
           </Button>
         }
         error={
           error && (
-            <p className="text-[12px] text-risk" role="alert">
+            <p className="text-[0.75rem] text-risk" role="alert">
               {KNOWN_ERRORS.includes(error) ? t(`cleanup.error.${error}`) : t("cleanup.error.other", { message: error })}
             </p>
           )
@@ -132,13 +132,13 @@ function Scanning({ holding }: { holding: boolean }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
       <Ring value={holding ? 100 : percent} color="var(--color-accent)" size={150}>
-        <span className="font-display text-[32px] font-semibold leading-none">
+        <span className="font-display text-[2rem] font-semibold leading-none">
           <AnimatedNumber value={holding ? 100 : percent} />
-          <span className="text-[15px] text-muted">%</span>
+          <span className="text-[0.9375rem] text-muted">%</span>
         </span>
       </Ring>
-      <div className="mt-6 font-display text-[18px] font-semibold">{t(holding ? "leftovers.holding" : "leftovers.scanning")}</div>
-      <div className="num mt-3 h-4 w-[70%] truncate text-[11px] text-muted/70">{holding ? "" : (progress?.path ?? t("cleanup.preparing"))}</div>
+      <div className="mt-6 font-display text-[1.125rem] font-semibold">{t(holding ? "leftovers.holding" : "leftovers.scanning")}</div>
+      <div className="num mt-3 h-4 w-[70%] truncate text-[0.6875rem] text-muted/70">{holding ? "" : (progress?.path ?? t("cleanup.preparing"))}</div>
       {!holding && (
         <Button variant="quiet" className="mt-5" onClick={cancelScan}>
           {t("cleanup.cancel")}
@@ -183,16 +183,16 @@ function Row({ report, item }: { report: ScanReport; item: Leftover }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-medium">{item.name}</span>
+            <span className="truncate text-[0.875rem] font-medium">{item.name}</span>
             {locked && (
               <span className="shrink-0 text-warn" title={t("cleanup.needsAdmin")}>
                 <ShieldAlert size={14} />
               </span>
             )}
           </div>
-          <div className="mt-0.5 truncate text-[12px] text-muted">{facts.join(" · ")}</div>
+          <div className="mt-0.5 truncate text-[0.75rem] text-muted">{facts.join(" · ")}</div>
         </div>
-        <span className="num shrink-0 text-[14px]">{entry ? "—" : fmt.bytes(item.bytes)}</span>
+        <span className="num shrink-0 text-[0.875rem]">{entry ? "—" : fmt.bytes(item.bytes)}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 text-muted">
           <ChevronDown size={16} />
         </motion.span>
@@ -206,14 +206,14 @@ function Row({ report, item }: { report: ScanReport; item: Leftover }) {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <ul className="space-y-1.5 border-t border-line/60 bg-bg/40 py-3 pl-[88px] pr-5 text-[12px]">
+            <ul className="space-y-1.5 border-t border-line/60 bg-bg/40 py-3 pl-[88px] pr-5 text-[0.75rem]">
               {item.folders.map((folder) => (
                 <li key={folder.path} className="group flex items-center gap-3">
                   <Folder size={13} className="shrink-0 text-muted" />
                   <span className="num min-w-0 flex-1 truncate" title={folder.path}>
                     {shortenPath(folder.path, 80)}
                   </span>
-                  <span className="shrink-0 text-[11px] text-muted">{fmt.date(folder.lastUsed)}</span>
+                  <span className="shrink-0 text-[0.6875rem] text-muted">{fmt.date(folder.lastUsed)}</span>
                   <span className="num w-20 shrink-0 text-right text-muted">{fmt.bytes(folder.bytes)}</span>
                   <button className="shrink-0 rounded p-1 text-muted hover:text-fg" title={t("disk.reveal")} aria-label={t("disk.reveal")} onClick={() => reveal(folder.path)}>
                     <FolderOpen size={13} />
@@ -254,10 +254,10 @@ function Report({ report }: { report: ScanReport }) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-6 rounded-card border border-line bg-surface px-5 py-4">
         <div className="min-w-0">
-          <div className="font-display text-[30px] font-semibold leading-none" data-testid="leftovers-total">
+          <div className="font-display text-[1.875rem] font-semibold leading-none" data-testid="leftovers-total">
             {report.items.length ? fmt.bytes(total) : t("leftovers.none")}
           </div>
-          <div className="mt-1.5 truncate text-[12px] text-muted">
+          <div className="mt-1.5 truncate text-[0.75rem] text-muted">
             {report.items.length > 0 && `${t("leftovers.found", { count: report.items.length })} · `}
             {t("leftovers.checked", { folders: fmt.int(report.checked), apps: fmt.int(report.installed), time: fmt.duration(report.durationMs) })}
           </div>
@@ -275,7 +275,7 @@ function Report({ report }: { report: ScanReport }) {
       {adminWouldHelp && (
         <div className="flex items-center gap-4 rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-3.5">
           <ShieldAlert size={20} className="shrink-0 text-warn" />
-          <div className="min-w-0 flex-1 text-[12px] text-muted">{declined ? t("cleanup.adminDeclined") : t("leftovers.adminText")}</div>
+          <div className="min-w-0 flex-1 text-[0.75rem] text-muted">{declined ? t("cleanup.adminDeclined") : t("leftovers.adminText")}</div>
           <Button onClick={async () => setDeclined(!(await relaunchElevated()))}>{t("cleanup.adminAction")}</Button>
         </div>
       )}
@@ -295,8 +295,8 @@ function Report({ report }: { report: ScanReport }) {
                 label={t(`leftovers.level.${level}`)}
               />
               <Badge level={level} />
-              <span className="min-w-0 flex-1 truncate text-[12px] text-muted">{t(`leftovers.levelHint.${level}`)}</span>
-              <span className="num shrink-0 text-[12px] text-muted">{fmt.bytes(items.reduce((sum, i) => sum + i.bytes, 0))}</span>
+              <span className="min-w-0 flex-1 truncate text-[0.75rem] text-muted">{t(`leftovers.levelHint.${level}`)}</span>
+              <span className="num shrink-0 text-[0.75rem] text-muted">{fmt.bytes(items.reduce((sum, i) => sum + i.bytes, 0))}</span>
             </div>
             <div className="overflow-hidden rounded-card border border-line bg-surface">
               {items.map((item) => (
@@ -308,12 +308,12 @@ function Report({ report }: { report: ScanReport }) {
       })}
 
       <Modal open={confirming} onClose={() => setConfirming(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("leftovers.confirmTitle")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("leftovers.confirmTitle")}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">
           {t("leftovers.confirmText", { folders: chosenFolders, keys: chosenKeys, size: fmt.bytes(chosenBytes) })}
         </p>
         {chosen.some((i) => i.confidence !== "high") && (
-          <p className="mt-3 flex gap-2 text-[12px] leading-relaxed text-warn">
+          <p className="mt-3 flex gap-2 text-[0.75rem] leading-relaxed text-warn">
             <ShieldAlert size={14} className="mt-[3px] shrink-0" />
             {t("leftovers.confirmCaution")}
           </p>
@@ -349,17 +349,17 @@ function HeldRow({ entry, picked, onPick, onPurge }: { entry: Held; picked: bool
         {entry.kind === "folder" ? <Folder size={17} /> : <KeyRound size={17} />}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-[14px] font-medium">
+        <div className="flex items-center gap-2 text-[0.875rem] font-medium">
           <span className="truncate">{entry.name}</span>
           {entry.admin && <ShieldAlert size={13} className="shrink-0 text-warn" />}
         </div>
-        <div className="num truncate text-[11px] text-muted" title={entry.original}>
+        <div className="num truncate text-[0.6875rem] text-muted" title={entry.original}>
           {shortenPath(entry.original, 90)}
         </div>
       </div>
       <div className="shrink-0 text-right">
-        <div className="num text-[13px]">{entry.kind === "folder" ? fmt.bytes(entry.bytes) : "—"}</div>
-        <div className="text-[11px] text-muted">{t("leftovers.expiresIn", { count: days })}</div>
+        <div className="num text-[0.8125rem]">{entry.kind === "folder" ? fmt.bytes(entry.bytes) : "—"}</div>
+        <div className="text-[0.6875rem] text-muted">{t("leftovers.expiresIn", { count: days })}</div>
       </div>
       <Button icon={<Undo2 size={14} />} onClick={() => actOnHeld([entry.id], true)} data-testid="held-restore">
         {t("leftovers.restore")}
@@ -388,8 +388,8 @@ function Quarantine() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-muted">
           <ArchiveRestore size={28} />
         </div>
-        <h2 className="font-display text-[18px] font-semibold">{t("leftovers.quarantineEmpty")}</h2>
-        <p className="mt-2 max-w-[50ch] text-[13px] leading-relaxed text-muted">{t("leftovers.quarantineText")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("leftovers.quarantineEmpty")}</h2>
+        <p className="mt-2 max-w-[50ch] text-[0.8125rem] leading-relaxed text-muted">{t("leftovers.quarantineText")}</p>
       </div>
     );
   }
@@ -415,7 +415,7 @@ function Quarantine() {
 
   return (
     <div className="space-y-3">
-      <p className="px-1 text-[12px] leading-relaxed text-muted">
+      <p className="px-1 text-[0.75rem] leading-relaxed text-muted">
         {t("leftovers.quarantineSummary", { size: fmt.bytes(held.reduce((sum, h) => sum + h.bytes, 0)) })}
       </p>
       <div className="sticky top-[52px] z-10 flex items-center gap-3 rounded-card border border-line bg-surface/95 px-5 py-2.5 backdrop-blur" data-testid="held-bar">
@@ -424,7 +424,7 @@ function Quarantine() {
           onChange={() => setPicked(all ? new Set() : new Set(held.map((h) => h.id)))}
           label={t("leftovers.selectAll")}
         />
-        <span className="min-w-0 flex-1 text-[13px]">
+        <span className="min-w-0 flex-1 text-[0.8125rem]">
           {chosen.length ? t("leftovers.picked", { count: chosen.length, size: fmt.bytes(chosenBytes) }) : <span className="text-muted">{t("leftovers.selectAll")}</span>}
         </span>
         <Button icon={<Undo2 size={14} />} disabled={!chosen.length || busy} onClick={() => run(chosen.map((h) => h.id), true)} data-testid="held-restore-picked">
@@ -440,14 +440,14 @@ function Quarantine() {
         ))}
       </ul>
       <Modal open={purging !== null} onClose={() => setPurging(null)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("leftovers.purgeTitle")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("leftovers.purgeTitle")}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">
           {purging && purging.length === 1
             ? t("leftovers.purgeText", { name: purging[0].name })
             : t("leftovers.purgeManyText", { count: purging?.length ?? 0, size: fmt.bytes(purgeBytes) })}
         </p>
         {purging && purging.length > 1 && (
-          <ul className="mt-3 max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3 py-2 text-[12px]">
+          <ul className="mt-3 max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3 py-2 text-[0.75rem]">
             {purging.map((h) => (
               <li key={h.id} className="truncate">
                 {h.name}
@@ -455,7 +455,7 @@ function Quarantine() {
             ))}
           </ul>
         )}
-        {purgeAdmin && <p className="mt-2 text-[12px] text-warn">{t("leftovers.purgeAdminNote")}</p>}
+        {purgeAdmin && <p className="mt-2 text-[0.75rem] text-warn">{t("leftovers.purgeAdminNote")}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <Button autoFocus onClick={() => setPurging(null)}>
             {t("cleanup.cancel")}
@@ -486,7 +486,7 @@ export function Leftovers() {
 
   return (
     <div className="flex min-h-full flex-col gap-4">
-      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[13px]" role="tablist">
+      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[0.8125rem]" role="tablist">
         {(["found", "quarantine"] as const).map((id) => (
           <button
             key={id}

@@ -98,13 +98,13 @@ function Spectrum() {
           <button
             key={b}
             onClick={() => setBand(b)}
-            className={`rounded-md border px-2.5 py-1 text-[12px] transition-colors ${band === b ? "border-transparent text-bg" : "border-line text-muted hover:text-fg"}`}
+            className={`rounded-md border px-2.5 py-1 text-[0.75rem] transition-colors ${band === b ? "border-transparent text-bg" : "border-line text-muted hover:text-fg"}`}
             style={band === b ? { background: BAND_COLORS[b] } : undefined}
           >
             {b} {t("wifi.ghz")} · {snap.networks.filter((n) => n.band === b).length}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-muted">{t("wifi.adv.spectrumHint")}</span>
+        <span className="ml-auto text-[0.6875rem] text-muted">{t("wifi.adv.spectrumHint")}</span>
       </div>
       <div ref={box} className="relative" onMouseLeave={() => setHover(null)}>
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={t("wifi.adv.tabs.spectrum")}>
@@ -199,10 +199,10 @@ function Tooltip({ n, x, y }: { n: Bss; x: number; y: number }) {
   const { t } = useTranslation();
   return (
     <div
-      className="pointer-events-none absolute z-10 w-[230px] rounded-xl border border-line bg-bg/95 p-3 text-[11px] shadow-xl backdrop-blur"
+      className="pointer-events-none absolute z-10 w-[14.375rem] rounded-xl border border-line bg-bg/95 p-3 text-[0.6875rem] shadow-xl backdrop-blur"
       style={{ left: Math.min(x + 14, 9999), top: y + 14, transform: x > 600 ? "translateX(-110%)" : undefined }}
     >
-      <div className="truncate text-[13px] font-medium text-fg">{nameOf(n, t("wifi.hidden"))}</div>
+      <div className="truncate text-[0.8125rem] font-medium text-fg">{nameOf(n, t("wifi.hidden"))}</div>
       <div className="num text-muted">{n.bssid}</div>
       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
         <dt className="text-muted">{t("wifi.col.signal")}</dt>
@@ -264,7 +264,7 @@ function Timeline() {
             <button
               key={n.bssid}
               onClick={() => setChosen(on ? shown.filter((b) => b !== n.bssid) : [...shown, n.bssid].slice(-8))}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors ${on ? "border-line text-fg" : "border-transparent text-muted hover:text-fg"}`}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-[0.6875rem] transition-colors ${on ? "border-line text-fg" : "border-transparent text-muted hover:text-fg"}`}
             >
               <span className="h-2 w-2 rounded-full" style={{ background: on ? c : "var(--color-line)" }} />
               {nameOf(n, t("wifi.hidden"))}
@@ -328,7 +328,7 @@ function Timeline() {
           </g>
         )}
       </svg>
-      <p className="mt-1 text-[11px] text-muted">{t("wifi.adv.timelineHint")}</p>
+      <p className="mt-1 text-[0.6875rem] text-muted">{t("wifi.adv.timelineHint")}</p>
     </div>
   );
 }
@@ -365,8 +365,8 @@ function Table() {
   return (
     <div className="overflow-clip rounded-card border border-line bg-surface" data-testid="wifi-table">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-[12px]">
-          <thead className="text-[11px] text-muted">
+        <table className="w-full text-left text-[0.75rem]">
+          <thead className="text-[0.6875rem] text-muted">
             <tr className="border-b border-line">
               {cols.map(([c, label]) => (
                 <th key={c} className="whitespace-nowrap px-3 py-2 font-normal">
@@ -381,16 +381,16 @@ function Table() {
           <tbody>
             {rows.map((n) => (
               <motion.tr layout="position" key={n.bssid} className={`border-b border-line/50 last:border-b-0 ${n.connected ? "bg-accent/[0.07]" : ""}`}>
-                <td className="max-w-[260px] px-3 py-1.5">
+                <td className="max-w-[16.25rem] px-3 py-1.5">
                   <div className={`truncate ${n.hidden ? "italic text-muted" : ""}`}>
                     {nameOf(n, t("wifi.hidden"))}
-                    {n.connected && <span className="ml-1.5 rounded bg-accent/15 px-1 text-[10px] text-accent">{t("wifi.yours")}</span>}
-                    {!n.connected && snap.analysis?.mine.includes(n.bssid) && <span className="ml-1.5 rounded bg-raised px-1 text-[10px] text-muted">{t("wifi.yourRouter")}</span>}
+                    {n.connected && <span className="ml-1.5 rounded bg-accent/15 px-1 text-[0.625rem] text-accent">{t("wifi.yours")}</span>}
+                    {!n.connected && snap.analysis?.mine.includes(n.bssid) && <span className="ml-1.5 rounded bg-raised px-1 text-[0.625rem] text-muted">{t("wifi.yourRouter")}</span>}
                     {firstSeen[n.bssid] - sessionStart > 20_000 && Date.now() - firstSeen[n.bssid] < 120_000 && (
-                      <span className="ml-1.5 rounded bg-safe/15 px-1 text-[10px] text-safe">{t("wifi.adv.new")}</span>
+                      <span className="ml-1.5 rounded bg-safe/15 px-1 text-[0.625rem] text-safe">{t("wifi.adv.new")}</span>
                     )}
                   </div>
-                  <div className="num text-[10px] text-muted">
+                  <div className="num text-[0.625rem] text-muted">
                     {n.bssid}
                     {n.randomMac && <span title={t("wifi.adv.virtualHint")}> · {t("wifi.adv.virtual")}</span>}
                   </div>
@@ -410,11 +410,11 @@ function Table() {
                 <td className={`whitespace-nowrap px-3 ${["open", "wep", "wpa"].includes(n.security) || n.tkip ? "text-warn" : ""}`}>
                   {t(`wifi.security.${n.security}`)}
                   {n.tkip && !["wep", "wpa"].includes(n.security) && (
-                    <span className="ml-1 text-[10px] text-warn" title={t("wifi.adv.tkip")}>
+                    <span className="ml-1 text-[0.625rem] text-warn" title={t("wifi.adv.tkip")}>
                       TKIP
                     </span>
                   )}
-                  {n.wps && <span className="ml-1 text-[10px] text-muted">WPS</span>}
+                  {n.wps && <span className="ml-1 text-[0.625rem] text-muted">WPS</span>}
                 </td>
                 <td className="num px-3 text-muted">{n.stations ?? "—"}</td>
                 <td className="num px-3 text-muted">{n.utilization !== null ? `${n.utilization}%` : "—"}</td>
@@ -443,7 +443,7 @@ export function Advanced() {
             key={id}
             onClick={() => setTab(id)}
             data-testid={`wifi-tab-${id}`}
-            className={`relative flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[13px] transition-colors ${tab === id ? "text-fg" : "text-muted hover:text-fg"}`}
+            className={`relative flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[0.8125rem] transition-colors ${tab === id ? "text-fg" : "text-muted hover:text-fg"}`}
           >
             <Icon size={14} />
             {t(`wifi.adv.tabs.${id}`)}
@@ -462,7 +462,7 @@ export function Advanced() {
       {tab === "echo" && (
         <Suspense
           fallback={
-            <div className="flex h-[560px] items-center justify-center rounded-card border border-line bg-surface">
+            <div className="flex h-[35rem] items-center justify-center rounded-card border border-line bg-surface">
               <Loader2 className="animate-spin text-accent" />
             </div>
           }

@@ -54,17 +54,17 @@ function Row({ entry }: { entry: Entry }) {
           <Icon size={17} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[14px] font-medium">
+          <div className="flex items-center gap-2 text-[0.875rem] font-medium">
             {known ? t(`journal.${entry.kind}`) : entry.kind}
             {entry.details?.sandbox && (
-              <span className="rounded-full bg-warn/10 px-2 py-0.5 text-[11px] font-normal text-warn">{t("app.sandbox")}</span>
+              <span className="rounded-full bg-warn/10 px-2 py-0.5 text-[0.6875rem] font-normal text-warn">{t("app.sandbox")}</span>
             )}
           </div>
-          <div className="num text-[12px] text-muted">{new Date(entry.at * 1000).toLocaleTimeString(i18n.language.startsWith("uk") ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" })}</div>
+          <div className="num text-[0.75rem] text-muted">{new Date(entry.at * 1000).toLocaleTimeString(i18n.language.startsWith("uk") ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" })}</div>
         </div>
         <div className="shrink-0 text-right">
-          {frees && <div className="num text-[14px] text-safe">{t("journal.freed", { value: fmt.bytes(entry.bytes) })}</div>}
-          <div className={`num text-muted ${frees ? "text-[11px]" : "text-[13px]"}`}>
+          {frees && <div className="num text-[0.875rem] text-safe">{t("journal.freed", { value: fmt.bytes(entry.bytes) })}</div>}
+          <div className={`num text-muted ${frees ? "text-[0.6875rem]" : "text-[0.8125rem]"}`}>
             {t(frees ? "journal.files" : "journal.items", { value: fmt.int(entry.files) })}
             {entry.skipped > 0 && ` · ${t("journal.skipped", { value: fmt.int(entry.skipped) })}`}
           </div>
@@ -80,7 +80,7 @@ function Row({ entry }: { entry: Entry }) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="overflow-hidden border-t border-line/60 bg-bg/40 pl-[70px] pr-5 text-[13px]"
+            className="overflow-hidden border-t border-line/60 bg-bg/40 pl-[70px] pr-5 text-[0.8125rem]"
           >
             {entry.details?.name && (
               <li className="flex items-center gap-3 py-2">
@@ -92,7 +92,7 @@ function Row({ entry }: { entry: Entry }) {
             )}
             {items.map((item) => (
               <li key={item.path} className="flex items-center gap-3 py-2">
-                <span className="num min-w-0 flex-1 truncate text-[12px]" title={item.path}>
+                <span className="num min-w-0 flex-1 truncate text-[0.75rem]" title={item.path}>
                   {item.path}
                 </span>
                 <span className="num shrink-0 text-muted">{fmt.bytes(item.bytes)}</span>
@@ -102,7 +102,7 @@ function Row({ entry }: { entry: Entry }) {
               <li key={c.id} className="flex items-center gap-3 py-2">
                 <span className="min-w-0 flex-1 truncate">{names.category(c)}</span>
                 {c.skippedFiles > 0 && (
-                  <span className="num shrink-0 text-[11px] text-warn">{t("journal.skipped", { value: fmt.int(c.skippedFiles) })}</span>
+                  <span className="num shrink-0 text-[0.6875rem] text-warn">{t("journal.skipped", { value: fmt.int(c.skippedFiles) })}</span>
                 )}
                 <span className="num shrink-0 text-muted">{fmt.bytes(c.freedBytes)}</span>
               </li>
@@ -137,8 +137,8 @@ export function Journal() {
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-muted">
           <History size={28} />
         </div>
-        <h2 className="font-display text-[18px] font-semibold">{t("journal.empty")}</h2>
-        <p className="mt-2 max-w-[48ch] text-[13px] leading-relaxed text-muted">{t("journal.emptyText")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("journal.empty")}</h2>
+        <p className="mt-2 max-w-[48ch] text-[0.8125rem] leading-relaxed text-muted">{t("journal.emptyText")}</p>
         <div className="mt-6">
           <ErrorLogLink />
         </div>
@@ -170,9 +170,9 @@ export function Journal() {
         return (
           <section key={d.key} data-testid="journal-day">
             <div className="mb-2 flex items-baseline gap-2 px-1">
-              <h3 className="text-[13px] font-semibold first-letter:uppercase">{d.label}</h3>
-              <span className="text-[12px] text-muted">{t("journal.actions", { count: d.items.length })}</span>
-              {freed > 0 && <span className="num ml-auto text-[12px] text-safe">{t("journal.freed", { value: fmt.bytes(freed) })}</span>}
+              <h3 className="text-[0.8125rem] font-semibold first-letter:uppercase">{d.label}</h3>
+              <span className="text-[0.75rem] text-muted">{t("journal.actions", { count: d.items.length })}</span>
+              {freed > 0 && <span className="num ml-auto text-[0.75rem] text-safe">{t("journal.freed", { value: fmt.bytes(freed) })}</span>}
             </div>
             <ul className="rows-enter overflow-hidden rounded-card border border-line bg-surface">
               {d.items.map((entry) => (
@@ -191,7 +191,7 @@ export function Journal() {
 function ErrorLogLink() {
   const { t } = useTranslation();
   return (
-    <p className="px-1 text-[12px] text-muted">
+    <p className="px-1 text-[0.75rem] text-muted">
       {t("journal.errorLog")}{" "}
       <button className="text-accent hover:underline" onClick={() => invoke("open_log_folder").catch(console.error)} data-testid="open-log">
         {t("journal.openErrorLog")}

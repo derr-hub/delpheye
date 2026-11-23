@@ -404,7 +404,7 @@ export default function Shield3D({
       <div ref={host} className="absolute inset-0" data-testid="shield-3d" />
       <div ref={labelHost} className="pointer-events-none absolute inset-0 overflow-hidden" />
       {hovered && !selected && (
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-line bg-surface/90 px-3 py-1 text-[12px] backdrop-blur" data-testid="shield-hover">
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-line bg-surface/90 px-3 py-1 text-[0.75rem] backdrop-blur" data-testid="shield-hover">
           <span className="font-medium">{hovered.title}</span>
           <span className="text-muted"> · {hovered.status}</span>
         </div>

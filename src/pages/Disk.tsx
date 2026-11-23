@@ -61,7 +61,7 @@ function ErrorLine({ error }: { error: string | null }) {
   const { t } = useTranslation();
   if (!error) return null;
   return (
-    <p className="text-[12px] text-risk" role="alert">
+    <p className="text-[0.75rem] text-risk" role="alert">
       {KNOWN_ERRORS.includes(error) ? t(`disk.error.${error}`) : t("disk.error.other", { message: error })}
     </p>
   );
@@ -82,7 +82,7 @@ function Intro() {
         { icon: Copy, title: t("hero.disk.f3"), text: t("hero.disk.f3t") },
       ]}
       action={
-        <Button variant="primary" className="!h-11 !px-8 text-[14px]" disabled={!drive} onClick={startIndex} data-testid="disk-index">
+        <Button variant="primary" className="!h-11 !px-8 text-[0.875rem]" disabled={!drive} onClick={startIndex} data-testid="disk-index">
           {t("disk.index", { drive: drive?.replace(/\\$/, "") ?? "" })}
         </Button>
       }
@@ -94,7 +94,7 @@ function Intro() {
             <button
               key={d.mount}
               onClick={() => useDisk.setState({ drive: d.mount })}
-              className={`rounded-lg border px-3 py-1.5 text-[12px] transition-colors duration-150 ${
+              className={`rounded-lg border px-3 py-1.5 text-[0.75rem] transition-colors duration-150 ${
                 d.mount === drive ? "border-accent bg-accent/10 text-fg" : "border-line text-muted hover:text-fg"
               }`}
             >
@@ -120,23 +120,23 @@ function Indexing() {
   const zone = zoneOf(progress?.path ?? "");
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 lg:flex-row lg:gap-10">
-      <div className="relative h-[360px] w-full max-w-[560px]">
+      <div className="relative h-[22.5rem] w-full max-w-[35rem]">
         <div className="pointer-events-none absolute inset-8 rounded-full bg-accent/10 blur-3xl" />
         <Suspense fallback={null}>
           <DiskBuild3D kind={media} fill={fill} zone={zone} />
         </Suspense>
       </div>
-      <div className="w-full max-w-[360px] text-center lg:text-left">
-        <div className="text-[12px] uppercase tracking-wider text-muted">{t(media === "hdd" ? "disk.build.hdd" : "disk.build.ssd")}</div>
-        <div className="mt-1 font-display text-[22px] font-semibold">{t("disk.indexing")}</div>
+      <div className="w-full max-w-[22.5rem] text-center lg:text-left">
+        <div className="text-[0.75rem] uppercase tracking-wider text-muted">{t(media === "hdd" ? "disk.build.hdd" : "disk.build.ssd")}</div>
+        <div className="mt-1 font-display text-[1.375rem] font-semibold">{t("disk.indexing")}</div>
         <div className="mt-2 flex items-baseline justify-center gap-2 lg:justify-start">
-          <span className="num font-display text-[34px] font-semibold leading-none text-accent">{Math.round(fill * 100)}%</span>
-          <span className="text-[12px] text-muted">{t("disk.build.ofUsed", { used: fmt.bytes(used) })}</span>
+          <span className="num font-display text-[2.125rem] font-semibold leading-none text-accent">{Math.round(fill * 100)}%</span>
+          <span className="text-[0.75rem] text-muted">{t("disk.build.ofUsed", { used: fmt.bytes(used) })}</span>
         </div>
-        <div className="mt-2 text-[13px] text-muted">
+        <div className="mt-2 text-[0.8125rem] text-muted">
           {t("disk.filesSoFar", { value: fmt.int(progress?.files ?? 0) })} · <AnimatedBytes value={progress?.bytes ?? 0} />
         </div>
-        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
+        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[0.75rem]">
           {ZONE_COLOURS.map((c, i) => (
             <li key={c} className={`flex items-center gap-2 transition-opacity ${zone === i ? "opacity-100" : "opacity-55"}`}>
               <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: c, boxShadow: zone === i ? `0 0 8px ${c}` : undefined }} />
@@ -144,7 +144,7 @@ function Indexing() {
             </li>
           ))}
         </ul>
-        <div className="num mt-4 h-4 truncate text-[11px] text-muted/70" title={progress?.path}>
+        <div className="num mt-4 h-4 truncate text-[0.6875rem] text-muted/70" title={progress?.path}>
           {progress?.path ?? ""}
         </div>
         <Button variant="quiet" className="mt-4" onClick={cancelWork}>
@@ -175,8 +175,8 @@ function ItemRow({ item, share, showPath, lastCopy, aged }: { item: Item; share?
           <Icon size={15} className={`shrink-0 ${item.isDir ? "text-accent" : "text-muted"}`} />
         )}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px]">{item.name}</span>
-          {showPath && <span className="num block truncate text-[11px] text-muted/80">{shortenPath(item.path, 100)}</span>}
+          <span className="block truncate text-[0.8125rem]">{item.name}</span>
+          {showPath && <span className="num block truncate text-[0.6875rem] text-muted/80">{shortenPath(item.path, 100)}</span>}
         </span>
       </button>
       {share !== undefined && (
@@ -186,10 +186,10 @@ function ItemRow({ item, share, showPath, lastCopy, aged }: { item: Item; share?
           </span>
         </span>
       )}
-      <span className="num w-28 shrink-0 whitespace-nowrap text-right text-[11px] text-muted">
+      <span className="num w-28 shrink-0 whitespace-nowrap text-right text-[0.6875rem] text-muted">
         {item.isDir ? t("disk.filesSoFar", { value: fmt.int(item.files) }) : item.modified > 0 ? fmt.date(item.modified) : ""}
       </span>
-      <span className="num w-20 shrink-0 text-right text-[13px]">{fmt.bytes(item.size)}</span>
+      <span className="num w-20 shrink-0 text-right text-[0.8125rem]">{fmt.bytes(item.size)}</span>
       <button
         className="shrink-0 rounded p-1 text-muted opacity-0 transition-opacity duration-150 hover:text-fg group-hover:opacity-100"
         title={t("disk.reveal")}
@@ -227,7 +227,7 @@ function MapTab({ folder }: { folder: Folder }) {
   const fmt = useFmt();
   return (
     <div className="space-y-4">
-      <nav className="flex flex-wrap items-center gap-1 text-[13px]" aria-label="breadcrumb">
+      <nav className="flex flex-wrap items-center gap-1 text-[0.8125rem]" aria-label="breadcrumb">
         {folder.trail.map((crumb, i) => {
           const last = i === folder.trail.length - 1;
           return (
@@ -244,7 +244,7 @@ function MapTab({ folder }: { folder: Folder }) {
           );
         })}
         <span className="num ml-auto text-muted">{fmt.bytes(folder.item.size)}</span>
-        <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+        <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]">
           {(["rings", "city"] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} className={`rounded-md px-2.5 py-1 ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`} data-testid={`disk-view-${v}`}>
               {t(`disk.city.view.${v}`)}
@@ -258,7 +258,7 @@ function MapTab({ folder }: { folder: Folder }) {
         </div>
       )}
       {rings && rings.id === folder.item.id && view === "city" && (
-        <Suspense fallback={<div className="skeleton h-[560px]" />}>
+        <Suspense fallback={<div className="skeleton h-[35rem]" />}>
           <FileCity root={rings} base={folder.item.path.replace(/\\$/, "")} onOpen={openFolder} onUp={parent === null ? null : () => openFolder(parent)} />
         </Suspense>
       )}
@@ -266,9 +266,9 @@ function MapTab({ folder }: { folder: Folder }) {
         {folder.children.map((child) => (
           <ItemRow key={child.id} item={child} share={folder.item.size > 0 ? child.size / folder.item.size : 0} aged />
         ))}
-        {folder.children.length === 0 && <li className="px-5 py-4 text-[13px] text-muted">{t("disk.emptyFolder")}</li>}
+        {folder.children.length === 0 && <li className="px-5 py-4 text-[0.8125rem] text-muted">{t("disk.emptyFolder")}</li>}
         {folder.moreCount > 0 && (
-          <li className="flex justify-between px-5 py-2 text-[12px] text-muted">
+          <li className="flex justify-between px-5 py-2 text-[0.75rem] text-muted">
             {t("disk.rest", { value: fmt.int(folder.moreCount) })}
             <span className="num">{fmt.bytes(folder.moreBytes)}</span>
           </li>
@@ -299,15 +299,15 @@ function SearchTab() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t("disk.searchPlaceholder")}
-          className="min-w-0 flex-1 select-text bg-transparent text-[14px] outline-none placeholder:text-muted/60"
+          className="min-w-0 flex-1 select-text bg-transparent text-[0.875rem] outline-none placeholder:text-muted/60"
           data-testid="disk-search"
         />
       </label>
       {!found ? (
-        <p className="px-1 text-[12px] text-muted">{t("disk.searchHint")}</p>
+        <p className="px-1 text-[0.75rem] text-muted">{t("disk.searchHint")}</p>
       ) : (
         <>
-          <p className="px-1 text-[12px] text-muted" data-testid="disk-search-total">
+          <p className="px-1 text-[0.75rem] text-muted" data-testid="disk-search-total">
             {found.total === 0 ? t("disk.noResults") : t("disk.searchTotal", { value: fmt.int(found.total) })}
             {found.total > SEARCH_LIMIT && ` · ${t("disk.searchShown", { value: SEARCH_LIMIT })}`}
           </p>
@@ -330,7 +330,7 @@ function DupeGroupCard({ group }: { group: DupeGroup }) {
   const picked = useDisk((s) => s.picked);
   return (
     <section data-testid="dupe-group">
-      <h3 className="mb-1.5 flex items-baseline justify-between px-1 text-[12px] text-muted">
+      <h3 className="mb-1.5 flex items-baseline justify-between px-1 text-[0.75rem] text-muted">
         <span>
           {t("disk.dupesCopies", { n: group.items.length, size: fmt.bytes(group.size) })}
         </span>
@@ -355,9 +355,9 @@ function DupesTab() {
     const percent = dupesProgress && dupesProgress.total > 0 ? (dupesProgress.done / dupesProgress.total) * 100 : 0;
     return (
       <div className="rounded-card border border-line bg-surface px-5 py-5" data-testid="dupes-running">
-        <div className="mb-3 flex items-baseline justify-between text-[13px]">
+        <div className="mb-3 flex items-baseline justify-between text-[0.8125rem]">
           <span>{t(hashing ? "disk.dupesHashing" : "disk.dupesSampling")}</span>
-          <span className="num text-[12px] text-muted">
+          <span className="num text-[0.75rem] text-muted">
             {dupesProgress &&
               (hashing
                 ? `${fmt.bytes(dupesProgress.done)} / ${fmt.bytes(dupesProgress.total)}`
@@ -378,21 +378,21 @@ function DupesTab() {
         <div className="min-w-0 flex-1">
           {dupes ? (
             <>
-              <div className="text-[14px] font-medium" data-testid="dupes-summary">
+              <div className="text-[0.875rem] font-medium" data-testid="dupes-summary">
                 {dupes.totalGroups === 0
                   ? t("disk.dupesNone")
                   : t("disk.dupesFound", { groups: fmt.int(dupes.totalGroups), size: fmt.bytes(dupes.wastedBytes) })}
               </div>
-              <div className="text-[12px] text-muted">
+              <div className="text-[0.75rem] text-muted">
                 {t("disk.dupesTook", { value: fmt.duration(dupes.durationMs) })}
                 {dupes.totalGroups > dupes.groups.length && ` · ${t("disk.dupesShown", { value: fmt.int(dupes.groups.length) })}`}
               </div>
             </>
           ) : (
-            <p className="max-w-[70ch] text-[12px] leading-relaxed text-muted">{t("disk.dupesIntro")}</p>
+            <p className="max-w-[70ch] text-[0.75rem] leading-relaxed text-muted">{t("disk.dupesIntro")}</p>
           )}
         </div>
-        <div className="flex rounded-lg border border-line p-0.5 text-[12px]" role="radiogroup" aria-label={t("disk.dupesMinSize")}>
+        <div className="flex rounded-lg border border-line p-0.5 text-[0.75rem]" role="radiogroup" aria-label={t("disk.dupesMinSize")}>
           {DUPES_SIZES.map((size) => (
             <button
               key={size}
@@ -442,7 +442,7 @@ function SelectionBar() {
             className="sticky bottom-0 z-10 flex items-center gap-4 rounded-card border border-line bg-raised px-5 py-3 shadow-2xl"
             data-testid="selection-bar"
           >
-            <span className="text-[13px]">
+            <span className="text-[0.8125rem]">
               {t("disk.pickedCount", { value: fmt.int(items.length) })} · <span className="num">{fmt.bytes(bytes)}</span>
             </span>
             <Button variant="quiet" className="ml-auto" onClick={clearPicked}>
@@ -455,11 +455,11 @@ function SelectionBar() {
         )}
       </AnimatePresence>
       <Modal open={confirming} onClose={() => setConfirming(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("disk.binTitle")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("disk.binText", { size: fmt.bytes(bytes) })}</p>
-        <ul className="mt-4 max-h-[220px] space-y-1.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3.5 py-2.5">
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("disk.binTitle")}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("disk.binText", { size: fmt.bytes(bytes) })}</p>
+        <ul className="mt-4 max-h-[13.75rem] space-y-1.5 overflow-y-auto rounded-lg border border-line bg-bg/50 px-3.5 py-2.5">
           {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 text-[12px]">
+            <li key={item.id} className="flex items-center gap-3 text-[0.75rem]">
               <span className="num min-w-0 flex-1 truncate" title={item.path}>
                 {shortenPath(item.path, 60)}
               </span>
@@ -494,11 +494,11 @@ function TrashResult() {
   if (!report) return null;
   return (
     <div
-      className={`rounded-card border px-5 py-3 text-[12px] leading-relaxed ${report.failed.length ? "border-warn/25 bg-warn/[0.06]" : "border-safe/25 bg-safe/[0.06]"}`}
+      className={`rounded-card border px-5 py-3 text-[0.75rem] leading-relaxed ${report.failed.length ? "border-warn/25 bg-warn/[0.06]" : "border-safe/25 bg-safe/[0.06]"}`}
       data-testid="trash-result"
     >
       <div className="flex items-center gap-3">
-        <span className="flex-1 text-[13px]">
+        <span className="flex-1 text-[0.8125rem]">
           {t("disk.binDone", { count: fmt.int(report.trashed.length), size: fmt.bytes(report.freedBytes) })}
         </span>
         <button className="text-muted hover:text-fg" onClick={() => useDisk.setState({ lastTrash: null })}>
@@ -531,16 +531,16 @@ export function Disk() {
     <div className="flex min-h-full flex-col gap-4 pb-2">
       <div className="flex items-center gap-6 rounded-card border border-line bg-surface px-5 py-4">
         <div className="min-w-0">
-          <div className="font-display text-[30px] font-semibold leading-none" data-testid="disk-total">
+          <div className="font-display text-[1.875rem] font-semibold leading-none" data-testid="disk-total">
             {fmt.bytes(summary.bytes)}
           </div>
-          <div className="mt-1.5 truncate text-[12px] text-muted" data-testid="disk-summary">
+          <div className="mt-1.5 truncate text-[0.75rem] text-muted" data-testid="disk-summary">
             <span className="num">{summary.root}</span> · {t("disk.used")} ·{" "}
             {t("disk.summary", { files: fmt.int(summary.files), folders: fmt.int(summary.folders), time: fmt.duration(summary.durationMs) })}
           </div>
         </div>
         <span
-          className={`ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] ${fast ? "bg-accent/10 text-accent" : "bg-raised text-muted"}`}
+          className={`ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] ${fast ? "bg-accent/10 text-accent" : "bg-raised text-muted"}`}
           data-testid="disk-method"
           data-method={summary.method}
         >
@@ -548,7 +548,7 @@ export function Disk() {
           {t(`disk.method.${summary.method}`)}
         </span>
         {drives.length > 1 && (
-          <div className="flex shrink-0 rounded-lg border border-line p-0.5 text-[12px]" role="tablist" aria-label={t("disk.otherDrive")}>
+          <div className="flex shrink-0 rounded-lg border border-line p-0.5 text-[0.75rem]" role="tablist" aria-label={t("disk.otherDrive")}>
             {drives.map((d) => {
               const current = d.mount.toLowerCase() === summary.root.toLowerCase();
               return (
@@ -577,14 +577,14 @@ export function Disk() {
       {!summary.elevated && (
         <div className="flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-3">
           <ShieldAlert size={18} className="shrink-0 text-warn" />
-          <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-muted">
+          <p className="min-w-0 flex-1 text-[0.75rem] leading-relaxed text-muted">
             {declined ? t("cleanup.adminDeclined") : t("disk.adminHint", { value: fmt.int(summary.unreadable) })}
           </p>
           <Button onClick={async () => setDeclined(!(await relaunchElevated()))}>{t("cleanup.adminAction")}</Button>
         </div>
       )}
       {summary.elevated && summary.unreadable > 0 && (
-        <p className="flex items-start gap-2 px-1 text-[12px] leading-relaxed text-muted">
+        <p className="flex items-start gap-2 px-1 text-[0.75rem] leading-relaxed text-muted">
           <TriangleAlert size={14} className="mt-[3px] shrink-0 text-warn" />
           {t("disk.unreadable", { value: fmt.int(summary.unreadable) })}
         </p>
@@ -593,7 +593,7 @@ export function Disk() {
       <TrashResult />
       <ErrorLine error={error} />
 
-      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[13px]" role="tablist">
+      <div className="flex gap-1 rounded-lg border border-line p-0.5 text-[0.8125rem]" role="tablist">
         {TABS.map((id) => (
           <button
             key={id}
@@ -622,7 +622,7 @@ export function Disk() {
       {tab === "search" && <SearchTab />}
       {tab === "dupes" && <DupesTab />}
 
-      <p className="flex items-start gap-2 px-1 text-[11px] text-muted/80">
+      <p className="flex items-start gap-2 px-1 text-[0.6875rem] text-muted/80">
         <Info size={13} className="mt-0.5 shrink-0" />
         {t("disk.sizeNote")}
       </p>

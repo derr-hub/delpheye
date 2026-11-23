@@ -23,13 +23,13 @@ function Intro() {
         { icon: Cpu, title: t("hero.updates.f3"), text: t("hero.updates.f3t") },
       ]}
       action={
-        <Button variant="primary" className="!h-11 !px-8 text-[14px]" onClick={checkUpdates} data-testid="updates-check">
+        <Button variant="primary" className="!h-11 !px-8 text-[0.875rem]" onClick={checkUpdates} data-testid="updates-check">
           {t("updates.check")}
         </Button>
       }
       error={
         error && (
-          <p className="text-[12px] text-risk" role="alert">
+          <p className="text-[0.75rem] text-risk" role="alert">
             {error === "no-winget" ? t("updates.noWinget") : t("updates.error", { message: error })}
           </p>
         )
@@ -43,8 +43,8 @@ function Loading() {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
       <Loader2 size={36} className="animate-spin text-accent" />
-      <div className="mt-5 font-display text-[18px] font-semibold">{t("updates.loading")}</div>
-      <div className="mt-1 max-w-[46ch] text-[13px] text-muted">{t("updates.loadingHint")}</div>
+      <div className="mt-5 font-display text-[1.125rem] font-semibold">{t("updates.loading")}</div>
+      <div className="mt-1 max-w-[46ch] text-[0.8125rem] text-muted">{t("updates.loadingHint")}</div>
     </div>
   );
 }
@@ -54,14 +54,14 @@ function Status({ row, id }: { row: RowState | undefined; id: string }) {
   if (!row) return null;
   if (row.state === "running")
     return (
-      <span className="flex items-center gap-1.5 text-[12px] text-accent">
+      <span className="flex items-center gap-1.5 text-[0.75rem] text-accent">
         <Loader2 size={13} className="animate-spin" />
         {t("updates.running")}
       </span>
     );
   if (row.state === "done")
     return (
-      <span className="flex items-center gap-1.5 text-[12px] text-safe">
+      <span className="flex items-center gap-1.5 text-[0.75rem] text-safe">
         <Check size={13} />
         {t("updates.done")}
       </span>
@@ -81,19 +81,19 @@ function Failed({ id, reason, code }: { id: string; reason: string; code: number
   }, [id]);
   const names = [...new Set((open ?? []).map((b) => b.name.replace(/\.exe$/i, "")))];
   return (
-    <span className="flex flex-wrap items-center justify-end gap-2 text-[12px]">
+    <span className="flex flex-wrap items-center justify-end gap-2 text-[0.75rem]">
       <span className="flex items-center gap-1.5 text-warn" title={`0x${(code >>> 0).toString(16).toUpperCase()}`}>
         <CircleAlert size={13} />
         {names.length ? t("updates.isOpen", { names: names.join(", ") }) : t(`updates.reason.${reason}`)}
       </span>
       {names.length > 0 && (
-        <Button className="!h-7 !px-2.5 text-[12px]" onClick={() => setAsking(true)} data-testid="close-and-update">
+        <Button className="!h-7 !px-2.5 text-[0.75rem]" onClick={() => setAsking(true)} data-testid="close-and-update">
           {t("updates.closeAndUpdate")}
         </Button>
       )}
       <Modal open={asking} onClose={() => setAsking(false)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("updates.closeTitle", { names: names.join(", ") })}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("updates.closeText")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("updates.closeTitle", { names: names.join(", ") })}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("updates.closeText")}</p>
         <div className="mt-6 flex justify-end gap-2">
           <Button autoFocus onClick={() => setAsking(false)}>
             {t("cleanup.cancel")}
@@ -121,19 +121,19 @@ function Row({ pkg, chosen, toggle, busy }: { pkg: Package; chosen: boolean; tog
     <li className="flex items-center gap-3 border-b border-line/60 px-4 py-2.5 last:border-b-0" data-testid="update-row">
       <Checkbox state={chosen && !finished} onChange={toggle} disabled={busy || finished} label={pkg.name} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px]">{pkg.name}</div>
-        <div className="num flex items-center gap-1.5 text-[11px] text-muted">
+        <div className="truncate text-[0.8125rem]">{pkg.name}</div>
+        <div className="num flex items-center gap-1.5 text-[0.6875rem] text-muted">
           <span>{pkg.version === "Unknown" ? t("updates.unknownVersion") : pkg.version}</span>
           <ArrowRight size={11} className="nudge" />
           <span className="text-fg">{pkg.available}</span>
-          {pkg.explicit && <span className="ml-1 rounded bg-raised px-1.5 text-[10px]">{t("updates.explicit")}</span>}
+          {pkg.explicit && <span className="ml-1 rounded bg-raised px-1.5 text-[0.625rem]">{t("updates.explicit")}</span>}
         </div>
       </div>
       <div className="shrink-0">
         <Status row={row} id={pkg.id} />
       </div>
       {!row && (
-        <Button variant="quiet" className="!h-8 !px-3 text-[12px]" disabled={busy} onClick={() => installUpdates([pkg.id])} data-testid="update-one">
+        <Button variant="quiet" className="!h-8 !px-3 text-[0.75rem]" disabled={busy} onClick={() => installUpdates([pkg.id])} data-testid="update-one">
           {t("updates.updateOne")}
         </Button>
       )}
@@ -167,8 +167,8 @@ function List() {
         <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-safe/10 text-safe">
           <Check size={38} />
         </div>
-        <h2 className="font-display text-[22px] font-semibold">{t("updates.noneTitle")}</h2>
-        <p className="mt-1 text-[13px] text-muted">{t("updates.noneText")}</p>
+        <h2 className="font-display text-[1.375rem] font-semibold">{t("updates.noneTitle")}</h2>
+        <p className="mt-1 text-[0.8125rem] text-muted">{t("updates.noneText")}</p>
         <Button className="mt-6" icon={<RefreshCw size={15} />} onClick={checkUpdates}>
           {t("updates.recheck")}
         </Button>
@@ -176,11 +176,11 @@ function List() {
     );
 
   return (
-    <div className="mx-auto max-w-[820px] pb-6">
+    <div className="mx-auto max-w-[51.25rem] pb-6">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="font-display text-[18px] font-semibold">{t("updates.found", { count: list.length })}</h2>
-          <p className="text-[12px] text-muted">
+          <h2 className="font-display text-[1.125rem] font-semibold">{t("updates.found", { count: list.length })}</h2>
+          <p className="text-[0.75rem] text-muted">
             {done > 0 || failed > 0
               ? t("updates.progress", { done, failed })
               : checkedAt && t("updates.checkedAt", { time: new Date(checkedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
@@ -203,7 +203,7 @@ function List() {
       </div>
 
       <div className="overflow-clip rounded-card border border-line bg-surface">
-        <div className="flex items-center gap-3 border-b border-line px-4 py-2 text-[11px] text-muted">
+        <div className="flex items-center gap-3 border-b border-line px-4 py-2 text-[0.6875rem] text-muted">
           <Checkbox
             state={allState}
             disabled={busy || pending.length === 0}
@@ -219,7 +219,7 @@ function List() {
         </ul>
       </div>
 
-      <div className="mt-4 grid gap-3 text-[12px] leading-relaxed text-muted sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 text-[0.75rem] leading-relaxed text-muted sm:grid-cols-2">
         <p className="rounded-card border border-line bg-surface px-4 py-3">{t("updates.howItWorks")}</p>
         <div className="rounded-card border border-line bg-surface px-4 py-3">
           <div className="mb-1 flex items-center gap-1.5 text-fg">
@@ -237,8 +237,8 @@ function List() {
       </div>
 
       <Modal open={confirm !== null} onClose={() => setConfirm(null)}>
-        <h2 className="font-display text-[18px] font-semibold">{t("updates.confirmTitle", { count: confirm?.length ?? 0 })}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("updates.confirmText")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("updates.confirmTitle", { count: confirm?.length ?? 0 })}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("updates.confirmText")}</p>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="quiet" onClick={() => setConfirm(null)}>
             {t("updates.cancel")}

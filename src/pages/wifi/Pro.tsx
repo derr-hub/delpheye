@@ -52,10 +52,10 @@ function Connect() {
     );
   if (!found.host || found.vendor === "unknown")
     return (
-      <div className="mx-auto max-w-[560px] rounded-card border border-line bg-surface p-6 text-center" data-testid="router-unsupported">
+      <div className="mx-auto max-w-[35rem] rounded-card border border-line bg-surface p-6 text-center" data-testid="router-unsupported">
         <Router size={32} className="mx-auto text-muted" />
-        <h2 className="mt-3 font-display text-[18px] font-semibold">{t(found.host ? "router.unsupported" : "router.noGateway")}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(found.host ? "router.unsupportedText" : "router.noGatewayText", { host: found.host })}</p>
+        <h2 className="mt-3 font-display text-[1.125rem] font-semibold">{t(found.host ? "router.unsupported" : "router.noGateway")}</h2>
+        <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t(found.host ? "router.unsupportedText" : "router.noGatewayText", { host: found.host })}</p>
       </div>
     );
 
@@ -63,18 +63,18 @@ function Connect() {
   const left = login ? Math.max(0, 9 - login.errors) : null;
   const errorText = error && (error.startsWith("locked") ? t("router.error.locked", { secs: error.split(":")[1] }) : t(`router.error.${error}`, { defaultValue: t("router.error.failed") }));
   return (
-    <div className="mx-auto grid max-w-[920px] gap-4 md:grid-cols-[1.1fr_1fr]" data-testid="router-connect">
+    <div className="mx-auto grid max-w-[57.5rem] gap-4 md:grid-cols-[1.1fr_1fr]" data-testid="router-connect">
       <div className="rounded-card border border-line bg-surface p-6">
         <div className="flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
             <Router size={22} />
           </span>
           <div>
-            <h2 className="font-display text-[17px] font-semibold">
+            <h2 className="font-display text-[1.0625rem] font-semibold">
               {t("router.found", { vendor: VENDOR_NAMES[found.vendor] ?? found.vendor })}
               {found.model && ` ${found.model}`}
             </h2>
-            <div className="num text-[12px] text-muted">{found.host}</div>
+            <div className="num text-[0.75rem] text-muted">{found.host}</div>
           </div>
         </div>
         {found.saved && (
@@ -90,11 +90,11 @@ function Connect() {
             if (password) connectRouter(user.trim(), password, remember).then(() => setPassword(""));
           }}
         >
-          <label className="grid gap-1 text-[12px] text-muted">
+          <label className="grid gap-1 text-[0.75rem] text-muted">
             {t("router.user")}
-            <input value={user} onChange={(e) => setUser(e.target.value)} autoComplete="username" className="h-9 rounded-lg border border-line bg-raised px-3 text-[13px] text-fg outline-none focus:border-accent/60" />
+            <input value={user} onChange={(e) => setUser(e.target.value)} autoComplete="username" className="h-9 rounded-lg border border-line bg-raised px-3 text-[0.8125rem] text-fg outline-none focus:border-accent/60" />
           </label>
-          <label className="grid gap-1 text-[12px] text-muted">
+          <label className="grid gap-1 text-[0.75rem] text-muted">
             {t("router.password")}
             <span className="relative">
               <input
@@ -102,7 +102,7 @@ function Connect() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                className="h-9 w-full rounded-lg border border-line bg-raised px-3 pr-9 text-[13px] text-fg outline-none focus:border-accent/60"
+                className="h-9 w-full rounded-lg border border-line bg-raised px-3 pr-9 text-[0.8125rem] text-fg outline-none focus:border-accent/60"
                 data-testid="router-password"
               />
               <button type="button" onClick={() => setShow(!show)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-fg" aria-label={t("router.showPassword")}>
@@ -110,7 +110,7 @@ function Connect() {
               </button>
             </span>
           </label>
-          <label className="flex items-center gap-2 text-[12px] text-muted">
+          <label className="flex items-center gap-2 text-[0.75rem] text-muted">
             <Checkbox state={remember} onChange={() => setRemember(!remember)} label={t("router.remember")} />
             {t("router.remember")}
           </label>
@@ -120,31 +120,31 @@ function Connect() {
           </Button>
         </form>
         {errorText && (
-          <p className="mt-3 text-[12px] leading-relaxed text-risk" role="alert" data-testid="router-error">
+          <p className="mt-3 text-[0.75rem] leading-relaxed text-risk" role="alert" data-testid="router-error">
             {errorText}
           </p>
         )}
         {login && (login.errors > 0 || login.captcha || login.lockedFor) && (
-          <p className="mt-3 rounded-lg border border-warn/30 bg-warn/[0.06] px-3 py-2 text-[12px] leading-relaxed text-warn" data-testid="router-attempts">
+          <p className="mt-3 rounded-lg border border-warn/30 bg-warn/[0.06] px-3 py-2 text-[0.75rem] leading-relaxed text-warn" data-testid="router-attempts">
             {login.lockedFor ? t("router.lockedNow", { secs: login.lockedFor }) : login.captcha ? t("router.captcha") : t("router.attempts", { errors: login.errors, left })}
           </p>
         )}
         {(login?.captcha || login?.lockedFor) && (
-          <button className="mt-2 flex items-center gap-1 text-[12px] text-accent hover:underline" onClick={() => openUrl(`http://${found.host}/`).catch(console.error)}>
+          <button className="mt-2 flex items-center gap-1 text-[0.75rem] text-accent hover:underline" onClick={() => openUrl(`http://${found.host}/`).catch(console.error)}>
             {t("router.openInBrowser")} <ExternalLink size={12} />
           </button>
         )}
       </div>
-      <div className="grid content-start gap-3 text-[12px] leading-relaxed text-muted">
+      <div className="grid content-start gap-3 text-[0.75rem] leading-relaxed text-muted">
         <div className="rounded-card border border-line bg-surface p-4">
-          <div className="mb-1 flex items-center gap-1.5 text-[13px] text-fg">
+          <div className="mb-1 flex items-center gap-1.5 text-[0.8125rem] text-fg">
             <Sparkle size={14} className="text-accent" />
             {t("router.whatTitle")}
           </div>
           {t("router.whatText")}
         </div>
         <div className="rounded-card border border-line bg-surface p-4">
-          <div className="mb-1 flex items-center gap-1.5 text-[13px] text-fg">
+          <div className="mb-1 flex items-center gap-1.5 text-[0.8125rem] text-fg">
             <ShieldCheck size={14} className="text-safe" />
             {t("router.safeTitle")}
           </div>
@@ -188,18 +188,18 @@ function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: ((c
       <span className="flex w-6 justify-center">{c.link === "wired" ? <Cable size={16} className="text-muted" /> : c.rssi !== null ? <Bars rssi={c.rssi} /> : <Wifi size={15} className="text-muted" />}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className={`truncate text-[13px] ${c.name ? "" : "italic"}`}>{name}</span>
-          {fresh && <span className="shrink-0 rounded bg-safe/15 px-1.5 text-[10px] text-safe">{t("router.new")}</span>}
-          {c.guest && <span className="shrink-0 rounded bg-raised px-1.5 text-[10px] text-muted">{t("router.guest")}</span>}
-          {!known && c.online && <span className="shrink-0 rounded bg-warn/15 px-1.5 text-[10px] text-warn">{t("router.notMarked")}</span>}
+          <span className={`truncate text-[0.8125rem] ${c.name ? "" : "italic"}`}>{name}</span>
+          {fresh && <span className="shrink-0 rounded bg-safe/15 px-1.5 text-[0.625rem] text-safe">{t("router.new")}</span>}
+          {c.guest && <span className="shrink-0 rounded bg-raised px-1.5 text-[0.625rem] text-muted">{t("router.guest")}</span>}
+          {!known && c.online && <span className="shrink-0 rounded bg-warn/15 px-1.5 text-[0.625rem] text-warn">{t("router.notMarked")}</span>}
         </div>
-        <div className="num truncate text-[11px] text-muted">
+        <div className="num truncate text-[0.6875rem] text-muted">
           {c.ip || "—"} · {c.mac}
           {c.randomMac && <span title={t("router.privateHint")}> · {t("router.private")}</span>}
           {c.name && c.vendor && ` · ${c.vendor}`}
         </div>
       </div>
-      <div className="hidden w-28 shrink-0 text-right text-[11px] sm:block">
+      <div className="hidden w-28 shrink-0 text-right text-[0.6875rem] sm:block">
         {c.link === "wired" ? (
           <span className="text-muted">{t("router.wired")}</span>
         ) : (
@@ -216,7 +216,7 @@ function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: ((c
       {c.link !== "wired" && onBlock && (
         <button
           onClick={() => onBlock(c)}
-          className="flex h-7 shrink-0 items-center rounded-md border border-line px-2 text-[11px] text-muted hover:border-risk/50 hover:text-risk"
+          className="flex h-7 shrink-0 items-center rounded-md border border-line px-2 text-[0.6875rem] text-muted hover:border-risk/50 hover:text-risk"
           data-testid="router-block"
         >
           {t("router.block.button")}
@@ -224,7 +224,7 @@ function ClientRow({ c, host, onBlock }: { c: Client; host: string; onBlock: ((c
       )}
       <button
         onClick={() => toggleKnown(host, c.mac)}
-        className={`flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] transition-colors ${known ? "bg-safe/15 text-safe" : "border border-line text-muted hover:text-fg"}`}
+        className={`flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[0.6875rem] transition-colors ${known ? "bg-safe/15 text-safe" : "border border-line text-muted hover:text-fg"}`}
         data-testid="router-known"
       >
         <UserCheck size={12} />
@@ -249,38 +249,38 @@ function ChannelPicker({ radio, onClose }: { radio: Radio | null; onClose: () =>
   return (
     <Modal open onClose={onClose}>
       <div data-testid="router-channel-picker">
-        <h2 className="font-display text-[18px] font-semibold">{t("router.channel.title", { band: radio.band, ssid: radio.ssid })}</h2>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("router.channel.text")}</p>
+        <h2 className="font-display text-[1.125rem] font-semibold">{t("router.channel.title", { band: radio.band, ssid: radio.ssid })}</h2>
+        <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("router.channel.text")}</p>
         <div className="mt-3 grid gap-1.5">
-          {candidates.length === 0 && <p className="text-[12px] text-warn">{t("router.channel.noScan")}</p>}
+          {candidates.length === 0 && <p className="text-[0.75rem] text-warn">{t("router.channel.noScan")}</p>}
           {candidates.map((c, i) => {
             const spec = specOf(c.channel);
             return (
               <button
                 key={c.channel}
                 onClick={() => setChoice(spec)}
-                className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-[12px] transition-colors ${choice === spec ? "border-accent/70 bg-accent/10" : "border-line hover:bg-raised"}`}
+                className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-[0.75rem] transition-colors ${choice === spec ? "border-accent/70 bg-accent/10" : "border-line hover:bg-raised"}`}
               >
                 <span className="w-24 font-medium">{t("wifi.channelN", { n: c.channel })}</span>
                 <span className="flex-1 text-muted">
                   {c.networks === 0 ? t("router.channel.empty") : t("router.channel.busy", { count: c.networks })}
                   {c.dfs && ` · ${t("router.channel.dfs")}`}
                 </span>
-                {i === 0 && <span className="rounded bg-safe/15 px-1.5 text-[10px] text-safe">{t("router.channel.best")}</span>}
-                {spec === current && <span className="rounded bg-raised px-1.5 text-[10px] text-muted">{t("router.channel.now")}</span>}
+                {i === 0 && <span className="rounded bg-safe/15 px-1.5 text-[0.625rem] text-safe">{t("router.channel.best")}</span>}
+                {spec === current && <span className="rounded bg-raised px-1.5 text-[0.625rem] text-muted">{t("router.channel.now")}</span>}
               </button>
             );
           })}
           <button
             onClick={() => setChoice("0")}
-            className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-[12px] transition-colors ${choice === "0" ? "border-accent/70 bg-accent/10" : "border-line hover:bg-raised"}`}
+            className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-[0.75rem] transition-colors ${choice === "0" ? "border-accent/70 bg-accent/10" : "border-line hover:bg-raised"}`}
           >
             <span className="w-24 font-medium">{t("router.channel.auto")}</span>
             <span className="flex-1 text-muted">{t("router.channel.autoText")}</span>
-            {current === "0" && <span className="rounded bg-raised px-1.5 text-[10px] text-muted">{t("router.channel.now")}</span>}
+            {current === "0" && <span className="rounded bg-raised px-1.5 text-[0.625rem] text-muted">{t("router.channel.now")}</span>}
           </button>
         </div>
-        <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[12px] leading-relaxed text-muted">{t("router.fix.wps-off.effect")}</p>
+        <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[0.75rem] leading-relaxed text-muted">{t("router.fix.wps-off.effect")}</p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="quiet" onClick={onClose}>
             {t("router.fix.cancel")}
@@ -353,8 +353,8 @@ function Dashboard() {
           <Router size={24} />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-display text-[19px] font-semibold">ASUS {o.model}</h2>
-          <div className="num text-[12px] text-muted">
+          <h2 className="font-display text-[1.1875rem] font-semibold">ASUS {o.model}</h2>
+          <div className="num text-[0.75rem] text-muted">
             {o.host} · {t("router.firmware")} {o.firmware} · {t("router.uptime")} {duration(o.uptimeSecs, t)}
           </div>
         </div>
@@ -383,13 +383,13 @@ function Dashboard() {
         {o.radios.map((r) => (
           <div key={r.unit} className="rounded-card border border-line bg-surface p-4" data-testid="router-radio">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-medium" style={{ color: BAND_COLORS[r.band] }}>
+              <span className="text-[0.75rem] font-medium" style={{ color: BAND_COLORS[r.band] }}>
                 {r.band} {t("wifi.ghz")}
               </span>
-              <span className={`text-[11px] ${r.enabled ? "text-safe" : "text-muted"}`}>{r.enabled ? t("router.on") : t("router.off")}</span>
+              <span className={`text-[0.6875rem] ${r.enabled ? "text-safe" : "text-muted"}`}>{r.enabled ? t("router.on") : t("router.off")}</span>
             </div>
-            <div className="mt-1 truncate text-[15px] font-medium">{r.ssid}</div>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+            <div className="mt-1 truncate text-[0.9375rem] font-medium">{r.ssid}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[0.6875rem]">
               <span className="rounded bg-raised px-1.5 py-0.5">{r.auto
                   ? liveChannel(r.ssid, r.band) && r.enabled
                     ? t("router.autoNow", { n: liveChannel(r.ssid, r.band) })
@@ -403,7 +403,7 @@ function Dashboard() {
               {r.hidden && <span className="rounded bg-raised px-1.5 py-0.5">{t("router.hidden")}</span>}
             </div>
             {r.enabled && full && (
-              <Button className="mt-3 !h-8 text-[12px]" disabled={!!applying} onClick={() => setPick(r)} data-testid={`router-channel-${r.unit}`}>
+              <Button className="mt-3 !h-8 text-[0.75rem]" disabled={!!applying} onClick={() => setPick(r)} data-testid={`router-channel-${r.unit}`}>
                 {applying?.startsWith(`channel:${r.unit}:`) && <Loader2 size={13} className="animate-spin" />}
                 {t("router.channel.button")}
               </Button>
@@ -414,16 +414,16 @@ function Dashboard() {
 
       <div className="grid gap-4">
         <div className="grid content-start gap-2 md:grid-cols-2">
-          <h3 className="text-[13px] font-medium md:col-span-2">{t("router.checksTitle")}</h3>
+          <h3 className="text-[0.8125rem] font-medium md:col-span-2">{t("router.checksTitle")}</h3>
           {error && !applying && error !== "expired" && (
-            <p className="rounded-lg border border-risk/30 bg-risk/[0.06] px-3 py-2 text-[12px] text-risk md:col-span-2" role="alert">
+            <p className="rounded-lg border border-risk/30 bg-risk/[0.06] px-3 py-2 text-[0.75rem] text-risk md:col-span-2" role="alert">
               {t("router.fix.failed", { error })}
             </p>
           )}
           {done.map((d, i) => (
             <div
               key={i}
-              className={`flex flex-wrap items-center gap-3 rounded-card border px-4 py-2.5 text-[12px] md:col-span-2 ${
+              className={`flex flex-wrap items-center gap-3 rounded-card border px-4 py-2.5 text-[0.75rem] md:col-span-2 ${
                 d.undone ? "border-line bg-surface text-muted" : d.confirmed ? "border-safe/30 bg-safe/[0.06]" : "border-warn/30 bg-warn/[0.06]"
               }`}
               data-testid="router-done"
@@ -441,7 +441,7 @@ function Dashboard() {
               {!d.undone && (
                 <Button
                   variant="quiet"
-                  className="!h-7 text-[12px]"
+                  className="!h-7 text-[0.75rem]"
                   disabled={!!applying}
                   onClick={() => applyRouter(d.back.action, d.back.guest, d.label, true)}
                   data-testid="router-undo"
@@ -460,14 +460,14 @@ function Dashboard() {
                 <div key={c.id} className="flex gap-3 rounded-card border border-line bg-surface px-4 py-3" data-testid="router-check">
                   <Icon size={18} className={`mt-0.5 shrink-0 ${TONE[c.level]}`} />
                   <div className="min-w-0">
-                    <div className="text-[13px] font-medium">{t(`router.check.${c.id}.title`, c.values)}</div>
-                    <div className="mt-0.5 text-[12px] leading-relaxed text-muted">{t(`router.check.${c.id}.text`, c.values)}</div>
+                    <div className="text-[0.8125rem] font-medium">{t(`router.check.${c.id}.title`, c.values)}</div>
+                    <div className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`router.check.${c.id}.text`, c.values)}</div>
                     {fixes(c.id).length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {fixes(c.id).map((f) => (
                           <Button
                             key={f.action + (f.guest ?? "")}
-                            className="!h-8 text-[12px]"
+                            className="!h-8 text-[0.75rem]"
                             disabled={!!applying}
                             onClick={() => setAsk(f)}
                             data-testid={`router-fix-${f.action}`}
@@ -486,12 +486,12 @@ function Dashboard() {
         {full && <RouterExtras onUnblock={(mac, label) => applyRouter(`unblock:${mac}`, null, label, false, { action: `block:${mac}`, guest: null })} />}
         <div className="overflow-clip rounded-card border border-line bg-surface">
           <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
-            <h3 className="text-[13px] font-medium">{t("router.devices", { online: online.length, total: o.clients.length })}</h3>
-            <span className={`text-[11px] ${unmarked.length ? "text-warn" : "text-safe"}`}>
+            <h3 className="text-[0.8125rem] font-medium">{t("router.devices", { online: online.length, total: o.clients.length })}</h3>
+            <span className={`text-[0.6875rem] ${unmarked.length ? "text-warn" : "text-safe"}`}>
               {unmarked.length ? t("router.unmarked", { count: unmarked.length }) : t("router.allMarked")}
             </span>
           </div>
-          <p className="border-b border-line/60 px-4 py-2 text-[11px] leading-relaxed text-muted">{t("router.devicesHint")}</p>
+          <p className="border-b border-line/60 px-4 py-2 text-[0.6875rem] leading-relaxed text-muted">{t("router.devicesHint")}</p>
           <ul>
             {o.clients.map((c) => (
               <ClientRow key={c.mac} c={c} host={o.host} onBlock={full ? (x) => setAsk({ action: `block:${x.mac}`, guest: null, label: x.name || x.vendor || x.mac }) : null} />
@@ -505,9 +505,9 @@ function Dashboard() {
       <Modal open={ask !== null} onClose={() => setAsk(null)}>
         {ask && (
           <div data-testid="router-confirm">
-            <h2 className="font-display text-[18px] font-semibold">{t(`router.fix.${fixKey(ask.action)}.title`, { name: ask.label })}</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted">{t(`router.fix.${fixKey(ask.action)}.text`, { name: ask.label })}</p>
-            <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[12px] leading-relaxed text-muted">{t(`router.fix.${fixKey(ask.action)}.effect`)}</p>
+            <h2 className="font-display text-[1.125rem] font-semibold">{t(`router.fix.${fixKey(ask.action)}.title`, { name: ask.label })}</h2>
+            <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t(`router.fix.${fixKey(ask.action)}.text`, { name: ask.label })}</p>
+            <p className="mt-3 rounded-lg bg-raised px-3 py-2 text-[0.75rem] leading-relaxed text-muted">{t(`router.fix.${fixKey(ask.action)}.effect`)}</p>
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="quiet" onClick={() => setAsk(null)}>
                 {t("router.fix.cancel")}

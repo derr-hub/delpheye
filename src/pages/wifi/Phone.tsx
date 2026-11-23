@@ -11,7 +11,7 @@ function Qr({ text }: { text: string }) {
   useEffect(() => {
     QRCode.toString(text, { type: "svg", margin: 1, color: { dark: "#0f1216", light: "#ffffff" } }).then(setSvg);
   }, [text]);
-  return <div className="h-[200px] w-[200px] overflow-hidden rounded-xl bg-white p-2 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} data-testid="phone-qr" />;
+  return <div className="h-[12.5rem] w-[12.5rem] overflow-hidden rounded-xl bg-white p-2 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} data-testid="phone-qr" />;
 }
 
 /** The arrow points where the router is, turning as the phone turns. */
@@ -25,12 +25,12 @@ function LiveCompass() {
   const rel = ready && heading !== null ? (((est!.angle - heading) % 360) + 360) % 360 : null;
   return (
     <div className="rounded-card border border-line bg-surface p-5" data-testid="phone-compass">
-      <h3 className="flex items-center gap-2 text-[14px] font-medium">
+      <h3 className="flex items-center gap-2 text-[0.875rem] font-medium">
         <Compass size={16} className="text-accent" />
         {t("phone.compass.title")}
       </h3>
       <div className="mt-4 grid items-center gap-5 md:grid-cols-[240px_1fr]">
-        <svg viewBox="-120 -120 240 240" className="mx-auto w-full max-w-[240px]">
+        <svg viewBox="-120 -120 240 240" className="mx-auto w-full max-w-[15rem]">
           <circle r={104} fill="none" stroke="var(--color-line)" strokeWidth={2} />
           {/* coverage of the turn so far */}
           <circle r={112} fill="none" stroke="var(--color-accent)" strokeWidth={4} strokeDasharray={`${(est?.coverage ?? 0) * 2 * Math.PI * 112} 9999`} transform="rotate(-90)" opacity={0.6} />
@@ -48,13 +48,13 @@ function LiveCompass() {
         <div>
           {rel !== null ? (
             <>
-              <div className="font-display text-[20px] font-semibold">{t("phone.compass.towards")}</div>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">{t("phone.compass.how", { spread: est!.spread.toFixed(1) })}</p>
+              <div className="font-display text-[1.25rem] font-semibold">{t("phone.compass.towards")}</div>
+              <p className="mt-1 text-[0.75rem] leading-relaxed text-muted">{t("phone.compass.how", { spread: est!.spread.toFixed(1) })}</p>
             </>
           ) : (
-            <p className="text-[13px] leading-relaxed text-muted">{t("phone.compass.start", { pct: Math.round((est?.coverage ?? 0) * 100) })}</p>
+            <p className="text-[0.8125rem] leading-relaxed text-muted">{t("phone.compass.start", { pct: Math.round((est?.coverage ?? 0) * 100) })}</p>
           )}
-          <p className="mt-2 text-[11px] leading-relaxed text-muted">{t("phone.compass.note")}</p>
+          <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted">{t("phone.compass.note")}</p>
         </div>
       </div>
     </div>
@@ -76,15 +76,15 @@ export function Phone() {
 
   if (!pairing || !pairing.code) {
     return (
-      <div className="mx-auto grid max-w-[720px] gap-4" data-testid="phone-intro">
+      <div className="mx-auto grid max-w-[45rem] gap-4" data-testid="phone-intro">
         <div className="rounded-card border border-line bg-surface p-6">
           <Smartphone size={30} className="text-accent" />
-          <h2 className="mt-3 font-display text-[19px] font-semibold">{t("phone.introTitle")}</h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted">{t("phone.introText")}</p>
+          <h2 className="mt-3 font-display text-[1.1875rem] font-semibold">{t("phone.introTitle")}</h2>
+          <p className="mt-2 text-[0.8125rem] leading-relaxed text-muted">{t("phone.introText")}</p>
           <Button variant="primary" className="mt-5" onClick={startPairing} data-testid="phone-start">
             {t("phone.start")}
           </Button>
-          {error && <p className="mt-3 text-[12px] text-risk">{t("phone.error", { error })}</p>}
+          {error && <p className="mt-3 text-[0.75rem] text-risk">{t("phone.error", { error })}</p>}
         </div>
       </div>
     );
@@ -100,17 +100,17 @@ export function Phone() {
                 <Smartphone size={22} />
               </span>
               <div>
-                <div className="font-display text-[17px] font-semibold">{pairing.device ?? t("phone.phone")}</div>
-                <div className={`text-[12px] ${isLive ? "text-safe" : "text-warn"}`}>{isLive ? t("phone.live") : t("phone.waiting")}</div>
+                <div className="font-display text-[1.0625rem] font-semibold">{pairing.device ?? t("phone.phone")}</div>
+                <div className={`text-[0.75rem] ${isLive ? "text-safe" : "text-warn"}`}>{isLive ? t("phone.live") : t("phone.waiting")}</div>
               </div>
             </div>
           ) : (
             <div className="grid justify-items-center gap-3 text-center">
               <Qr text={pairing.link} />
-              <div className="num font-display text-[28px] font-semibold tracking-[0.25em]" data-testid="phone-code">
+              <div className="num font-display text-[1.75rem] font-semibold tracking-[0.25em]" data-testid="phone-code">
                 {pairing.code}
               </div>
-              <div className="num text-[12px] text-muted">
+              <div className="num text-[0.75rem] text-muted">
                 {pairing.addresses.join(" · ")} : {pairing.port}
               </div>
             </div>
@@ -119,17 +119,17 @@ export function Phone() {
             {t("phone.stop")}
           </Button>
         </div>
-        <div className="rounded-card border border-line bg-surface p-5 text-[13px] leading-relaxed">
+        <div className="rounded-card border border-line bg-surface p-5 text-[0.8125rem] leading-relaxed">
           {!pairing.paired ? (
             <>
-              <h3 className="text-[14px] font-medium">{t("phone.howTitle")}</h3>
+              <h3 className="text-[0.875rem] font-medium">{t("phone.howTitle")}</h3>
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
                 <li>{t("phone.how1")}</li>
                 <li>{t("phone.how2")}</li>
                 <li>{t("phone.how3")}</li>
                 <li>{t("phone.how4")}</li>
               </ol>
-              <p className="mt-3 text-[12px] text-muted">{t("phone.firewall")}</p>
+              <p className="mt-3 text-[0.75rem] text-muted">{t("phone.firewall")}</p>
             </>
           ) : (
             <div className="grid grid-cols-3 gap-3 text-center">
@@ -142,11 +142,11 @@ export function Phone() {
               ).map(([Icon, v, l]) => (
                 <div key={l} className="rounded-xl bg-raised/50 p-3">
                   <Icon size={16} className="mx-auto text-accent" />
-                  <div className="num mt-1 font-display text-[20px] font-semibold">{v}</div>
-                  <div className="text-[11px] text-muted">{l}</div>
+                  <div className="num mt-1 font-display text-[1.25rem] font-semibold">{v}</div>
+                  <div className="text-[0.6875rem] text-muted">{l}</div>
                 </div>
               ))}
-              <p className="col-span-3 text-left text-[12px] text-muted">
+              <p className="col-span-3 text-left text-[0.75rem] text-muted">
                 {t("phone.heard", { count: frame?.scan.length ?? 0, age: frame?.scanAt ? Math.max(0, Math.round((Date.now() - frame.scanAt) / 1000)) : "—" })}
               </p>
             </div>
