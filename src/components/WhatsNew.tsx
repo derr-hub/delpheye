@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Activity, AppWindow, Maximize2, Building2, ArrowRight, BellRing, Gift, HardDrive, PackageCheck, Palette, ShieldCheck, Smartphone, Sparkles, Webcam, Wifi, Zap, type LucideIcon } from "lucide-react";
+import { Activity, AppWindow, Maximize2, Building2, ArrowRight, BellRing, Gift, HardDrive, Headphones, PackageCheck, Palette, ShieldCheck, Smartphone, Sparkles, Webcam, Wifi, Zap, type LucideIcon } from "lucide-react";
 import { Button, Modal } from "./ui";
 import { go, useApp, type Page } from "../lib/app";
 
 /** What each release brings, newest first; texts live under whatsnew.<id>. */
 const RELEASES: Record<string, { id: string; icon: LucideIcon; page: Page | null }[]> = {
+  "0.4.3": [
+    { id: "phones", icon: Headphones, page: "watcher" },
+    { id: "vpnPing", icon: Wifi, page: "network" },
+    { id: "layout", icon: Maximize2, page: null },
+  ],
   "0.4.2": [
     { id: "cityPlan", icon: Building2, page: "disk" },
     { id: "scale", icon: Maximize2, page: null },
