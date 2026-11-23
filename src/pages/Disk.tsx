@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { useMetrics } from "../lib/metrics";
 import { ZONE_COLOURS, zoneOf } from "./disk/DiskBuild3D";
 const DiskBuild3D = lazy(() => import("./disk/DiskBuild3D"));
+const FileCity = lazy(() => import("./disk/FileCity"));
 import { Hero } from "../components/Hero";
 import { Clock3, FileStack } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -201,8 +202,26 @@ function ItemRow({ item, share, showPath, lastCopy, aged }: { item: Item; share?
   );
 }
 
+const CITY_KEY = "disk.view";
+const loadView = (): "rings" | "city" => {
+  try {
+    return localStorage.getItem(CITY_KEY) === "city" ? "city" : "rings";
+  } catch {
+    return "rings";
+  }
+};
+
 function MapTab({ folder }: { folder: Folder }) {
   const rings = useDisk((s) => s.rings);
+  const [view, setViewState] = useState<"rings" | "city">(loadView);
+  const setView = (v: "rings" | "city") => {
+    setViewState(v);
+    try {
+      localStorage.setItem(CITY_KEY, v);
+    } catch {
+      /* this session only */
+    }
+  };
   const parent = folder.trail.length > 1 ? folder.trail[folder.trail.length - 2].id : null;
   const { t } = useTranslation();
   const fmt = useFmt();
@@ -225,11 +244,23 @@ function MapTab({ folder }: { folder: Folder }) {
           );
         })}
         <span className="num ml-auto text-muted">{fmt.bytes(folder.item.size)}</span>
+        <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+          {(["rings", "city"] as const).map((v) => (
+            <button key={v} onClick={() => setView(v)} className={`rounded-md px-2.5 py-1 ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`} data-testid={`disk-view-${v}`}>
+              {t(`disk.city.view.${v}`)}
+            </button>
+          ))}
+        </div>
       </nav>
-      {rings && rings.id === folder.item.id && (
+      {rings && rings.id === folder.item.id && view === "rings" && (
         <div className="rounded-card border border-line bg-surface p-5">
           <TimeRings root={rings} onOpen={openFolder} onUp={parent === null ? null : () => openFolder(parent)} />
         </div>
+      )}
+      {rings && rings.id === folder.item.id && view === "city" && (
+        <Suspense fallback={<div className="skeleton h-[560px]" />}>
+          <FileCity root={rings} base={folder.item.path.replace(/\\$/, "")} onOpen={openFolder} onUp={parent === null ? null : () => openFolder(parent)} />
+        </Suspense>
       )}
       <ul className="overflow-hidden rounded-card border border-line bg-surface">
         {folder.children.map((child) => (

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Activity, AppWindow, ArrowRight, BellRing, Gift, HardDrive, PackageCheck, Palette, ShieldCheck, Smartphone, Sparkles, Webcam, Wifi, Zap, type LucideIcon } from "lucide-react";
+import { Activity, AppWindow, Building2, ArrowRight, BellRing, Gift, HardDrive, PackageCheck, Palette, ShieldCheck, Smartphone, Sparkles, Webcam, Wifi, Zap, type LucideIcon } from "lucide-react";
 import { Button, Modal } from "./ui";
 import { go, useApp, type Page } from "../lib/app";
 
 /** What each release brings, newest first; texts live under whatsnew.<id>. */
 const RELEASES: Record<string, { id: string; icon: LucideIcon; page: Page | null }[]> = {
   "0.4.1": [
+    { id: "city", icon: Building2, page: "disk" },
     { id: "disk3d", icon: HardDrive, page: "disk" },
     { id: "crashes", icon: Zap, page: "monitoring" },
     { id: "privacy", icon: Webcam, page: "privacy" },
