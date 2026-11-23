@@ -34,7 +34,8 @@ export function verdict(router: ReturnType<typeof stats>, internet: ReturnType<t
   // itself answers pings slowly (routers reply to pings at low priority but forward at full speed).
   const internetBad = internet.loss > 3 || (internet.jitter ?? 0) > 40 || (internet.avg ?? 0) > 120;
   if (!internetBad) return "good";
-  const routerBad = router.loss > 3 || (router.jitter ?? 0) > 40;
+  // A router that never answers (a VPN or the router itself drops its pings) proves nothing about Wi-Fi.
+  const routerBad = (router.loss > 3 && router.loss < 100) || (router.jitter ?? 0) > 40;
   return routerBad ? "wifi" : "provider";
 }
 
@@ -43,6 +44,7 @@ export function Quality() {
   const linkHistory = useWifi((s) => s.linkHistory);
   const [samples, setSamples] = useState<Sample[]>([]);
   const [connected, setConnected] = useState(true);
+  const [vpn, setVpn] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -50,8 +52,9 @@ export function Quality() {
       while (alive) {
         const started = Date.now();
         try {
-          const q = await invoke<{ routerMs: number | null; internetMs: number | null; connected: boolean }>("wifi_quality");
+          const q = await invoke<{ routerMs: number | null; internetMs: number | null; connected: boolean; viaVpn: boolean }>("wifi_quality");
           setConnected(q.connected);
+          setVpn(q.viaVpn);
           if (q.connected) setSamples((s) => [...s.filter((x) => Date.now() - x.t < SPAN), { t: Date.now(), router: q.routerMs, internet: q.internetMs }]);
         } catch {
           /* next round */
@@ -95,6 +98,11 @@ export function Quality() {
           <div className="mt-0.5 text-[0.75rem] leading-relaxed text-muted">{t(`wifi.quality.verdict.${v}.text`)}</div>
         </div>
       </div>
+      {vpn && (
+        <div className="rounded-card border border-line bg-surface px-5 py-3 text-[0.75rem] leading-relaxed text-muted" data-testid="wifi-quality-vpn">
+          {t("wifi.quality.vpn")}
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-3">
         {(
           [
@@ -112,7 +120,7 @@ export function Quality() {
               <span className="ml-1 text-[0.75rem] text-muted">{t("wifi.quality.ms")}</span>
             </div>
             <div className="num mt-2 text-[0.6875rem] text-muted">
-              {t("wifi.quality.jitter")} {st.jitter ?? "—"} {t("wifi.quality.ms")} · {t("wifi.quality.loss")} {st.loss}%
+              {t("wifi.quality.jitter")} {st.jitter ?? "—"} {t("wifi.quality.ms")} · {t("wifi.quality.loss")} {vpn && st.loss === 100 ? "—" : `${st.loss}%`}
             </div>
           </div>
         ))}
@@ -144,7 +152,7 @@ export function Quality() {
             </text>
           ))}
           {samples.map((s) =>
-            s.router === null ? <line key={`l${s.t}`} x1={x(s.t)} x2={x(s.t)} y1={M.t} y2={H - M.b} stroke="var(--color-risk)" strokeWidth={2} opacity={0.6} /> : null,
+            s.router === null && r.loss < 100 ? <line key={`l${s.t}`} x1={x(s.t)} x2={x(s.t)} y1={M.t} y2={H - M.b} stroke="var(--color-risk)" strokeWidth={2} opacity={0.6} /> : null,
           )}
           <path d={line("internet")} fill="none" stroke="#F5A35C" strokeWidth={2} strokeLinejoin="round" />
           <path d={line("router")} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinejoin="round" />

@@ -29,7 +29,7 @@ function LiveCompass() {
         <Compass size={16} className="text-accent" />
         {t("phone.compass.title")}
       </h3>
-      <div className="mt-4 grid items-center gap-5 md:grid-cols-[240px_1fr]">
+      <div className="mt-4 grid items-center gap-5 md:grid-cols-[15rem_1fr]">
         <svg viewBox="-120 -120 240 240" className="mx-auto w-full max-w-[15rem]">
           <circle r={104} fill="none" stroke="var(--color-line)" strokeWidth={2} />
           {/* coverage of the turn so far */}

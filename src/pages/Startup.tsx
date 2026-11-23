@@ -196,7 +196,7 @@ function Details({ entry }: { entry: Entry }) {
           </li>
         ))}
       </ul>
-      <dl className="grid grid-cols-[150px_1fr] gap-x-4 gap-y-1.5">
+      <dl className="grid grid-cols-[9.375rem_1fr] gap-x-4 gap-y-1.5">
         <Fact label={t("startup.command")}>
           <span className="num select-text text-[0.6875rem]">{entry.command || "—"}</span>
         </Fact>

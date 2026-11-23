@@ -26,6 +26,7 @@ export interface Tick {
   fpsStatus: "listening" | "off" | "failed";
   routerMs: number | null;
   internetMs: number | null;
+  online: boolean;
   loss: number | null;
   wifi: { ssid: string; rssi: number; quality: number } | null;
   elevated: boolean;

@@ -55,6 +55,8 @@ pub struct OverlayState {
 struct Net {
     router_ms: Option<u32>,
     internet_ms: Option<u32>,
+    /// Windows sees a way to the internet, whatever the pings say.
+    online: bool,
     /// The last internet pings: answered or not.
     answers: VecDeque<bool>,
 }
@@ -180,7 +182,7 @@ pub fn alert(app: &AppHandle, kind: &str, level: &str, title: &str, body: &str) 
     app.emit_to(LABEL, "overlay:alert", json!({ "kind": kind, "level": level, "title": title, "body": body })).is_ok()
 }
 
-/// The way pings go: over Wi-Fi when connected, else over the cable.
+/// The way router pings go: over Wi-Fi when connected, else over the cable.
 fn route() -> Option<(Ipv4Addr, Ipv4Addr)> {
     crate::network::wifi_route().or_else(|| Some((*crate::network::lan_ipv4().first()?, crate::network::gateway()?)))
 }
@@ -196,6 +198,7 @@ struct Tick {
     fps_status: &'static str,
     router_ms: Option<u32>,
     internet_ms: Option<u32>,
+    online: bool,
     /// Lost internet pings of the last 20, in percent.
     loss: Option<u32>,
     wifi: Option<serde_json::Value>,
@@ -221,6 +224,7 @@ fn tick(app: &AppHandle) -> Tick {
         fps_status: fps::status(),
         router_ms: net.router_ms,
         internet_ms: net.internet_ms,
+        online: net.online,
         loss,
         wifi,
         elevated: crate::system::is_elevated(),
@@ -259,13 +263,16 @@ pub fn start(app: &tauri::App) {
             if !on {
                 continue;
             }
-            let Some((from, gateway)) = route() else { continue };
-            let router_ms = crate::network::ping_from(from, gateway, 800);
-            let internet_ms = crate::network::ping_from(from, Ipv4Addr::new(1, 1, 1, 1), 1200);
+            let router_ms = route().and_then(|(from, gateway)| crate::network::ping_from(from, gateway, 800));
+            // The way the game's own traffic goes — through a VPN too. Forced over Wi-Fi it would
+            // be blocked by the VPN and look like no network at all.
+            let internet_ms = crate::network::ping(Ipv4Addr::new(1, 1, 1, 1), 1200);
+            let online = internet_ms.is_some() || crate::network::windows_online().unwrap_or(false);
             let state = handle.state::<OverlayState>();
             let mut net = state.net.lock().unwrap();
             net.router_ms = router_ms;
             net.internet_ms = internet_ms;
+            net.online = online;
             net.answers.push_back(internet_ms.is_some());
             while net.answers.len() > 20 {
                 net.answers.pop_front();

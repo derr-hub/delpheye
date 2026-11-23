@@ -339,6 +339,8 @@ pub struct Quality {
     pub internet_ms: Option<u32>,
     /// False when Wi-Fi is not connected: nothing was measured.
     pub connected: bool,
+    /// A VPN keeps packets from going past it, so the internet was measured through the VPN.
+    pub via_vpn: bool,
 }
 
 /// One measurement of the link: a ping to the router and one to the internet, both sent from the
@@ -346,10 +348,14 @@ pub struct Quality {
 #[tauri::command]
 pub async fn wifi_quality() -> Result<Quality, String> {
     tauri::async_runtime::spawn_blocking(|| {
-        let Some((ip, gateway)) = crate::network::wifi_route() else { return Quality { router_ms: None, internet_ms: None, connected: false } };
+        let Some((ip, gateway)) = crate::network::wifi_route() else { return Quality { router_ms: None, internet_ms: None, connected: false, via_vpn: false } };
         let router_ms = crate::network::ping_from(ip, gateway, 1000);
-        let internet_ms = crate::network::ping_from(ip, std::net::Ipv4Addr::new(1, 1, 1, 1), 1500);
-        Quality { router_ms, internet_ms, connected: true }
+        let target = std::net::Ipv4Addr::new(1, 1, 1, 1);
+        let direct = crate::network::ping_from(ip, target, 1500);
+        // Only behind a VPN: otherwise a cable would answer for a broken Wi-Fi.
+        let via_vpn = direct.is_none() && crate::network::vpn_up();
+        let internet_ms = if via_vpn { crate::network::ping(target, 1500) } else { direct };
+        Quality { router_ms, internet_ms, connected: true, via_vpn }
     })
     .await
     .map_err(|e| e.to_string())

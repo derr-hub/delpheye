@@ -52,7 +52,8 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
 
   return (
     <nav className="shell flex w-[13.25rem] shrink-0 flex-col bg-bg p-3">
-      <ul className="flex flex-col gap-1">
+      {/* The list scrolls in a low window, so the language and theme below always stay reachable. */}
+      <motion.ul layoutScroll className="-mr-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-2">
         {PAGES.map(({ id, icon: Icon }) => {
           const active = id === page;
           return (
@@ -61,7 +62,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
                 onClick={() => onChange(id)}
                 data-testid={`nav-${id}`}
                 aria-current={active ? "page" : undefined}
-                className={`reveal relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-[0.8125rem] transition-colors duration-150 ${
+                className={`reveal relative flex h-10 w-full shrink-0 items-center gap-3 rounded-lg px-3 text-left text-[0.8125rem] transition-colors duration-150 ${
                   active ? "text-fg" : "text-muted hover:bg-surface hover:text-fg"
                 }`}
               >
@@ -85,9 +86,8 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
             </li>
           );
         })}
-      </ul>
+      </motion.ul>
 
-      <div className="mt-auto" />
       <UpdateChip />
       {elevated && (
         <div className="mb-2 flex items-center gap-2 px-3 text-[0.75rem] text-accent" data-testid="admin-chip">

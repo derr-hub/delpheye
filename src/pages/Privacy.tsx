@@ -224,7 +224,7 @@ export function Privacy() {
     );
 
   return (
-    <div className="mx-auto max-w-[53.75rem] pb-6">
+    <div className="pb-6">
       <p className="mb-4 max-w-[70ch] text-[0.8125rem] leading-relaxed text-muted">{t("privacy.intro")}</p>
       <div className="grid grid-cols-3 gap-3">
         {caps.map((c) => (

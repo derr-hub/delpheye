@@ -144,7 +144,7 @@ function FindingRow({ finding }: { finding: Finding }) {
             <div className="space-y-3 border-t border-line/60 bg-bg/40 px-5 py-4 text-[0.75rem]">
               <p className="max-w-[85ch] leading-relaxed">{t(`security.kind.${finding.kind}.why`)}</p>
               {reason && <p className="max-w-[85ch] leading-relaxed text-muted">{reason}</p>}
-              <dl className="grid grid-cols-[120px_1fr] gap-x-4 gap-y-1.5">
+              <dl className="grid grid-cols-[7.5rem_1fr] gap-x-4 gap-y-1.5">
                 <dt className="text-muted">{t("security.evidence")}</dt>
                 <dd className="num select-text break-all text-[0.6875rem]">{finding.detail || "—"}</dd>
                 <dt className="text-muted">{t("security.where")}</dt>
@@ -796,7 +796,7 @@ export function Security() {
       ) : (
         // The 3D shield always stands on a dark stage, in both themes; the controls on it use the dark tokens.
         <div
-          className="relative overflow-hidden rounded-card border border-line bg-[#0b0f14] text-[#e6e9ee]"
+          className="relative overflow-hidden rounded-card border border-line bg-black text-[#e6e9ee]"
           style={{ "--color-fg": "#e6e9ee", "--color-muted": "#8b95a5", "--color-line": "#2a313b", "--color-surface": "#171b21", "--color-raised": "#1f242c", "--color-bg": "#0f1216", "--color-accent": "#4cc2ff" } as CSSProperties}
         >
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgb(76_194_255/0.12),transparent_60%)]" />

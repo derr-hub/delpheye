@@ -118,7 +118,7 @@ export function TimeRings({ root, onOpen, onUp }: { root: Ring; onOpen: (id: num
   };
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_260px] items-center gap-6" data-testid="time-rings">
+    <div className="grid grid-cols-[minmax(0,1fr)_16.25rem] items-center gap-6" data-testid="time-rings">
       <div className="relative mx-auto w-full max-w-[26.25rem]" onMouseLeave={() => setHover(null)}>
         <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="block w-full" role="img" aria-label={t("disk.ringsLabel", { name: root.name })}>
           <AnimatePresence mode="popLayout">

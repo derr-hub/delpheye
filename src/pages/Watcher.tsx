@@ -67,7 +67,7 @@ export function Watcher() {
   const toggle = (k: Kind) => saveWatcher({ off: on(k) ? [...settings.off, k] : settings.off.filter((x) => x !== k) });
 
   return (
-    <div className="mx-auto grid max-w-[68.75rem] gap-4 pb-6 lg:grid-cols-[1.4fr_1fr]" data-testid="watcher-page">
+    <div className="grid gap-4 pb-6 lg:grid-cols-[1.4fr_1fr]" data-testid="watcher-page">
       <div className="grid content-start gap-4">
         <div className="flex items-center gap-4 rounded-card border border-line bg-surface p-5">
           <span className={`relative flex h-12 w-12 items-center justify-center rounded-xl ${settings.enabled ? "bg-safe/10 text-safe" : "bg-raised text-muted"}`}>

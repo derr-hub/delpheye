@@ -64,7 +64,7 @@ export function Wifi() {
     );
 
   return (
-    <div className="mx-auto max-w-[68.75rem] pb-6">
+    <div className="pb-6">
       <div className="mb-4 flex items-center gap-3">
         <div className="flex rounded-lg border border-line bg-surface p-0.5" role="tablist">
           {(

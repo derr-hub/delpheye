@@ -153,7 +153,9 @@ export function Overlay() {
   const temp = [tick?.cpuTemp, tick?.gpuTemp].filter((x): x is number => typeof x === "number");
   const hot = temp.length ? Math.max(...temp) : null;
   const ping = tick?.internetMs ?? null;
-  const offline = !!tick && settings.net && ping === null && (tick.loss ?? 0) >= 50;
+  const offline = !!tick && settings.net && ping === null && !tick.online && tick.loss !== null;
+  // Online, yet not one ping comes back: this network drops pings, so "loss" would be made up.
+  const loss = offline || (ping === null && tick?.loss === 100) ? 0 : (tick?.loss ?? 0);
   const mode = open ? "panel" : alert ? "alert" : "pill";
   const LevelIcon = alert?.level === "risk" ? ShieldAlert : alert?.level === "warn" ? AlertTriangle : alert?.kind === "test" ? BellRing : Info;
   const levelColor = alert?.level === "risk" ? RED : alert?.level === "warn" ? AMBER : BLUE;
@@ -214,7 +216,7 @@ export function Overlay() {
                 {settings.net && tick && (
                   <Seg icon={offline ? <WifiOff size={12} /> : tick.wifi ? <Bars rssi={tick.wifi.rssi} /> : <Zap size={12} />} title={t("overlay.ping")}>
                     <span style={{ color: pingTone(ping) }}>{ping !== null ? `${ping} ${t("overlay.ms")}` : offline ? t("overlay.offline") : "—"}</span>
-                    {!!tick.loss && <span className="text-[0.625rem]" style={{ color: RED }}>−{tick.loss}%</span>}
+                    {loss > 0 && <span className="text-[0.625rem]" style={{ color: RED }}>−{loss}%</span>}
                   </Seg>
                 )}
               </motion.div>
@@ -305,7 +307,7 @@ export function Overlay() {
                   <Tile
                     label={t("overlay.ping")}
                     value={ping !== null ? `${ping} ${t("overlay.ms")}` : "—"}
-                    sub={tick?.loss ? t("overlay.loss", { pct: tick.loss }) : tick?.routerMs !== null && tick?.routerMs !== undefined ? t("overlay.router", { ms: tick.routerMs }) : undefined}
+                    sub={loss ? t("overlay.loss", { pct: loss }) : tick?.routerMs !== null && tick?.routerMs !== undefined ? t("overlay.router", { ms: tick.routerMs }) : undefined}
                     color={pingTone(ping)}
                     data={hist.ping}
                   />

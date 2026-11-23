@@ -182,7 +182,7 @@ function ConnectionList({ app }: { app: NetApp }) {
   return (
     <ul className="space-y-1 border-t border-line/60 bg-bg/40 px-5 py-3 text-[0.75rem]">
       {app.connections.map((c, i) => (
-        <li key={`${c.remote}-${i}`} className="grid grid-cols-[minmax(0,1fr)_120px_90px_90px] items-center gap-3">
+        <li key={`${c.remote}-${i}`} className="grid grid-cols-[minmax(0,1fr)_7.5rem_5.625rem_5.625rem] items-center gap-3">
           <span className="min-w-0 truncate">
             <span className={c.host ? "" : "num text-[0.6875rem]"}>{c.host ?? c.ip}</span>
             {c.host && <span className="num ml-2 text-[0.6875rem] text-muted">{c.ip}</span>}
@@ -209,7 +209,7 @@ function AppRow({ app }: { app: NetApp }) {
   return (
     <div className="border-b border-line/50 last:border-b-0" data-testid={`net-app-${app.pid}`}>
       <button
-        className="grid w-full grid-cols-[minmax(0,1fr)_80px_96px_96px_20px] items-center gap-3 px-5 py-2.5 text-left hover:bg-raised/40"
+        className="grid w-full grid-cols-[minmax(0,1fr)_5rem_6rem_6rem_1.25rem] items-center gap-3 px-5 py-2.5 text-left hover:bg-raised/40"
         onClick={() => useNetwork.setState((s) => ({ open: { ...s.open, [app.pid]: !open } }))}
         aria-expanded={open}
       >
@@ -339,7 +339,7 @@ function Apps() {
         </div>
       )}
       <div className="overflow-clip rounded-card border border-line bg-surface">
-        <div className="grid grid-cols-[minmax(0,1fr)_80px_96px_96px_20px] gap-3 border-b border-line px-5 py-2 text-[0.6875rem] uppercase tracking-wider text-muted">
+        <div className="grid grid-cols-[minmax(0,1fr)_5rem_6rem_6rem_1.25rem] gap-3 border-b border-line px-5 py-2 text-[0.6875rem] uppercase tracking-wider text-muted">
           <span>{t("network.program")}</span>
           <span className="text-right" title={t("network.connectionsHint")}>
             {t("network.connections")}
@@ -410,7 +410,7 @@ function AdapterCard({ a }: { a: Adapter }) {
       <p className="mb-2 truncate text-[0.6875rem] text-muted" title={a.description}>
         {t(`network.kind.${a.kind}`)} · {a.description}
       </p>
-      <dl className="grid grid-cols-[96px_1fr] gap-x-3 gap-y-1 text-[0.75rem]">
+      <dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1 text-[0.75rem]">
         {a.up && (
           <>
             <dt className="text-muted">{t("network.speed")}</dt>

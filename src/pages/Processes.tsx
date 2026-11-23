@@ -91,7 +91,7 @@ function heat(share: number) {
   return a < 0.02 ? undefined : { background: `rgba(76, 194, 255, ${(0.05 + a * 0.28).toFixed(3)})` };
 }
 
-const COLUMNS = "grid-cols-[minmax(0,1fr)_72px_88px_84px_64px]";
+const COLUMNS = "grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.25rem_4rem]";
 
 function Row({ node, open, onToggle, tree }: { node: Node; open: boolean; onToggle: () => void; tree: boolean }) {
   const { t } = useTranslation();
@@ -547,7 +547,7 @@ function Drawer({ proc }: { proc: Proc }) {
           <p className={`leading-relaxed ${proc.level === "critical" ? "text-risk" : proc.level === "windows" ? "text-warn" : "text-muted"}`}>{end}</p>
         </section>
 
-        <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-2 text-[0.75rem]">
+        <dl className="grid grid-cols-[6.875rem_1fr] gap-x-3 gap-y-2 text-[0.75rem]">
           <Fact label={t("processes.fact.publisher")}>{proc.company ?? "—"}</Fact>
           <Fact label={t("processes.fact.signature")}>{signature}</Fact>
           <Fact label={t("processes.fact.file")}>

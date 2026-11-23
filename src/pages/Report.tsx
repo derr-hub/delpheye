@@ -169,7 +169,7 @@ export function Report() {
               {avgBoot !== null && <span className="text-muted"> · {t("report.bootAvg", { value: fmt.duration(avgBoot) })}</span>}
             </div>
             {r.startup.entries.slice(0, 15).map((e) => (
-              <div key={e.id} className="grid grid-cols-[minmax(0,1fr)_120px_90px_110px] items-center gap-3 border-b border-line/50 px-5 py-2 text-[0.75rem] last:border-b-0">
+              <div key={e.id} className="grid grid-cols-[minmax(0,1fr)_7.5rem_5.625rem_6.875rem] items-center gap-3 border-b border-line/50 px-5 py-2 text-[0.75rem] last:border-b-0">
                 <div className="min-w-0">
                   <div className="truncate text-[0.8125rem]">{e.name}</div>
                   <div className="truncate text-[0.6875rem] text-muted">{e.publisher ?? e.program ?? ""}</div>
@@ -214,7 +214,7 @@ export function Report() {
         {r.processes && (
           <div className="overflow-hidden rounded-card border border-line bg-surface">
             {r.processes.map((p) => (
-              <div key={p.name} className="grid grid-cols-[minmax(0,1fr)_90px_70px_90px] items-center gap-3 border-b border-line/50 px-5 py-2 text-[0.75rem] last:border-b-0">
+              <div key={p.name} className="grid grid-cols-[minmax(0,1fr)_5.625rem_4.375rem_5.625rem] items-center gap-3 border-b border-line/50 px-5 py-2 text-[0.75rem] last:border-b-0">
                 <span className="truncate text-[0.8125rem]">{p.description || p.name}</span>
                 <span className="text-muted">{p.count > 1 ? t("overview.procCount", { count: p.count }) : ""}</span>
                 <span className="num text-right">{p.cpu.toFixed(1)}%</span>

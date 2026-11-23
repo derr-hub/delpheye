@@ -104,10 +104,13 @@ function plan(root: Ring, base: string): { lots: Lot[]; roads: Road[] } {
       // Each thing gets cells in proportion to its size, the largest nearest the plaza.
       const iSum = items.reduce((s, [g]) => s + g.size, 0) || 1;
       const list: [Ring, string, Role][] = [];
-      for (const it of items) {
-        const c = Math.max(1, Math.round((it[0].size / iSum) * cells));
-        for (let m = 0; m < c && list.length < cells; m++) list.push(it);
-      }
+      // One each first, so nothing small is left out; the rest of the cells go by size.
+      const spare = cells - items.length;
+      const extra = items.map(([g]) => Math.floor((g.size / iSum) * spare));
+      extra[0] += spare - extra.reduce((x, y) => x + y, 0);
+      items.forEach((it, n) => {
+        for (let m = 0; m <= extra[n]; m++) list.push(it);
+      });
       const step = depth / rows;
       list.forEach(([g, gPath, gRole], n) => {
         const row = Math.floor(n / cols);
@@ -515,7 +518,7 @@ export default function FileCity({ root, base, onOpen, onUp }: { root: Ring; bas
               <Route size={12} className="mt-0.5 shrink-0" />
               <span className="num break-all">{info.path}</span>
             </div>
-            <dl className="mt-3 grid grid-cols-[110px_1fr] gap-y-1 text-[0.75rem]">
+            <dl className="mt-3 grid grid-cols-[6.875rem_1fr] gap-y-1 text-[0.75rem]">
               <dt className="text-white/50">{t("disk.city.size")}</dt>
               <dd className="num">
                 {fmt.bytes(info.ring.size)} · {(share * 100).toFixed(share < 0.01 ? 2 : 1)}%

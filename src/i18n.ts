@@ -866,6 +866,8 @@ const uk = {
     },
   },
   network: {
+    receives: "Отримує",
+    sends: "Надсилає",
     loading: "Читаю мережу…",
     offline: "Немає підключення до мережі",
     viaWifi: "Підключено через Wi-Fi «{{ssid}}»",
@@ -1569,6 +1571,7 @@ const uk = {
     },
     quality: {
       notConnected: "Ноутбук не підключений до Wi-Fi — міряти нічого. Підключись до своєї мережі (кабель можна лишити: заміри все одно йдуть саме через Wi-Fi).",
+      vpn: "Увімкнено VPN, який не пускає пакети повз себе: шлях до інтернету заміряно через VPN, а роутер може не відповідати — це не означає, що Wi-Fi поганий.",
       router: "До роутера (Wi-Fi)",
       internet: "До інтернету",
       signal: "Сигнал",
@@ -3210,6 +3213,8 @@ const en: typeof uk = {
   } as typeof uk.monitor),
   // English needs only the "one" and "other" plural forms.
   network: {
+    receives: "In",
+    sends: "Out",
     loading: "Reading the network…",
     offline: "No network connection",
     viaWifi: "Connected over Wi-Fi “{{ssid}}”",
@@ -3913,6 +3918,7 @@ const en: typeof uk = {
     },
     quality: {
       notConnected: "The laptop is not on Wi-Fi — nothing to measure. Connect to your network (the cable can stay: the pings still go over Wi-Fi).",
+      vpn: "A VPN is on and lets nothing past it: the internet is measured through the VPN, and the router may stay silent — that does not mean Wi-Fi is bad.",
       router: "To the router (Wi-Fi)",
       internet: "To the internet",
       signal: "Signal",

@@ -323,8 +323,19 @@ pub fn verdict(gateway: Option<&Probe>, internet: &[Probe], dns_ms: Option<u32>)
     let loss = internet.iter().map(|p| p.loss).min().unwrap_or(100);
     match (gateway, best) {
         (None, None) => "no-network",
-        (Some(g), _) if g.avg_ms.is_none() => "no-network",
+        (Some(g), None) if g.avg_ms.is_none() => "no-network",
         (_, None) => "no-internet",
+        // The internet answers but the router does not (a VPN or the router drops its pings):
+        // the link is fine, so the router's silence says nothing.
+        (Some(g), Some(ms)) if g.avg_ms.is_none() => {
+            if ms > 120 || loss >= 25 {
+                "slow-internet"
+            } else if dns_ms.is_none_or(|d| d > 300) {
+                "dns"
+            } else {
+                "good"
+            }
+        }
         (Some(g), Some(_)) if g.avg_ms.unwrap_or(0) > 30 || g.loss >= 25 => "slow-local",
         (_, Some(ms)) if ms > 120 || loss >= 25 => "slow-internet",
         _ if dns_ms.is_none_or(|d| d > 300) => "dns",
@@ -369,6 +380,20 @@ pub fn wifi_route() -> Option<(Ipv4Addr, Ipv4Addr)> {
 
 pub fn ping_from(from: Ipv4Addr, to: Ipv4Addr, timeout_ms: u32) -> Option<u32> {
     win::ping_from(from, to, timeout_ms)
+}
+
+/// Round trip the way the computer's own traffic goes (through a VPN when one is on).
+pub fn ping(to: Ipv4Addr, timeout_ms: u32) -> Option<u32> {
+    win::ping(to, timeout_ms)
+}
+
+pub fn windows_online() -> Option<bool> {
+    win::windows_online()
+}
+
+/// A VPN adapter is up: packets forced past it (from the Wi-Fi address) may be blocked.
+pub fn vpn_up() -> bool {
+    win::adapters().iter().any(|a| a.up && a.kind == "vpn" && !a.ipv4.is_empty())
 }
 
 /// The default gateway of the first connected adapter (not a VPN): usually the home router.
@@ -427,6 +452,8 @@ mod tests {
         assert_eq!(verdict(Some(&p(Some(3), 0)), &[p(Some(200), 0)], Some(30)), "slow-internet");
         assert_eq!(verdict(Some(&p(Some(3), 0)), &[p(None, 100)], None), "no-internet");
         assert_eq!(verdict(Some(&p(None, 100)), &[p(None, 100)], None), "no-network");
+        // Behind a VPN the router may stay silent while the internet works.
+        assert_eq!(verdict(Some(&p(None, 100)), &[p(Some(65), 0)], Some(30)), "good");
         assert_eq!(verdict(Some(&p(Some(3), 0)), &[p(Some(20), 0)], Some(900)), "dns");
     }
 

@@ -493,7 +493,7 @@ function IncidentLine({ e }: { e: Incident }) {
     text = driver ? t("monitor.gpuReset", { driver }) : t("monitor.gpuResetUnknown");
   }
   return (
-    <li className="grid grid-cols-[150px_1fr] gap-3 py-1.5">
+    <li className="grid grid-cols-[9.375rem_1fr] gap-3 py-1.5">
       <span className="num text-[0.6875rem] text-muted">{when}</span>
       <span className="leading-relaxed">
         {text}

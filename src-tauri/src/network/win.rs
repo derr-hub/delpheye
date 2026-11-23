@@ -358,6 +358,25 @@ pub fn ping_from(from: Ipv4Addr, to: Ipv4Addr, timeout_ms: u32) -> Option<u32> {
     }
 }
 
+/// Whether Windows itself sees a way to the internet (the network icon's verdict). Some networks
+/// drop pings, so silence alone does not mean "offline". `None` when Windows cannot say.
+pub fn windows_online() -> Option<bool> {
+    use windows::Win32::Networking::NetworkListManager::{INetworkListManager, NetworkListManager};
+    use windows::Win32::System::Com::{CLSCTX_ALL, COINIT_MULTITHREADED, CoCreateInstance, CoInitializeEx, CoUninitialize};
+    // SAFETY: COM is initialised on this thread for the call and released after the object is gone.
+    unsafe {
+        let init = CoInitializeEx(None, COINIT_MULTITHREADED).is_ok();
+        let answer = CoCreateInstance::<_, INetworkListManager>(&NetworkListManager, None, CLSCTX_ALL)
+            .and_then(|m| m.IsConnectedToInternet())
+            .ok()
+            .map(|b| b.as_bool());
+        if init {
+            CoUninitialize();
+        }
+        answer
+    }
+}
+
 fn reverse_name(ip: IpAddr) -> String {
     match ip {
         IpAddr::V4(v4) => {
