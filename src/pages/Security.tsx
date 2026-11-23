@@ -1,6 +1,8 @@
 import { Hero } from "../components/Hero";
 import { Bug, ShieldHalf, Puzzle, HardDriveDownload, Router, KeyRound, Fingerprint, Eye, EyeOff, Loader2, Copy, Check, ArrowRight, Wifi } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+
+const Shield3D = lazy(() => import("./security/Shield3D"));
 import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -270,7 +272,14 @@ function TestList({ tests, group }: { tests: HardeningTest[]; group: "test" | "b
       {sorted.map((test) => {
         const Icon = OUTCOME_ICON[test.outcome];
         const isOpen = open === test.id;
-        const detail = test.detail === "other-av" ? t("security.backup.otherAv") : test.detail === "cloud-enough" ? t("security.backup.cloudEnough") : test.detail;
+        const detail =
+          test.detail === "other-av"
+            ? t("security.backup.otherAv")
+            : test.detail === "cloud-enough"
+              ? t("security.backup.cloudEnough")
+              : test.id === "cloud-folders" && test.detail
+                ? test.detail.split(", ").map((f) => t(`security.backup.folder.${f}`, { defaultValue: f })).join(", ")
+                : test.detail;
         return (
           <li key={test.id} className="border-b border-line last:border-b-0" data-testid={`test-${test.id}`}>
             <button className="flex w-full items-start gap-3.5 px-5 py-3 text-left transition-colors hover:bg-raised/40" onClick={() => setOpen(isOpen ? null : test.id)} aria-expanded={isOpen}>
@@ -703,10 +712,30 @@ function SectionCards({ active, onPick }: { active: Section; onPick: (s: Section
   );
 }
 
+const VIEW_KEY = "security.view";
+const loadView = (): "3d" | "cards" => {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "cards" ? "cards" : "3d";
+  } catch {
+    return "3d";
+  }
+};
+
 export function Security() {
   const { t } = useTranslation();
   const { phase, report, tab, error } = useSecurity();
   const [declined, setDeclined] = useState(false);
+  const [view, setViewState] = useState<"3d" | "cards">(loadView);
+  const setView = (v: "3d" | "cards") => {
+    setViewState(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* this session only */
+    }
+  };
+  // In 3D, nothing is open until a piece of the shield is chosen.
+  const [zoom, setZoom] = useState<Section | null>(null);
   // The section to show first: the weakest one.
   const worst = useMemo<Section>(() => {
     if (!report) return "threats";
@@ -745,10 +774,71 @@ export function Security() {
     );
   }
 
-  const Icon = SECTION_ICON[active];
+  const shown: Section | null = view === "3d" ? zoom : active;
+  const Icon = SECTION_ICON[shown ?? active];
+  const scores = sectionScores(report);
+  const toggle = (
+    <div className="flex rounded-lg border border-line p-0.5 text-[12px]">
+      {(["3d", "cards"] as const).map((v) => (
+        <button key={v} onClick={() => setView(v)} className={`rounded-md px-2.5 py-1 ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`} data-testid={`security-view-${v}`}>
+          {t(`security.view.${v}`)}
+        </button>
+      ))}
+    </div>
+  );
   return (
     <div className="flex flex-col gap-4 pb-2">
-      <Shield />
+      {view === "cards" ? (
+        <>
+          <div className="flex justify-end">{toggle}</div>
+          <Shield />
+        </>
+      ) : (
+        // The 3D shield always stands on a dark stage, in both themes; the controls on it use the dark tokens.
+        <div
+          className="relative overflow-hidden rounded-card border border-line bg-[#0b0f14] text-[#e6e9ee]"
+          style={{ "--color-fg": "#e6e9ee", "--color-muted": "#8b95a5", "--color-line": "#2a313b", "--color-surface": "#171b21", "--color-raised": "#1f242c", "--color-bg": "#0f1216", "--color-accent": "#4cc2ff" } as CSSProperties}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgb(76_194_255/0.12),transparent_60%)]" />
+          <div className="absolute left-5 top-4 z-10 max-w-[280px]">
+            <div className="text-[11px] uppercase tracking-wider text-muted">{t("security.shield.label")}</div>
+            <div className="font-display text-[22px] font-semibold" style={{ color: report.findings.some((f) => f.severity === "high") ? "var(--color-risk)" : toneOf(shieldScore(report)) }} data-testid="security-verdict">
+              {t(report.findings.some((f) => f.severity === "high") ? "security.shield.bad" : shieldScore(report) >= 85 ? "security.shield.good" : shieldScore(report) >= 60 ? "security.shield.fair" : "security.shield.poor")}
+            </div>
+            <p className="mt-1 text-[12px] leading-relaxed text-muted">{zoom ? t("security.view.back") : t("security.view.hint")}</p>
+          </div>
+          <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+            {toggle}
+            <Button icon={<RefreshCw size={14} />} onClick={scan} data-testid="security-rescan">
+              {t("security.rescan")}
+            </Button>
+          </div>
+          {zoom && (
+            <button onClick={() => setZoom(null)} className="absolute bottom-4 left-5 z-10 flex items-center gap-1.5 rounded-full border border-line bg-surface/90 px-3 py-1.5 text-[12px] backdrop-blur hover:bg-raised" data-testid="shield-back">
+              ← {t("security.view.whole")}
+            </button>
+          )}
+          <div className="h-[470px]">
+            <Suspense fallback={<div className="flex h-full items-center justify-center text-muted">…</div>}>
+              <Shield3D
+                parts={SECTIONS.map((s) => ({
+                  id: s,
+                  title: t(`security.section.${s}.title`),
+                  score: s === "passwords" ? null : scores[s],
+                  status: s === "passwords" ? t("security.section.passwords.status") : sectionIssues(report, s) ? t("security.section.issues", { count: sectionIssues(report, s) }) : t("security.section.ok"),
+                }))}
+                score={shieldScore(report)}
+                selected={zoom}
+                onSelect={(id) => {
+                  setZoom(id as Section | null);
+                  // The panel opens as the camera arrives.
+                  if (id) window.setTimeout(() => document.querySelector("[data-testid^=panel-]")?.scrollIntoView({ behavior: "smooth", block: "start" }), 650);
+                }}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
       {!report.elevated && (
         <div className="flex items-center gap-4 rounded-card border border-warn/25 bg-warn/[0.06] px-5 py-2.5">
           <ShieldAlert size={16} className="shrink-0 text-warn" />
@@ -756,21 +846,22 @@ export function Security() {
           <Button onClick={async () => setDeclined(!(await relaunchElevated()))}>{t("cleanup.adminAction")}</Button>
         </div>
       )}
-      <SectionCards active={active} onPick={(s) => useSecurity.setState({ tab: s })} />
+      {view === "cards" && <SectionCards active={active} onPick={(s) => useSecurity.setState({ tab: s })} />}
 
       <AnimatePresence mode="wait" initial={false}>
-        <motion.section key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="space-y-3" data-testid={`panel-${active}`}>
+        {shown && (
+        <motion.section key={shown} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="space-y-3" data-testid={`panel-${shown}`}>
           <div className="flex items-start gap-3 px-1">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
               <Icon size={18} />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-[18px] font-semibold">{t(`security.section.${active}.title`)}</h2>
-              <p className="max-w-[90ch] text-[12px] leading-relaxed text-muted">{t(`security.section.${active}.lead`)}</p>
+              <h2 className="font-display text-[18px] font-semibold">{t(`security.section.${shown}.title`)}</h2>
+              <p className="max-w-[90ch] text-[12px] leading-relaxed text-muted">{t(`security.section.${shown}.lead`)}</p>
             </div>
           </div>
 
-          {active === "threats" && (
+          {shown === "threats" && (
             <>
               <ReputationCard />
               {(["persistence", "process"] as const).map((area) => (
@@ -778,10 +869,10 @@ export function Security() {
               ))}
             </>
           )}
-          {active === "tamper" && <AreaSection area="tamper" findings={report.findings.filter((f) => f.area === "tamper")} />}
-          {active === "windows" && <TestList tests={report.hardening.tests} group="test" />}
-          {active === "browser" && <BrowserSection list={report.extensions} />}
-          {active === "backup" && (
+          {shown === "tamper" && <AreaSection area="tamper" findings={report.findings.filter((f) => f.area === "tamper")} />}
+          {shown === "windows" && <TestList tests={report.hardening.tests} group="test" />}
+          {shown === "browser" && <BrowserSection list={report.extensions} />}
+          {shown === "backup" && (
             <>
               <TestList tests={report.backup.tests} group="backup" />
               <button className="flex items-center gap-1.5 px-1 text-[12px] text-accent hover:underline" onClick={() => go("journal")}>
@@ -789,9 +880,10 @@ export function Security() {
               </button>
             </>
           )}
-          {active === "network" && <NetworkSection open={report.exposure.open} publicNets={report.exposure.publicNetworks} />}
-          {active === "passwords" && <PasswordsSection />}
+          {shown === "network" && <NetworkSection open={report.exposure.open} publicNets={report.exposure.publicNetworks} />}
+          {shown === "passwords" && <PasswordsSection />}
         </motion.section>
+        )}
       </AnimatePresence>
 
       <p className="flex items-start gap-2 px-1 text-[11px] leading-relaxed text-muted/80">

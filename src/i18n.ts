@@ -1854,6 +1854,7 @@ const uk = {
   security: {
     whyTitle: "Чому це важливо",
     howTitle: "Що зробити",
+    view: { "3d": "3D-щит", cards: "Картки", hint: "Наведи на частину щита, щоб побачити її стан, і натисни — щит відкриє цей розділ.", back: "Натисни на іншу частину або повернись до всього щита.", whole: "Увесь щит" },
     shield: { label: "Щит DelphEye", good: "Захищено добре", fair: "Є що підтягнути", poor: "Захист слабкий", bad: "Знайдено загрозу" },
     section: {
       ok: "Усе гаразд",
@@ -1872,6 +1873,7 @@ const uk = {
     backup: {
       otherAv: "керує інший антивірус",
       cloudEnough: "не обов'язково: папки вже в хмарі",
+      folder: { documents: "Документи", desktop: "Робочий стіл", pictures: "Зображення" },
       toRestore: "Точки відновлення Windows — у «Журналі»",
       "cloud-folders": {
         name: "Документи, Робочий стіл і Фото в хмарі",
@@ -1884,6 +1886,7 @@ const uk = {
         name: "Історія файлів",
         pass: "Історія файлів налаштована: Windows регулярно копіює файли на інший диск.",
         fail: "Історія файлів не налаштована.",
+        unknown: "Не обов'язково: важливі папки вже копіюються в хмару. Друга копія на диску — приємний бонус.",
         why: "Копія на окремому диску рятує, коли немає інтернету чи хмари. Найкраще — диск, який під'єднується лише для копіювання: тоді шифрувальник до нього не дістане.",
         how: "Панель керування → Історія файлів → вибери зовнішній диск і «Увімкнути». Достатньо однієї з резервних копій — хмарної чи на диску.",
       },
@@ -1891,6 +1894,7 @@ const uk = {
         name: "Контрольований доступ до папок",
         pass: "Захисник не дає невідомим програмам змінювати файли в захищених папках.",
         fail: "Вимкнено: будь-яка програма може переписати документи й фото.",
+        unknown: "Цим керує твій антивірус, а не Захисник Windows — у більшості антивірусів є свій захист від шифрувальників; глянь його налаштування.",
         why: "Це вбудований захист Windows саме від шифрувальників: змінювати файли в Документах, Фото й на Робочому столі можуть лише довірені програми. Коли стоїть інший антивірус, він зазвичай має власний такий захист.",
         how: "Безпека Windows → Захист від вірусів і загроз → Захист від програм-вимагачів → Контрольований доступ до папок. Якщо якась твоя програма перестане зберігати файли — додай її до дозволених.",
       },
@@ -4005,6 +4009,7 @@ const en: typeof uk = {
   security: ({
     whyTitle: "Why it matters",
     howTitle: "What to do",
+    view: { "3d": "3D shield", cards: "Cards", hint: "Hover a piece of the shield to see its state, and click it — the shield opens that section.", back: "Click another piece, or go back to the whole shield.", whole: "Whole shield" },
     shield: { label: "DelphEye shield", good: "Well protected", fair: "Room to improve", poor: "Weak protection", bad: "A threat was found" },
     section: {
       ok: "All good",
@@ -4023,6 +4028,7 @@ const en: typeof uk = {
     backup: {
       otherAv: "another antivirus is in charge",
       cloudEnough: "optional: the folders are already in the cloud",
+      folder: { documents: "Documents", desktop: "Desktop", pictures: "Pictures" },
       toRestore: "Windows restore points are in the Journal",
       "cloud-folders": {
         name: "Documents, Desktop and Pictures in the cloud",
@@ -4035,6 +4041,7 @@ const en: typeof uk = {
         name: "File History",
         pass: "File History is set up: Windows copies your files to another drive regularly.",
         fail: "File History is not set up.",
+        unknown: "Optional: the important folders are already copied to the cloud. A second copy on a drive is a nice extra.",
         why: "A copy on a separate drive helps when there is no internet or cloud. Best is a drive plugged in only for the backup, so ransomware cannot reach it.",
         how: "Control Panel → File History → pick an external drive and Turn on. One of the backups — cloud or drive — is enough.",
       },
@@ -4042,6 +4049,7 @@ const en: typeof uk = {
         name: "Controlled folder access",
         pass: "Defender stops unknown programs from changing files in protected folders.",
         fail: "Off: any program can rewrite your documents and photos.",
+        unknown: "Your antivirus is in charge, not Microsoft Defender — most have their own ransomware shield; check its settings.",
         why: "This is Windows' own protection against ransomware: only trusted programs may change files in Documents, Pictures and on the Desktop. When another antivirus is installed, it usually has its own.",
         how: "Windows Security → Virus & threat protection → Ransomware protection → Controlled folder access. If an app of yours can no longer save, allow it there.",
       },
