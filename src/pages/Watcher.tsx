@@ -1,14 +1,21 @@
 import { useEffect } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { BellRing, Check, Sparkles, CircleAlert, Cpu, HardDrive, Rocket, ShieldAlert, Smartphone, Wifi, Zap, type LucideIcon } from "lucide-react";
+import { BellRing, Check, Sparkles, Webcam, CircleAlert, Cpu, HardDrive, Rocket, ShieldAlert, Smartphone, Wifi, Zap, type LucideIcon } from "lucide-react";
 import { Button, Switch } from "../components/ui";
 import { go, type Page } from "../lib/app";
 import { OPEN_KEY, TOGGLE_KEY, loadOverlay, saveOverlay, testOverlay, useOverlay } from "../lib/overlay";
-import { KINDS, readAll, saveWatcher, setAutostart, testNotification, unread, useWatcher, type Alert, type Kind } from "../lib/watcher";
+import { readAll, saveWatcher, setAutostart, testNotification, unread, useWatcher, type Alert, type Kind } from "../lib/watcher";
 
-const ICON: Record<Kind, LucideIcon> = { device: Smartphone, twin: Wifi, heat: Cpu, disk: HardDrive, autostart: Rocket, crash: Zap, threat: ShieldAlert };
-const PAGE: Record<Kind, Page> = { device: "wifi", twin: "wifi", heat: "monitoring", disk: "cleanup", autostart: "startup", crash: "monitoring", threat: "security" };
+/** The watcher's checks, by what they look after. */
+const GROUPS: [string, Kind[]][] = [
+  ["pc", ["heat", "disk", "crash"]],
+  ["security", ["threat", "autostart", "sensor"]],
+  ["network", ["device", "twin"]],
+];
+
+const ICON: Record<Kind, LucideIcon> = { device: Smartphone, twin: Wifi, heat: Cpu, disk: HardDrive, autostart: Rocket, crash: Zap, threat: ShieldAlert, sensor: Webcam };
+const PAGE: Record<Kind, Page> = { device: "wifi", twin: "wifi", heat: "monitoring", disk: "cleanup", autostart: "startup", crash: "monitoring", threat: "security", sensor: "privacy" };
 const TONE = { info: "text-accent", warn: "text-warn", risk: "text-risk" } as const;
 
 function when(at: number, locale: string) {
@@ -124,31 +131,39 @@ export function Watcher() {
               ))}
             </ul>
             <p className="mt-3 rounded-lg bg-raised/60 px-3 py-2 text-[11px] leading-relaxed text-muted">{t("overlay.hotkeys", { toggle: TOGGLE_KEY, open: OPEN_KEY })}</p>
-            <Button className="mt-3 w-full" icon={<Sparkles size={14} />} onClick={testOverlay} data-testid="overlay-test">
-              {t("overlay.test")}
-            </Button>
           </div>
         )}
       </div>
 
       <div className="grid content-start gap-4">
         <div className="rounded-card border border-line bg-surface p-4">
-          <h3 className="mb-2 text-[13px] font-medium">{t("watcher.what")}</h3>
-          <ul className="grid gap-1">
-            {KINDS.map((k) => {
-              const Icon = ICON[k];
-              return (
-                <li key={k} className="flex items-start gap-3 rounded-lg px-1 py-2">
-                  <Icon size={16} className="mt-0.5 shrink-0 text-accent" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px]">{t(`watcher.kind.${k}.title`)}</div>
-                    <div className="text-[11px] leading-relaxed text-muted">{t(`watcher.kind.${k}.text`)}</div>
-                  </div>
-                  <Switch on={on(k)} onChange={() => toggle(k)} disabled={!settings.enabled} label={t(`watcher.kind.${k}.title`)} />
-                </li>
-              );
-            })}
-          </ul>
+          <h3 className="text-[13px] font-medium">{t("watcher.what")}</h3>
+          <p className="mb-2 text-[11px] leading-relaxed text-muted">{t("watcher.whatLead")}</p>
+          {GROUPS.map(([group, kinds]) => (
+            <div key={group} className="mt-2">
+              <div className="px-1 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted">{t(`watcher.group.${group}`)}</div>
+              <ul className="grid gap-0.5">
+                {kinds.map((k) => {
+                  const Icon = ICON[k];
+                  return (
+                    <li key={k} className="flex items-start gap-3 rounded-lg px-1 py-2 transition-colors hover:bg-raised/40">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                        <Icon size={14} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline gap-x-2 text-[13px]">
+                          {t(`watcher.kind.${k}.title`)}
+                          <span className="text-[10px] text-muted">{t(`watcher.every.${k}`)}</span>
+                        </div>
+                        <div className="text-[11px] leading-relaxed text-muted">{t(`watcher.kind.${k}.text`)}</div>
+                      </div>
+                      <Switch on={on(k)} onChange={() => toggle(k)} disabled={!settings.enabled} label={t(`watcher.kind.${k}.title`)} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </div>
         <div className="rounded-card border border-line bg-surface p-4">
           <h3 className="mb-2 text-[13px] font-medium">{t("watcher.behaviour")}</h3>
@@ -169,9 +184,10 @@ export function Watcher() {
               </li>
             ))}
           </ul>
-          <Button className="mt-4 w-full" icon={<BellRing size={14} />} onClick={testNotification} data-testid="watcher-test">
+          <Button className="mt-4 w-full" icon={<BellRing size={14} />} onClick={() => (overlay?.enabled && overlay.alerts ? testOverlay() : testNotification())} data-testid="watcher-test">
             {t("watcher.test")}
           </Button>
+          <p className="mt-2 text-center text-[11px] text-muted">{overlay?.enabled && overlay.alerts ? t("watcher.testWhere.island") : t("watcher.testWhere.windows")}</p>
         </div>
       </div>
     </div>

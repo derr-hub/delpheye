@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { AppWindow, Camera, ExternalLink, Info, Loader2, MapPin, Mic, type LucideIcon } from "lucide-react";
 import { SETTINGS, usePrivacy, type Capability, type Kind, type Use } from "../lib/privacy";
+import { BellRing, Ban } from "lucide-react";
+import { Switch } from "../components/ui";
+import { saveWatcher, useWatcher } from "../lib/watcher";
 import { ensureIcons, useProcesses } from "../lib/processes";
 
 const ICONS: Record<Kind, LucideIcon> = { webcam: Camera, microphone: Mic, location: MapPin };
@@ -77,7 +80,7 @@ function Tile({ cap, chosen, onChoose }: { cap: Capability; chosen: boolean; onC
   );
 }
 
-function Row({ use }: { use: Use }) {
+function Row({ use, kind }: { use: Use; kind: Kind }) {
   const { t } = useTranslation();
   const when = useWhen();
   const length = useLength();
@@ -95,6 +98,16 @@ function Row({ use }: { use: Use }) {
           {use.path ?? t("privacy.storeApp")}
         </div>
       </div>
+      {use.permission !== "deny" && !use.system && (
+        <button
+          onClick={() => openUrl(SETTINGS[kind]).catch(console.error)}
+          className="flex shrink-0 items-center gap-1 rounded-md border border-line px-2 py-1 text-[11px] text-muted hover:border-risk/50 hover:text-risk"
+          title={t("privacy.denyHint")}
+        >
+          <Ban size={12} />
+          {t("privacy.deny")}
+        </button>
+      )}
       <div className="shrink-0 text-right text-[12px]">
         {use.active ? (
           <span className="flex items-center gap-1.5 text-risk">
@@ -112,6 +125,79 @@ function Row({ use }: { use: Use }) {
         )}
       </div>
     </li>
+  );
+}
+
+/** The last 24 hours of one device: every use as a bar on a time line, and who used it most. */
+function Today({ cap }: { cap: Capability }) {
+  const { t, i18n } = useTranslation();
+  const length = useLength();
+  const now = Date.now();
+  const from = now - 24 * 3_600_000;
+  const uses = cap.uses.filter((u) => u.started && (u.stopped ?? now) > from);
+  const spans = uses.map((u) => ({ u, a: Math.max(from, u.started!), b: u.active ? now : Math.max(u.started! + 30_000, u.stopped ?? u.started!) }));
+  const total = spans.reduce((s, x) => s + (x.b - x.a), 0);
+  const byApp = new Map<string, number>();
+  for (const x of spans) byApp.set(x.u.name, (byApp.get(x.u.name) ?? 0) + (x.b - x.a));
+  const top = [...byApp.entries()].sort((a, b) => b[1] - a[1])[0];
+  const hour = new Intl.DateTimeFormat(i18n.language.startsWith("uk") ? "uk-UA" : "en-US", { hour: "2-digit", minute: "2-digit" });
+  const [hover, setHover] = useState<number | null>(null);
+  return (
+    <div className="mt-4 rounded-card border border-line bg-surface p-4" data-testid="privacy-today">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <h3 className="text-[13px] font-medium">{t("privacy.day.title")}</h3>
+        <span className="text-[12px] text-muted">
+          {uses.length ? t("privacy.day.summary", { count: uses.length, total: length(total) }) : t("privacy.day.none")}
+        </span>
+        {top && <span className="text-[12px] text-muted">{t("privacy.day.top", { name: top[0], total: length(top[1]) })}</span>}
+      </div>
+      <div className="relative mt-3 h-9 rounded-lg bg-raised/60" onMouseLeave={() => setHover(null)}>
+        {[0.25, 0.5, 0.75].map((f) => (
+          <span key={f} className="absolute bottom-0 top-0 w-px bg-line" style={{ left: `${f * 100}%` }} />
+        ))}
+        {spans.map((x, i) => (
+          <span
+            key={i}
+            onMouseEnter={() => setHover(i)}
+            className={`absolute top-1.5 h-6 min-w-[3px] rounded ${x.u.active ? "bg-risk" : "bg-accent"} ${hover === i ? "opacity-100" : "opacity-75"}`}
+            style={{ left: `${((x.a - from) / (now - from)) * 100}%`, width: `${((x.b - x.a) / (now - from)) * 100}%` }}
+          />
+        ))}
+        {hover !== null && spans[hover] && (
+          <span className="pointer-events-none absolute -top-8 z-10 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-[11px] shadow-lg" style={{ left: `${Math.min(80, ((spans[hover].a - from) / (now - from)) * 100)}%` }}>
+            {spans[hover].u.name} · {hour.format(spans[hover].a)} · {length(spans[hover].b - spans[hover].a)}
+          </span>
+        )}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-muted">
+        {[0, 6, 12, 18, 24].map((h) => (
+          <span key={h}>{hour.format(from + h * 3_600_000)}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** A switch for the watcher's alert when a program turns the camera or microphone on. */
+function AlertsCard() {
+  const { t } = useTranslation();
+  const settings = useWatcher((s) => s.settings);
+  if (!settings) return null;
+  const on = settings.enabled && !settings.off.includes("sensor");
+  return (
+    <div className="mt-4 flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3">
+      <BellRing size={16} className="shrink-0 text-accent" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px]">{t("privacy.alerts.title")}</div>
+        <div className="text-[11px] leading-relaxed text-muted">{t(settings.enabled ? "privacy.alerts.text" : "privacy.alerts.watcherOff")}</div>
+      </div>
+      <Switch
+        on={on}
+        disabled={!settings.enabled}
+        onChange={() => saveWatcher({ off: on ? [...settings.off, "sensor"] : settings.off.filter((k) => k !== "sensor") })}
+        label={t("privacy.alerts.title")}
+      />
+    </div>
   );
 }
 
@@ -146,6 +232,8 @@ export function Privacy() {
         ))}
       </div>
 
+      <AlertsCard />
+      {cap && <Today cap={cap} />}
       {cap && (
         <>
           <div className="mb-2 mt-6 flex items-center gap-3">
@@ -166,7 +254,7 @@ export function Privacy() {
               ) : (
                 <ul className="overflow-clip rounded-card border border-line bg-surface">
                   {cap.uses.map((u) => (
-                    <Row key={`${u.system}-${u.key}`} use={u} />
+                    <Row key={`${u.system}-${u.key}`} use={u} kind={kind} />
                   ))}
                 </ul>
               )}

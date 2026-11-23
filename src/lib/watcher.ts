@@ -2,8 +2,8 @@ import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
-export type Kind = "device" | "twin" | "heat" | "disk" | "autostart" | "crash" | "threat";
-export const KINDS: Kind[] = ["device", "twin", "heat", "disk", "autostart", "crash", "threat"];
+export type Kind = "device" | "twin" | "heat" | "disk" | "autostart" | "crash" | "threat" | "sensor";
+export const KINDS: Kind[] = ["device", "twin", "heat", "disk", "autostart", "crash", "threat", "sensor"];
 
 export interface Settings {
   enabled: boolean;

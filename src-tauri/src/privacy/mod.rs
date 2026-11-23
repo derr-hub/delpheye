@@ -275,13 +275,13 @@ pub fn start(app: AppHandle) {
     live::start_camera_monitor();
     std::thread::spawn(move || {
         loop {
-            tick(&app.state::<Journal>());
+            tick(&app, &app.state::<Journal>());
             std::thread::sleep(std::time::Duration::from_secs(2));
         }
     });
 }
 
-fn tick(journal: &Journal) {
+fn tick(app: &AppHandle, journal: &Journal) {
     let now = now_ms();
     let seen: Vec<(&'static str, u32)> = live::camera_pids()
         .into_iter()
@@ -321,6 +321,7 @@ fn tick(journal: &Journal) {
             })
             .unwrap_or(-1);
         live.push(Live { kind, pid, started: now, row });
+        crate::watcher::sensor_started(app, kind, &name);
     }
 }
 

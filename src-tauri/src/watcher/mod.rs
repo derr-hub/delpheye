@@ -21,7 +21,7 @@ use tauri_plugin_notification::NotificationExt;
 use crate::journal::Journal;
 
 #[cfg(test)]
-pub const KINDS: [&str; 7] = ["device", "twin", "heat", "disk", "autostart", "crash", "threat"];
+pub const KINDS: [&str; 8] = ["device", "twin", "heat", "disk", "autostart", "crash", "threat", "sensor"];
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -251,6 +251,15 @@ fn devices(app: &AppHandle, l: &mut Loop) {
             save_set(&j, "devices", &before);
         }
     }
+}
+
+/// A program turned on the camera or the microphone. Once per program and device in 30 minutes,
+/// so a video call does not alert every time it reconnects.
+pub fn sensor_started(app: &AppHandle, kind: &str, name: &str) {
+    if !cooled(app, &format!("sensor:{kind}:{name}"), Duration::from_secs(30 * 60)) {
+        return;
+    }
+    raise(app, "sensor", "info", json!({ "device": kind, "name": name }));
 }
 
 /// Hiding places of malware, between scans: anything new that settled in since the last look.

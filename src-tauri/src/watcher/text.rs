@@ -78,6 +78,19 @@ pub fn render(lang: &str, kind: &str, v: &Value) -> (String, String) {
                 (format!("{what} — DelphEye recorded it"), "Details and the likely cause are under Monitoring, stability section.".into())
             }
         }
+        "sensor" => {
+            let what = match (s(v, "device"), uk) {
+                ("webcam", true) => "камеру",
+                ("webcam", false) => "the camera",
+                (_, true) => "мікрофон",
+                (_, false) => "the microphone",
+            };
+            if uk {
+                (format!("{} вмикає {what}", s(v, "name")), "Якщо ти цього не очікував — подивись у «Камера й мікрофон».".into())
+            } else {
+                (format!("{} turned on {what}", s(v, "name")), "If you did not expect it, look under Camera & mic.".into())
+            }
+        }
         "threat" => {
             if uk {
                 (format!("Нове в схованках вірусів: {}", s(v, "name")), "Щось нове з'явилося там, де закріплюються шкідливі програми. Відкрий «Захист», щоб побачити подробиці.".into())
