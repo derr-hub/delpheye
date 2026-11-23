@@ -102,15 +102,20 @@ pub fn batches(sizes: &[(String, u64)]) -> Result<Vec<Vec<usize>>, String> {
     Ok(out)
 }
 
-fn log_tail() -> String {
-    let Some(path) = crate::errlog::folder().map(|d| d.join("delpheye.log")) else { return String::new() };
+/// The end of the error log, as a file to attach.
+fn log_tail() -> Vec<u8> {
+    let Some(path) = crate::errlog::folder().map(|d| d.join("delpheye.log")) else { return Vec::new() };
     let text = std::fs::read_to_string(path).unwrap_or_default();
     let lines: Vec<&str> = text.lines().collect();
-    lines[lines.len().saturating_sub(40)..].join("\n")
+    lines[lines.len().saturating_sub(300)..].join("\r\n").into_bytes()
 }
 
 fn windows_version() -> String {
-    sysinfo::System::long_os_version().unwrap_or_default()
+    let name = sysinfo::System::long_os_version().unwrap_or_default();
+    match sysinfo::System::kernel_version().ok() {
+        Some(build) if !build.is_empty() => format!("{name} ({build})"),
+        _ => name,
+    }
 }
 
 /// One multipart/form-data body: the JSON payload and the files.
@@ -172,14 +177,9 @@ pub async fn feedback_send(feedback: Feedback) -> Result<(), String> {
         if feedback.technical {
             fields.push(json!({ "name": "Windows", "value": windows_version(), "inline": true }));
         }
-        let mut description: String = text.chars().take(3900).collect();
-        if feedback.technical {
-            let tail = log_tail();
-            if !tail.is_empty() {
-                let tail: String = tail.chars().rev().take(1200).collect::<Vec<_>>().into_iter().rev().collect();
-                description.push_str(&format!("\n\n```\n{tail}\n```"));
-            }
-        }
+        let description: String = if text.is_empty() { "—".into() } else { text.chars().take(3900).collect() };
+        // The error log goes along as a file, so the message itself stays readable.
+        let log = if feedback.technical { log_tail() } else { Vec::new() };
         let first = json!({
             "username": "DelphEye",
             "allowed_mentions": { "parse": [] },
@@ -190,13 +190,24 @@ pub async fn feedback_send(feedback: Feedback) -> Result<(), String> {
             std::fs::File::open(&feedback.files[i]).and_then(|mut f| f.read_to_end(&mut data)).map_err(|e| e.to_string())?;
             Ok((sizes[i].0.clone(), data))
         };
+        let log_file = (!log.is_empty()).then(|| ("delpheye-log.txt".to_string(), log));
         if groups.is_empty() {
-            return post(&url, first, Vec::new());
+            post(&url, first, log_file.into_iter().collect())?;
+            crate::errlog::write("feedback", "sent");
+            return Ok(());
         }
+        let mut log_file = log_file;
         for (n, group) in groups.iter().enumerate() {
-            let files = group.iter().map(|&i| read(i)).collect::<Result<Vec<_>, _>>()?;
+            let mut files = group.iter().map(|&i| read(i)).collect::<Result<Vec<_>, _>>()?;
+            // The log rides with the first message when it fits.
+            if n == 0 && files.len() < MAX_FILES && files.iter().map(|f| f.1.len() as u64).sum::<u64>() + log_file.as_ref().map_or(0, |l| l.1.len() as u64) <= MESSAGE_LIMIT {
+                files.extend(log_file.take());
+            }
             let payload = if n == 0 { first.clone() } else { json!({ "username": "DelphEye", "content": format!("{label} — продовження ({}/{})", n + 1, groups.len()), "allowed_mentions": { "parse": [] } }) };
             post(&url, payload, files)?;
+        }
+        if let Some(l) = log_file {
+            post(&url, json!({ "username": "DelphEye", "content": format!("{label} — журнал"), "allowed_mentions": { "parse": [] } }), vec![l])?;
         }
         crate::errlog::write("feedback", "sent");
         Ok(())

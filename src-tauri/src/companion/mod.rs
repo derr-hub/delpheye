@@ -160,7 +160,8 @@ fn handle(app: &AppHandle, shared: &Arc<Mutex<Shared>>, mut stream: TcpStream, p
         respond(&mut stream, 400, &json!({ "error": "bad-request" }));
         return;
     };
-    if path != "/frame" {
+    // Pairing steps only: frames come every second.
+    if path == "/hello" || path == "/pair" {
         crate::errlog::write("companion", &format!("{method} {path} from {peer}"));
     }
     match (method.as_str(), path.as_str()) {
