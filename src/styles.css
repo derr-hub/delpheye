@@ -15,6 +15,8 @@
   --color-line-strong: #3d4653;
   --color-accent-hover: #74cfff;
   --color-risk-hover: #ffb3bb;
+  /* The reveal light's colour (an RGB triplet). */
+  --reveal: 76 194 255;
 
   --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
@@ -25,11 +27,13 @@
 
 /* Light theme: the same roles, re-stepped for a light surface (text keeps 4.5:1 contrast). */
 html.light {
-  --color-bg: #f3f5f8;
+  /* A cool blue cast, the light counterpart of the dark theme's blue edges and glow. */
+  --color-bg: #edf2f8;
   --color-surface: #ffffff;
-  --color-raised: #e9edf2;
-  --color-line: #dce1e8;
-  --color-line-strong: #b9c1cc;
+  --color-raised: #e3ecf6;
+  --color-line: #d0dcea;
+  --color-line-strong: #a7bbd0;
+  --reveal: 11 111 176;
   --color-fg: #161b22;
   --color-muted: #5a6474;
   --color-accent: #0b6fb0;
@@ -94,8 +98,18 @@ html.mica .content-layer {
   box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.06);
 }
 html.light.mica .content-layer {
-  background: rgb(246 248 251 / 0.78);
-  box-shadow: inset 1px 1px 0 rgb(0 0 0 / 0.06);
+  background: linear-gradient(160deg, rgb(244 248 253 / 0.86), rgb(234 241 249 / 0.8));
+  box-shadow: inset 1px 1px 0 rgb(11 111 176 / 0.10);
+}
+html.light .content-layer {
+  background: linear-gradient(160deg, #f3f7fc, #e9f0f8);
+}
+/* Cards float on a soft blue shadow, with a hairline of the accent on top. */
+html.light .rounded-card {
+  box-shadow:
+    0 1px 2px rgb(16 64 110 / 0.06),
+    0 6px 18px -8px rgb(16 64 110 / 0.14),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
 }
 html.light .reveal::before {
   background: radial-gradient(260px circle at var(--rx, -999px) var(--ry, -999px), rgb(11 111 176 / 0.05), transparent 65%);
@@ -114,7 +128,7 @@ html.light .reveal::before {
   border-radius: inherit;
   padding: 1px;
   pointer-events: none;
-  background: radial-gradient(180px circle at var(--rx, -999px) var(--ry, -999px), rgb(76 194 255 / 0.55), rgb(76 194 255 / 0.14) 45%, transparent 72%);
+  background: radial-gradient(180px circle at var(--rx, -999px) var(--ry, -999px), rgb(var(--reveal) / 0.55), rgb(var(--reveal) / 0.14) 45%, transparent 72%);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
