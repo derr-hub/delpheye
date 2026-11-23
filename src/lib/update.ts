@@ -13,6 +13,13 @@ interface State {
   error: string | null;
 }
 
+/** Release notes hold Ukrainian, a line "---", then English; this picks the reader's language. */
+export function notesFor(notes: string, lang: string): string {
+  const [uk, en] = notes.split(/\r?\n-{3,}\r?\n/);
+  if (en === undefined) return notes.trim();
+  return (lang.startsWith("en") ? en : uk).trim();
+}
+
 export const useUpdate = create<State>(() => ({ phase: "idle", version: null, notes: null, progress: 0, error: null }));
 
 let pending: Update | null = null;

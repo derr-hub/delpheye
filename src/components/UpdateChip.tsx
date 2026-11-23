@@ -3,12 +3,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { ArrowUpCircle, Loader2 } from "lucide-react";
 import { useApp } from "../lib/app";
-import { checkForUpdate, installUpdate, useUpdate } from "../lib/update";
+import { checkForUpdate, installUpdate, notesFor, useUpdate } from "../lib/update";
 import { Button, Modal } from "./ui";
 
 /** The version at the foot of the navigation; it turns into an invitation when a newer release exists. */
 export function UpdateChip() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const version = useApp((s) => s.status?.version);
   const { phase, version: next, notes, progress, error } = useUpdate();
   const [open, setOpen] = useState(false);
@@ -51,7 +51,7 @@ export function UpdateChip() {
       <Modal open={open} onClose={() => phase !== "downloading" && setOpen(false)}>
         <h2 className="font-display text-[18px] font-semibold">{t("update.title", { version: next })}</h2>
         <p className="mt-1 text-[12px] text-muted">{t("update.current", { version })}</p>
-        {notes && <div className="mt-3 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-lg border border-line bg-bg/50 px-3 py-2 text-[12px] leading-relaxed">{notes}</div>}
+        {notes && <div className="mt-3 max-h-56 overflow-y-auto whitespace-pre-wrap rounded-lg border border-line bg-bg/50 px-3 py-2 text-[12px] leading-relaxed">{notesFor(notes, i18n.language)}</div>}
         <p className="mt-3 text-[12px] leading-relaxed text-muted">{t("update.how")}</p>
         {phase === "downloading" && (
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-raised">

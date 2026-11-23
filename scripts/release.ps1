@@ -15,6 +15,8 @@
 #>
 param(
   [string]$Notes = "",
+  # English notes; the app shows the part in its own language.
+  [string]$NotesEn = "",
   [string]$Key = "$env:USERPROFILE\.tauri\delpheye.key"
 )
 $ErrorActionPreference = "Stop"
@@ -41,7 +43,7 @@ if (-not (Test-Path $sig)) { throw "No signature next to the installer: $sig" }
 
 $manifest = [ordered]@{
   version  = $version
-  notes    = $Notes
+  notes    = $(if ($NotesEn) { "$Notes`n---`n$NotesEn" } else { $Notes })
   pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
   platforms = [ordered]@{
     "windows-x86_64" = [ordered]@{
