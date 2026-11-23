@@ -92,7 +92,7 @@ export function Watcher() {
               {t("watcher.empty")}
             </div>
           ) : (
-            <ul>
+            <ul className="rows-enter">
               {alerts.map((a) => (
                 <Row key={a.id} a={a} />
               ))}

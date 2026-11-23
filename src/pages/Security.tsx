@@ -268,7 +268,7 @@ function TestList({ tests, group }: { tests: HardeningTest[]; group: "test" | "b
   const sorted = [...tests].sort((a, b) => ["fail", "unknown", "pass"].indexOf(a.outcome) - ["fail", "unknown", "pass"].indexOf(b.outcome) || b.weight - a.weight);
   const base = group === "test" ? "security.test" : "security.backup";
   return (
-    <ul className="overflow-hidden rounded-card border border-line bg-surface">
+    <ul className="rows-enter overflow-hidden rounded-card border border-line bg-surface">
       {sorted.map((test) => {
         const Icon = OUTCOME_ICON[test.outcome];
         const isOpen = open === test.id;
@@ -684,7 +684,7 @@ function SectionCards({ active, onPick }: { active: Section; onPick: (s: Section
             onClick={() => onPick(s)}
             data-testid={`section-${s}`}
             aria-pressed={on}
-            className={`reveal relative flex flex-col gap-2 rounded-card border p-3.5 text-left transition-colors ${on ? "border-accent/60 bg-accent/[0.07]" : "border-line bg-surface hover:bg-raised/40"}`}
+            className={`reveal lift relative flex flex-col gap-2 rounded-card border p-3.5 text-left ${on ? "border-accent/60 bg-accent/[0.07]" : "border-line bg-surface hover:bg-raised/40"}`}
           >
             <div className="flex items-center justify-between">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}>
@@ -876,7 +876,7 @@ export function Security() {
             <>
               <TestList tests={report.backup.tests} group="backup" />
               <button className="flex items-center gap-1.5 px-1 text-[12px] text-accent hover:underline" onClick={() => go("journal")}>
-                {t("security.backup.toRestore")} <ArrowRight size={13} />
+                {t("security.backup.toRestore")} <ArrowRight size={13} className="nudge" />
               </button>
             </>
           )}

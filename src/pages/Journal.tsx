@@ -174,7 +174,7 @@ export function Journal() {
               <span className="text-[12px] text-muted">{t("journal.actions", { count: d.items.length })}</span>
               {freed > 0 && <span className="num ml-auto text-[12px] text-safe">{t("journal.freed", { value: fmt.bytes(freed) })}</span>}
             </div>
-            <ul className="overflow-hidden rounded-card border border-line bg-surface">
+            <ul className="rows-enter overflow-hidden rounded-card border border-line bg-surface">
               {d.items.map((entry) => (
                 <Row key={entry.id} entry={entry} />
               ))}

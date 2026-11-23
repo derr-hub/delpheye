@@ -24,7 +24,7 @@ export function Card({
       variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       onClick={to ? () => go(to) : undefined}
-      className={`reveal rounded-card border border-line bg-surface p-5 transition-colors duration-200 hover:border-line-strong ${to ? "cursor-pointer" : ""} ${className}`}
+      className={`reveal rounded-card border border-line bg-surface p-5 transition-colors duration-200 hover:border-line-strong ${to ? "lift cursor-pointer" : ""} ${className}`}
     >
       {title && (
         <header className="mb-4 flex items-center gap-2 text-muted">
@@ -154,7 +154,7 @@ export function Sparkline({
       {last && shown.length > 1 && (
         // The dot is HTML so it stays round however the chart stretches.
         <span
-          className="pointer-events-none absolute h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="live-dot pointer-events-none absolute h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{ left: `${last[0]}%`, top: `${(last[1] / height) * 100}%`, background: color, boxShadow: `0 0 0 3px color-mix(in srgb, ${color} 22%, transparent)` }}
         />
       )}

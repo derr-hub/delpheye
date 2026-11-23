@@ -1,4 +1,4 @@
-import { Hero } from "../components/Hero";
+﻿import { Hero } from "../components/Hero";
 import { BadgeCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -84,7 +84,7 @@ function Row({ pkg, chosen, toggle, busy }: { pkg: Package; chosen: boolean; tog
         <div className="truncate text-[13px]">{pkg.name}</div>
         <div className="num flex items-center gap-1.5 text-[11px] text-muted">
           <span>{pkg.version === "Unknown" ? t("updates.unknownVersion") : pkg.version}</span>
-          <ArrowRight size={11} />
+          <ArrowRight size={11} className="nudge" />
           <span className="text-fg">{pkg.available}</span>
           {pkg.explicit && <span className="ml-1 rounded bg-raised px-1.5 text-[10px]">{t("updates.explicit")}</span>}
         </div>

@@ -148,7 +148,7 @@ function App() {
               <motion.div
                 aria-hidden
                 style={{ opacity: barOpacity }}
-                className="pointer-events-none absolute inset-0 border-b border-line/70 bg-[rgb(15_18_22/0.78)] backdrop-blur-xl"
+                className="pointer-events-none absolute inset-0 border-b border-line/70 bg-bg/80 shadow-[0_8px_24px_-16px_rgb(0_0_0/0.35)] backdrop-blur-xl"
               />
               <motion.h1 style={{ fontSize: headingSize }} className="relative font-display font-semibold leading-none">
                 <motion.span key={page} layoutId={`page-title-${page}`} className="inline-block" transition={{ type: "spring", stiffness: 300, damping: 32 }}>
@@ -159,7 +159,7 @@ function App() {
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.div
                 key={page}
-                className="flex-1"
+                className="page-enter flex-1"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}

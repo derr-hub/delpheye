@@ -75,7 +75,7 @@ export function Hero({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + i * 0.06 }}
-            className="reveal rounded-card border border-line bg-surface/70 p-4 text-left"
+            className="reveal lift rounded-card border border-line bg-surface/70 p-4 text-left"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
               <f.icon size={16} />

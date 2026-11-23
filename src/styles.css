@@ -168,3 +168,142 @@ html.light .reveal::before {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ───────── Motion: only opacity and the individual translate/scale properties, which the GPU
+   composites without re-laying out the page, and which never fight the `transform` that
+   Motion animates. Everything here is off when Windows' animation effects are off. ───────── */
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: none;
+  }
+}
+@keyframes ping {
+  from {
+    scale: 1;
+    opacity: 0.55;
+  }
+  to {
+    scale: 2.6;
+    opacity: 0;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A page's blocks rise in one after another when it opens. */
+  .page-enter > * > * {
+    animation: rise 0.42s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  }
+  .page-enter > * > *:nth-child(2) { animation-delay: 0.035s; }
+  .page-enter > * > *:nth-child(3) { animation-delay: 0.07s; }
+  .page-enter > * > *:nth-child(4) { animation-delay: 0.105s; }
+  .page-enter > * > *:nth-child(5) { animation-delay: 0.14s; }
+  .page-enter > * > *:nth-child(6) { animation-delay: 0.175s; }
+  .page-enter > * > *:nth-child(7) { animation-delay: 0.21s; }
+  .page-enter > * > *:nth-child(n + 8) { animation-delay: 0.24s; }
+
+  /* Rows of a list slide in, a few at a time (only the first dozen wait). */
+  .rows-enter > * {
+    animation: rise 0.32s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  }
+  .rows-enter > *:nth-child(2) { animation-delay: 0.02s; }
+  .rows-enter > *:nth-child(3) { animation-delay: 0.04s; }
+  .rows-enter > *:nth-child(4) { animation-delay: 0.06s; }
+  .rows-enter > *:nth-child(5) { animation-delay: 0.08s; }
+  .rows-enter > *:nth-child(6) { animation-delay: 0.1s; }
+  .rows-enter > *:nth-child(7) { animation-delay: 0.12s; }
+  .rows-enter > *:nth-child(8) { animation-delay: 0.14s; }
+  .rows-enter > *:nth-child(n + 9) { animation-delay: 0.16s; }
+
+  /* Things that open (panels, menus, results) pop in. */
+  .pop-in {
+    animation: pop 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+
+  /* Clickable cards lift towards the pointer. */
+  .lift {
+    transition:
+      translate 0.22s cubic-bezier(0.2, 0.8, 0.3, 1),
+      box-shadow 0.22s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+  }
+  .lift:hover {
+    translate: 0 -2px;
+    box-shadow: 0 14px 28px -18px rgb(0 0 0 / 0.55);
+  }
+  .lift:active {
+    translate: 0 0;
+  }
+
+  /* Every button gives a little under the finger. */
+  button:not(:disabled) {
+    transition-property: color, background-color, border-color, opacity, scale, translate;
+    transition-duration: 0.15s;
+  }
+  button:not(:disabled):active {
+    scale: 0.97;
+  }
+
+  /* Navigation icons hop up when pointed at. */
+  nav button svg {
+    transition: translate 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  nav button:hover svg {
+    translate: 0 -1.5px;
+  }
+
+  /* An arrow next to a link slides on hover. */
+  .nudge {
+    transition: translate 0.18s ease;
+  }
+  .group:hover .nudge,
+  button:hover > .nudge,
+  a:hover > .nudge {
+    translate: 3px 0;
+  }
+
+  /* The live dot at the end of a sparkline breathes. */
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: inherit;
+    animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+/* A placeholder while something loads. */
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--color-raised) 25%, color-mix(in srgb, var(--color-raised) 55%, var(--color-surface)) 50%, var(--color-raised) 75%);
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: shimmer 1.6s linear infinite;
+  }
+}
