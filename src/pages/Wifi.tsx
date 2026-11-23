@@ -1,3 +1,4 @@
+import { ShareWifi } from "./wifi/Share";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -87,6 +88,7 @@ export function Wifi() {
             </button>
           ))}
         </div>
+        {snap?.state === "ok" && snap.link && <ShareWifi />}
         <span className={`ml-auto items-center gap-2 text-[11px] text-muted ${mode === "pro" ? "hidden" : "flex"}`}>
           <span className="relative flex h-2 w-2">
             {scanning && <motion.span className="absolute inset-0 rounded-full bg-accent" animate={{ scale: [1, 2.4], opacity: [0.7, 0] }} transition={{ duration: 1.2, repeat: Infinity }} />}

@@ -11,6 +11,7 @@ mod ies;
 
 pub use history::start as start_history;
 
+pub mod share;
 use serde::Serialize;
 use windows::Win32::Foundation::HANDLE;
 use windows::Win32::NetworkManagement::WiFi::{

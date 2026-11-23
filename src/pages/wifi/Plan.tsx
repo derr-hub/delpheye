@@ -6,7 +6,7 @@ import { Button, Modal } from "../../components/ui";
 import { isLive, measure, nameOf, useWifi } from "../../lib/wifi";
 import { useRouter } from "../../lib/router";
 import { Whereami } from "./Whereami";
-import { calibrate, forgetPhonePlaces, live, measurePhone, rememberPhonePlace, trackPhone, usePhone, usePhoneMap } from "../../lib/phone";
+import { calibrate, clearWalk, forgetPhonePlaces, live, measurePhone, rememberPhonePlace, setRecording, usePhone, usePhoneMap } from "../../lib/phone";
 
 export interface Point {
   x: number;
@@ -155,13 +155,11 @@ export function Plan() {
   const phonePlaces = usePhoneMap((s) => s.places[key]) ?? [];
   const calibrated = usePhoneMap((s) => s.offset[key] !== undefined);
   const [phoneBusy, setPhoneBusy] = useState(false);
-  // Every frame from the phone moves its point on this map.
-  useEffect(() => {
-    if (!key) return;
-    return usePhone.subscribe((s, prev) => {
-      if (s.frame !== prev.frame) trackPhone(key, plan.w, plan.d);
-    });
-  }, [key, plan.w, plan.d]);
+  // The phone is tracked on this map by lib/phone (a particle filter), whichever page is open.
+  const cloud = usePhoneMap((s) => s.cloud[key]);
+  const walk = usePhoneMap((s) => s.walk[key]) ?? [];
+  const recording = usePhoneMap((s) => s.recording);
+  const [layer, setLayer] = useState<"laptop" | "phone">("laptop");
 
   const update = (next: Saved) => {
     const merged = { ...all, [key]: next };
@@ -177,12 +175,14 @@ export function Plan() {
     return { x: snap(Math.max(0, Math.min(plan.w, ((e.clientX - r.left) / r.width) * plan.w))), y: snap(Math.max(0, Math.min(plan.d, ((e.clientY - r.top) / r.height) * plan.d))) };
   };
 
+  // The heat map: the laptop's measured spots, or the phone's walk.
+  const heatPoints = useMemo(() => (layer === "phone" && walk.length >= 2 ? walk.map((w) => ({ x: w.x, y: w.y, rssi: w.rssi })) as Point[] : plan.points), [layer, walk, plan.points]);
   const heatCells = useMemo(() => {
-    if (plan.points.length < 2) return [];
+    if (heatPoints.length < 2) return [];
     const cells: { x: number; y: number; v: number }[] = [];
-    for (let x = 0; x < plan.w; x += CELL) for (let y = 0; y < plan.d; y += CELL) cells.push({ x, y, v: idw(plan.points, x + CELL / 2, y + CELL / 2) });
+    for (let x = 0; x < plan.w; x += CELL) for (let y = 0; y < plan.d; y += CELL) cells.push({ x, y, v: idw(heatPoints, x + CELL / 2, y + CELL / 2) });
     return cells;
-  }, [plan.points, plan.w, plan.d]);
+  }, [heatPoints, plan.w, plan.d]);
   const fit = useMemo(() => locate(plan.points, plan.w, plan.d, walls), [plan.points, plan.w, plan.d, walls]);
   const routerAt = plan.router ?? (fit ? { x: fit.x, y: fit.y } : null);
   const spread = plan.points.length ? Math.max(...plan.points.map((p) => p.x)) - Math.min(...plan.points.map((p) => p.x)) + Math.max(...plan.points.map((p) => p.y)) - Math.min(...plan.points.map((p) => p.y)) : 0;
@@ -441,9 +441,12 @@ export function Plan() {
               </g>
             ))}
             <Whereami.Marker scale={scale} planKey={key} />
+            {layer === "phone" &&
+              walk.map((w, i) => <circle key={`w${i}`} cx={w.x * scale} cy={w.y * scale} r={2} fill="#5ed6d0" opacity={0.55} pointerEvents="none" />)}
             {phoneLive && phonePos && (
               <g pointerEvents="none" data-testid="plan-phone">
-                <circle cx={phonePos.x * scale} cy={phonePos.y * scale} r={14} fill="#5ed6d0" opacity={0.2} />
+                {cloud?.map((p, i) => <circle key={i} cx={p.x * scale} cy={p.y * scale} r={1.6} fill="#5ed6d0" opacity={0.35} />)}
+                <circle cx={phonePos.x * scale} cy={phonePos.y * scale} r={Math.max(14, phonePos.spread * scale)} fill="#5ed6d0" opacity={0.12} stroke="#5ed6d0" strokeOpacity={0.5} strokeDasharray="4 4" data-testid="plan-phone-spread" />
                 {phonePos.heading !== null && (
                   <path
                     d={`M ${phonePos.x * scale} ${phonePos.y * scale} l ${Math.sin((phonePos.heading * Math.PI) / 180) * 26} ${-Math.cos((phonePos.heading * Math.PI) / 180) * 26}`}
@@ -512,6 +515,15 @@ export function Plan() {
             <div className="flex items-center gap-2 text-[13px] font-medium">
               <MapPinned size={15} className="text-accent" />
               {t("wifi.plan.heatTitle")}
+              {walk.length >= 2 && (
+                <div className="ml-auto flex rounded-lg border border-line p-0.5 text-[11px] font-normal">
+                  {(["laptop", "phone"] as const).map((l) => (
+                    <button key={l} onClick={() => setLayer(l)} className={`rounded-md px-2 py-0.5 ${layer === l ? "bg-raised text-fg" : "text-muted"}`} data-testid={`plan-layer-${l}`}>
+                      {t(`wifi.plan.source.${l}`)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <p className="mt-1 text-[12px] leading-relaxed text-muted">
               {weakest ? t("wifi.plan.weakest", { x: weakest.x, y: weakest.y, rssi: Math.round(weakest.rssi) }) : t("wifi.plan.heatHint")}
@@ -548,7 +560,24 @@ export function Plan() {
                     {t("wifi.plan.phone.forget")}
                   </button>
                 )}
+                <Button
+                  variant={recording ? "primary" : "ghost"}
+                  disabled={phonePlaces.length < 2 && !recording}
+                  onClick={() => {
+                    setRecording(!recording);
+                    if (!recording) setLayer("phone");
+                  }}
+                  data-testid="plan-phone-walk"
+                >
+                  {recording ? t("wifi.plan.phone.walkStop", { count: walk.length }) : t("wifi.plan.phone.walkStart")}
+                </Button>
+                {walk.length > 0 && !recording && (
+                  <button className="text-left text-[11px] text-muted hover:text-risk" onClick={() => clearWalk(key)}>
+                    {t("wifi.plan.phone.walkClear", { count: walk.length })}
+                  </button>
+                )}
               </div>
+              {phonePos && <p className="mt-2 text-[11px] text-muted" data-testid="plan-phone-accuracy">{t("wifi.plan.phone.accuracy", { m: phonePos.spread })}</p>}
               <p className="mt-2 text-[11px] leading-relaxed text-muted">
                 {!calibrated ? t("wifi.plan.phone.needCalibrate") : phonePlaces.length < 3 ? t("wifi.plan.phone.needPlaces", { count: 3 - phonePlaces.length }) : t("wifi.plan.phone.tracking")}
               </p>

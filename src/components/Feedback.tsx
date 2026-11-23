@@ -7,6 +7,7 @@ import { Bug, Check, FileVideo, ImageIcon, Lightbulb, Loader2, MessageSquareHear
 import { Button, Checkbox, Modal } from "./ui";
 import { closeFeedback, useFeedback } from "../lib/feedback";
 import { useFmt } from "../lib/format";
+import { showOnboarding } from "./Onboarding";
 
 interface Picked {
   path: string;
@@ -163,7 +164,18 @@ export function Feedback() {
               {error && <p className="mt-3 rounded-lg bg-risk/10 px-3 py-2 text-[12px] text-risk" data-testid="feedback-error">{error}</p>}
 
               <div className="mt-4 flex items-center justify-between gap-3">
-                <p className="text-[11px] leading-relaxed text-muted">{t("feedback.privacy")}</p>
+                <div className="min-w-0">
+                  <p className="text-[11px] leading-relaxed text-muted">{t("feedback.privacy")}</p>
+                  <button
+                    onClick={() => {
+                      closeFeedback();
+                      showOnboarding();
+                    }}
+                    className="mt-1 text-[11px] text-accent hover:underline"
+                  >
+                    {t("onboarding.again")}
+                  </button>
+                </div>
                 <Button
                   variant="primary"
                   icon={phase === "sending" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}

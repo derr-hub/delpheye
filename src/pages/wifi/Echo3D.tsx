@@ -670,6 +670,10 @@ export default function Echo3D({ onHunt }: { onHunt?: (bssid: string) => void })
         if (on && pp) {
           apt.phone.obj.position.lerp(new THREE.Vector3(apt.phone.X(pp.x), 0, apt.phone.Z(pp.y)), 1 - Math.exp(-dt * 6));
           if (pp.heading !== null) apt.phone.obj.rotation.y = (-pp.heading * Math.PI) / 180;
+          // The ring shows how sure the particle filter is: wide when unsure.
+          const ring = apt.phone.obj.children[1];
+          const want = Math.max(1, Math.min(10, (pp.spread ?? 0) / 0.34));
+          ring.scale.setScalar(ring.scale.x + (want - ring.scale.x) * (1 - Math.exp(-dt * 3)));
         }
         for (const l of apt.labels) {
           const p = toScreen(l.pos, w, h);

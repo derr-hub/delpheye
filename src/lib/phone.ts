@@ -61,6 +61,7 @@ function listenOnce() {
           : s.bearings;
       return { frame: { ...payload, scan: payload.scan.map((h) => ({ ...h, bssid: h.bssid.toUpperCase() })), linkBssid: payload.linkBssid?.toUpperCase() ?? null }, at: now, bearings };
     });
+    trackLinked();
   });
   listen("phone:paired", () => invoke<Pairing>("companion_state").then((pairing) => usePhone.setState({ pairing })));
   listen<string>("phone:code", ({ payload }) => usePhone.setState((s) => ({ pairing: s.pairing ? { ...s.pairing, code: payload, link: s.pairing.link.replace(/c=\d+/, `c=${payload}`) } : s.pairing })));
@@ -124,8 +125,21 @@ interface MapStore {
   places: Record<string, PhonePlace[]>;
   /** The phone's compass heading when facing the top of the plan, per map. */
   offset: Record<string, number>;
-  /** Where the phone is now, per map, in metres on the plan. */
-  pos: Record<string, { x: number; y: number; heading: number | null; at: number } | undefined>;
+  /** Where the phone is now, per map, in metres on the plan; `spread` is how unsure (m). */
+  pos: Record<string, { x: number; y: number; heading: number | null; at: number; spread: number } | undefined>;
+  /** A sample of the particle cloud, to draw. */
+  cloud: Record<string, { x: number; y: number }[] | undefined>;
+  /** Signal samples from walking around with the phone, per map: the phone's heat map. */
+  walk: Record<string, WalkSample[]>;
+  /** Walk samples are being recorded. */
+  recording: boolean;
+}
+
+export interface WalkSample {
+  x: number;
+  y: number;
+  rssi: number;
+  t: number;
 }
 
 const MAP_KEY = "phone.map";
@@ -136,7 +150,27 @@ const loadMap = (): Pick<MapStore, "places" | "offset"> => {
     return { places: {}, offset: {} };
   }
 };
-export const usePhoneMap = create<MapStore>(() => ({ ...loadMap(), pos: {} }));
+const WALK_KEY = "phone.walk";
+const loadWalk = (): Record<string, WalkSample[]> => {
+  try {
+    return JSON.parse(localStorage.getItem(WALK_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+};
+export const usePhoneMap = create<MapStore>(() => ({ ...loadMap(), pos: {}, cloud: {}, walk: loadWalk(), recording: false }));
+const saveWalk = () => {
+  try {
+    localStorage.setItem(WALK_KEY, JSON.stringify(usePhoneMap.getState().walk));
+  } catch {
+    /* this session only */
+  }
+};
+export const setRecording = (on: boolean) => usePhoneMap.setState({ recording: on });
+export function clearWalk(key: string) {
+  usePhoneMap.setState((s) => ({ walk: { ...s.walk, [key]: [] } }));
+  saveWalk();
+}
 const saveMap = () => {
   const { places, offset } = usePhoneMap.getState();
   try {
@@ -189,8 +223,9 @@ export async function rememberPhonePlace(key: string, x: number, y: number) {
 }
 
 export function forgetPhonePlaces(key: string) {
-  usePhoneMap.setState((s) => ({ places: { ...s.places, [key]: [] }, pos: { ...s.pos, [key]: undefined } }));
+  usePhoneMap.setState((s) => ({ places: { ...s.places, [key]: [] } }));
   saveMap();
+  resetTrack(key);
 }
 
 /** Mean dB difference over clearly heard access points; one-sided ones cost a fixed amount. */
@@ -219,36 +254,186 @@ export function fingerprintPosition(places: PhonePlace[], scan: Heard[]): { x: n
   return { x: wx / w, y: wy / w };
 }
 
-const STEP_M = 0.7;
-let tracked: { steps: number; scanAt: number | null } = { steps: -1, scanAt: null };
+// ───────────────────────── live location: a particle filter ─────────────────────────
+//
+// 400 guesses ("particles") of where the phone is. Each step moves every guess along the compass,
+// each with its own small error in step length and direction; a guess that would walk through a
+// wall of the plan or off it dies. Each fresh Wi-Fi scan weighs every guess by how well what the
+// phone hears matches what was heard near that spot (the remembered fingerprints, interpolated).
+// The cloud's centre is the position; its width is how unsure it is.
 
-/**
- * Moves the phone's point on `key`'s map with each frame: a step forward along the compass between
- * scans (dead reckoning), and pulled towards the fingerprint estimate whenever a new scan arrives.
- */
-export function trackPhone(key: string, w: number, d: number) {
+interface PlanInfo {
+  w: number;
+  d: number;
+  walls: { x1: number; y1: number; x2: number; y2: number }[];
+}
+interface Particle {
+  x: number;
+  y: number;
+  w: number;
+}
+interface Track {
+  particles: Particle[];
+  steps: number;
+  scanAt: number | null;
+  lastWalk: { x: number; y: number; t: number } | null;
+}
+
+const N = 400;
+const STEP_M = 0.7;
+const tracks: Record<string, Track> = {};
+const gauss = () => {
+  const u = 1 - Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+};
+
+function crossesWall(ax: number, ay: number, bx: number, by: number, w: PlanInfo["walls"][number]) {
+  const o = (px: number, py: number, qx: number, qy: number, rx: number, ry: number) => Math.sign((qx - px) * (ry - py) - (qy - py) * (rx - px));
+  return o(ax, ay, bx, by, w.x1, w.y1) * o(ax, ay, bx, by, w.x2, w.y2) < 0 && o(w.x1, w.y1, w.x2, w.y2, ax, ay) * o(w.x1, w.y1, w.x2, w.y2, bx, by) < 0;
+}
+
+/** What should be heard at (x, y): the remembered fingerprints, weighted by closeness. */
+export function expectedAt(places: PhonePlace[], x: number, y: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  const sum: Record<string, number> = {};
+  for (const p of places) {
+    const k = 1 / Math.max(0.25, (p.x - x) ** 2 + (p.y - y) ** 2);
+    for (const [b, v] of Object.entries(p.vec)) {
+      out[b] = (out[b] ?? 0) + v * k;
+      sum[b] = (sum[b] ?? 0) + k;
+    }
+  }
+  for (const b of Object.keys(out)) out[b] /= sum[b];
+  return out;
+}
+
+function spawn(cx: number, cy: number, sd: number, plan: PlanInfo): Particle[] {
+  return Array.from({ length: N }, () => ({
+    x: Math.max(0, Math.min(plan.w, cx + gauss() * sd)),
+    y: Math.max(0, Math.min(plan.d, cy + gauss() * sd)),
+    w: 1 / N,
+  }));
+}
+
+function resample(ps: Particle[]): Particle[] {
+  // Systematic resampling, with a little jitter so copies spread out again.
+  const out: Particle[] = [];
+  const step = 1 / N;
+  let u = Math.random() * step;
+  let c = ps[0].w;
+  let i = 0;
+  for (let m = 0; m < N; m++) {
+    while (u > c && i < ps.length - 1) c += ps[++i].w;
+    out.push({ x: ps[i].x + gauss() * 0.08, y: ps[i].y + gauss() * 0.08, w: step });
+    u += step;
+  }
+  return out;
+}
+
+/** One frame for the map `key`: move with the steps, weigh with a fresh scan, estimate. */
+export function trackPhone(key: string, plan: PlanInfo) {
   const f = usePhone.getState().frame;
   if (!f) return;
-  const { places, offset, pos } = usePhoneMap.getState();
-  let p = pos[key] ? { ...pos[key]! } : null;
-  // Steps since the last frame, along the heading turned into plan directions.
-  if (p && tracked.steps >= 0 && f.steps > tracked.steps && f.heading !== null && offset[key] !== undefined) {
-    const n = Math.min(6, f.steps - tracked.steps);
-    const a = ((f.heading - offset[key]) * Math.PI) / 180;
-    p.x += Math.sin(a) * STEP_M * n;
-    p.y -= Math.cos(a) * STEP_M * n;
+  const { places, offset } = usePhoneMap.getState();
+  const known = places[key] ?? [];
+  let tr = tracks[key];
+  const fresh = f.scanAt !== tr?.scanAt;
+  if (!tr) {
+    const fp = fingerprintPosition(known, f.scan);
+    if (!fp) return;
+    tr = tracks[key] = { particles: spawn(fp.x, fp.y, 1.5, plan), steps: f.steps, scanAt: null, lastWalk: null };
   }
-  tracked.steps = f.steps;
-  // A fresh scan: blend in where the fingerprints put the phone.
-  if (f.scanAt !== tracked.scanAt) {
-    tracked.scanAt = f.scanAt;
-    const fp = fingerprintPosition(places[key] ?? [], f.scan);
-    if (fp) p = p ? { ...p, x: p.x * 0.4 + fp.x * 0.6, y: p.y * 0.4 + fp.y * 0.6 } : { ...fp, heading: null, at: 0 };
+  let ps = tr.particles;
+
+  // Move: every new step, along the compass turned to the plan.
+  const n = Math.max(0, Math.min(8, f.steps - tr.steps));
+  tr.steps = f.steps;
+  const heading = f.heading !== null && offset[key] !== undefined ? f.heading - offset[key] : null;
+  ps = ps.map((p) => {
+    let nx = p.x + gauss() * 0.03;
+    let ny = p.y + gauss() * 0.03;
+    if (n > 0) {
+      if (heading !== null) {
+        const a = ((heading + gauss() * 14) * Math.PI) / 180;
+        const len = n * (STEP_M + gauss() * 0.12);
+        nx += Math.sin(a) * len;
+        ny -= Math.cos(a) * len;
+      } else {
+        // No direction known: the steps only say "somewhere nearby".
+        nx += gauss() * 0.5 * n;
+        ny += gauss() * 0.5 * n;
+      }
+    }
+    const blocked = nx < 0 || ny < 0 || nx > plan.w || ny > plan.d || plan.walls.some((w) => crossesWall(p.x, p.y, nx, ny, w));
+    return blocked ? { x: p.x, y: p.y, w: p.w * 0.02 } : { x: nx, y: ny, w: p.w };
+  });
+
+  // Weigh: what the phone hears now against what is expected at each guess.
+  if (fresh && known.length >= 2 && f.scan.length) {
+    tr.scanAt = f.scanAt;
+    const now = Object.fromEntries(f.scan.map((h) => [h.bssid, h.rssi]));
+    ps = ps.map((p) => {
+      const d = fpDistance(now, expectedAt(known, p.x, p.y));
+      return { ...p, w: p.w * Math.exp(-(Math.min(d, 30) ** 2) / (2 * 5 ** 2)) };
+    });
   }
-  if (!p) return;
-  p.x = Math.max(0, Math.min(w, p.x));
-  p.y = Math.max(0, Math.min(d, p.y));
-  p.heading = f.heading !== null && offset[key] !== undefined ? f.heading - offset[key] : null;
-  p.at = Date.now();
-  usePhoneMap.setState((s) => ({ pos: { ...s.pos, [key]: p } }));
+  let total = ps.reduce((a, p) => a + p.w, 0);
+  if (!(total > 1e-300)) {
+    // Every guess died (a jump the model could not follow): start again from the fingerprints.
+    const fp = fingerprintPosition(known, f.scan);
+    if (!fp) return;
+    ps = spawn(fp.x, fp.y, 1.5, plan);
+    total = 1;
+  }
+  ps = ps.map((p) => ({ ...p, w: p.w / total }));
+  const neff = 1 / ps.reduce((a, p) => a + p.w * p.w, 0);
+  if (neff < N / 2) ps = resample(ps);
+  tr.particles = ps;
+
+  // Estimate: the weighted centre and spread.
+  const x = ps.reduce((a, p) => a + p.x * p.w, 0);
+  const y = ps.reduce((a, p) => a + p.y * p.w, 0);
+  const spread = Math.sqrt(ps.reduce((a, p) => a + ((p.x - x) ** 2 + (p.y - y) ** 2) * p.w, 0));
+  const pos = { x, y, heading, at: Date.now(), spread: Math.round(spread * 10) / 10 };
+  const cloud = ps.filter((_, i) => i % 4 === 0).map((p) => ({ x: p.x, y: p.y }));
+
+  // The walk: the phone's own signal where it is, while recording and fairly sure.
+  const st = usePhoneMap.getState();
+  let walk = st.walk;
+  if (st.recording && f.linkRssi !== null && spread < 2.2) {
+    const last = tr.lastWalk;
+    if (!last || Math.hypot(last.x - x, last.y - y) > 0.6 || Date.now() - last.t > 6000) {
+      tr.lastWalk = { x, y, t: Date.now() };
+      walk = { ...walk, [key]: [...(walk[key] ?? []), { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, rssi: f.linkRssi, t: Date.now() }].slice(-1500) };
+    }
+  }
+  usePhoneMap.setState((s) => ({ pos: { ...s.pos, [key]: pos }, cloud: { ...s.cloud, [key]: cloud }, walk }));
+  if (walk !== st.walk) saveWalk();
+}
+
+let plansAt = 0;
+let plans: Record<string, PlanInfo & { image?: string }> = {};
+/** Tracks the phone on the map of the network it is connected to, whichever page is open. */
+function trackLinked() {
+  const f = usePhone.getState().frame;
+  if (!f?.linkBssid) return;
+  const own = f.scan.find((h) => h.bssid === f.linkBssid);
+  if (Date.now() - plansAt > 10_000) {
+    plansAt = Date.now();
+    try {
+      plans = JSON.parse(localStorage.getItem("wifi.plan") ?? "{}");
+    } catch {
+      plans = {};
+    }
+  }
+  const key = own?.ssid && plans[own.ssid] ? own.ssid : plans[f.linkBssid] ? f.linkBssid : null;
+  if (!key) return;
+  const p = plans[key];
+  trackPhone(key, { w: p.w, d: p.d, walls: p.walls ?? [] });
+}
+
+/** Forgets the live track of a map (after its fingerprints change). */
+export function resetTrack(key: string) {
+  delete tracks[key];
+  usePhoneMap.setState((s) => ({ pos: { ...s.pos, [key]: undefined }, cloud: { ...s.cloud, [key]: undefined } }));
 }
