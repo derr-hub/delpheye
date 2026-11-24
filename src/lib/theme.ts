@@ -17,24 +17,46 @@ export const useTheme = create<{ pref: ThemePref; light: boolean }>(() => ({ pre
 
 const media = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: light)") : null;
 
-function apply() {
+/** Counts choices, so a slow answer to an earlier one cannot override a later one. */
+let turn = 0;
+
+async function apply() {
+  const mine = ++turn;
+  const { pref } = useTheme.getState();
+  const tauri = "__TAURI_INTERNALS__" in window;
+  if (tauri && pref === "system") {
+    // A window forced light or dark answers "prefers-color-scheme" with that, not with Windows'
+    // own setting: let go of the window first.
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    await getCurrentWindow()
+      .setTheme(null)
+      .catch(() => {});
+    if (mine !== turn) return;
+  }
+  paint();
+  if (tauri && pref !== "system") {
+    // The Mica backdrop and the window frame follow the theme too.
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    if (mine === turn) await getCurrentWindow().setTheme(pref).catch(() => {});
+  }
+}
+
+function paint() {
   const { pref } = useTheme.getState();
   const light = pref === "light" || (pref === "system" && !!media?.matches);
   document.documentElement.classList.toggle("light", light);
   document.documentElement.style.colorScheme = light ? "light" : "dark";
   useTheme.setState({ light });
-  // The Mica backdrop and the window frame follow the theme too.
-  if ("__TAURI_INTERNALS__" in window) {
-    import("@tauri-apps/api/window").then(({ getCurrentWindow }) => getCurrentWindow().setTheme(light ? "light" : "dark").catch(() => {}));
-  }
 }
 
 let started = false;
 export function startTheme() {
   if (started) return;
   started = true;
+  // Painted at once, before anything is asked of the window: no flash of the wrong theme.
+  paint();
   apply();
-  media?.addEventListener("change", () => useTheme.getState().pref === "system" && apply());
+  media?.addEventListener("change", () => useTheme.getState().pref === "system" && paint());
 }
 
 export function setTheme(pref: ThemePref) {

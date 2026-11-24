@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useSpring, useTransform, type HTMLMotionProps } from "motion/react";
 import { useFmt } from "../lib/format";
@@ -269,7 +270,8 @@ export function Modal({ open, onClose, children, width = "max-w-[28.75rem]" }: {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  return (
+  // Straight in the body: inside an animated block "fixed" would mean that block, not the window.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -294,7 +296,8 @@ export function Modal({ open, onClose, children, width = "max-w-[28.75rem]" }: {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 

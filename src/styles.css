@@ -219,9 +219,10 @@ html.light .reveal::before {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* A page's blocks rise in one after another when it opens. */
+  /* A page's blocks rise in one after another when it opens. "backwards", never "both": a finished
+     animation that keeps its last frame traps every "position: fixed" inside its block. */
   .page-enter > * > * {
-    animation: rise 0.42s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+    animation: rise 0.42s cubic-bezier(0.2, 0.75, 0.25, 1) backwards;
   }
   .page-enter > * > *:nth-child(2) { animation-delay: 0.035s; }
   .page-enter > * > *:nth-child(3) { animation-delay: 0.07s; }
@@ -233,7 +234,7 @@ html.light .reveal::before {
 
   /* Rows of a list slide in, a few at a time (only the first dozen wait). */
   .rows-enter > * {
-    animation: rise 0.32s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+    animation: rise 0.32s cubic-bezier(0.2, 0.75, 0.25, 1) backwards;
   }
   .rows-enter > *:nth-child(2) { animation-delay: 0.02s; }
   .rows-enter > *:nth-child(3) { animation-delay: 0.04s; }
@@ -246,7 +247,7 @@ html.light .reveal::before {
 
   /* Things that open (panels, menus, results) pop in. */
   .pop-in {
-    animation: pop 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    animation: pop 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
   }
 
   /* Clickable cards lift towards the pointer. */
