@@ -71,6 +71,11 @@ fn table() -> Vec<Sample> {
     TABLE.lock().unwrap().clone()
 }
 
+/// A look at the latest samples without copying them.
+pub fn peek<T>(f: impl FnOnce(&[Sample]) -> T) -> T {
+    f(&TABLE.lock().unwrap())
+}
+
 /// The latest process samples, for other modules.
 pub fn samples() -> Vec<Sample> {
     table()

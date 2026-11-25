@@ -2,17 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { Layers, Loader2, Maximize2, Search, Thermometer } from "lucide-react";
+import { Binary, Blocks, Compass, Layers, Loader2, Maximize2, Search, Thermometer } from "lucide-react";
 import { useFmt } from "../../lib/format";
-import { investigate, type Finding, type Maker, type Progress } from "../../lib/investigate";
+import { investigate, type Finding, type Maker, type Progress, type Suspect } from "../../lib/investigate";
 import { bundles, causes, iconOf, isProblem, laneOf, loadReadings, titleOf, valueOf, type Bundle, type Cause, type Level, type Reading, type TimelineEvent } from "../../lib/timeline";
 import { useWidth } from "./Board";
 import { EventCard, EventRow } from "./Cards";
 import { SearchResult, SearchSteps } from "./Search";
+import { Levels } from "./Levels";
+import { direction, exceptionOf, type Picture } from "../../lib/levels";
 
 interface Node {
   id: string;
-  kind: "problem" | "bundle" | "cause" | "state" | "after";
+  kind: "problem" | "bundle" | "cause" | "state" | "after" | "mechanism" | "module" | "where";
   title: string;
   sub: string;
   color: string;
@@ -31,7 +33,8 @@ const COL = 122;
 const TOP = 58;
 const HEIGHT = 600;
 const R = [30, 24, 19];
-const EDGE: Record<Level | "state" | "after", { color: string; dash?: string; width: number }> = {
+const EDGE: Record<Level | "state" | "after" | "certain", { color: string; dash?: string; width: number }> = {
+  certain: { color: "#3fa96b", width: 3 },
   likely: { color: "#ef5a60", width: 3 },
   possible: { color: "#f0a04b", width: 2.2, dash: "8 5" },
   timing: { color: "#7f8ea3", width: 1.5, dash: "2 6" },
@@ -80,6 +83,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
   const [steps, setSteps] = useState<Progress[]>([]);
   const [searching, setSearching] = useState(false);
   const [finding, setFinding] = useState<Finding | null>(null);
+  const [pic, setPic] = useState<Picture | null>(null);
   const run = useRef(0);
   const [opened, setOpened] = useState<Set<string>>(new Set());
   const [before, setBefore] = useState<Reading[] | null>(null);
@@ -99,6 +103,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
     setSteps([]);
     setSearching(false);
     setFinding(null);
+    setPic(null);
     setOpened(new Set());
     loadReadings(root.t - 1800, root.t + 60, 60)
       .then((r) => alive && setBefore(r))
@@ -111,7 +116,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
   const tree = useMemo(() => {
     if (!root) return null;
     // After a search the map shows what is left standing, not merely what is near.
-    const found = bundles(finding ? finding.suspects.slice(0, 9).map((s) => ({ ...s.cause, score: s.score, level: s.level as Level })) : causes(root, all, days)).slice(0, 5);
+    const found = !finding ? [] : bundles(finding ? finding.suspects.slice(0, 9).map((s) => ({ ...s.cause, score: s.score, level: s.level as Level })) : causes(root, all, days)).slice(0, 5);
     const node = (n: Partial<Node> & Pick<Node, "id" | "kind" | "title" | "sub" | "color">): Node => ({ children: [], x: 0, y: 0, depth: 0, ...n });
     const top = node({ id: root.id, kind: "problem", title: titleOf(root, t), sub: valueOf(root, t) || fmt.dateTime(root.t), color: laneOf(root).color, e: root });
     // Oldest on the left: the map reads in the order things happened.
@@ -139,13 +144,21 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
     }
     const shared = finding?.conditions.filter((c) => c.id !== "normal") ?? [];
     for (const c of shared) top.children.push(node({ id: `s${c.id}`, kind: "state", title: t(`timeline.search.short.${c.id}`, c.values ?? {}), sub: t("timeline.search.times", { n: c.values?.n ?? 0, of: c.values?.of ?? 0 }), color: c.id === "hour" || c.id === "program" ? "#2d7fd3" : "#d8434a", level: c.id === "hour" || c.id === "program" ? "possible" : "likely", parent: root.id }));
-    if (!shared.length && before && before.length) {
+    // What is certain: the mechanism, and the place in the code it happened at.
+    if (finding && pic) {
+      const ex = exceptionOf(pic.detail);
+      if (ex) top.children.push(node({ id: "mechanism", kind: "mechanism", title: t(`timeline.lv.fact.sEx_${ex}`), sub: `0x${pic.detail!.code}`, color: "#3fa96b", parent: root.id }));
+      if (root.kind === "appcrash" && root.now) top.children.push(node({ id: "module", kind: "module", title: root.now, sub: pic.maker?.company ?? t(pic.maker?.exists ? "timeline.unknownMaker" : "timeline.goneFile"), color: "#2d7fd3", parent: root.id }));
+      const d = direction(root, pic);
+      if (d.sure !== "unknown") top.children.push(node({ id: "where", kind: "where", title: t("timeline.conn.where", { level: t(`timeline.lv.name.${d.level}`) }), sub: t(`timeline.conn.sure.${d.sure}`), color: d.sure === "certain" ? "#3fa96b" : "#2d7fd3", parent: root.id }));
+    }
+    if (finding && !shared.length && before && before.length) {
       const hot = Math.max(...before.map((r) => r.cpuTempMax ?? r.cpuTemp ?? 0));
       const ram = Math.max(...before.map((r) => r.ram ?? 0));
       const bad = hot >= 92 || ram >= 92 || before.some((r) => r.hot > 0);
       top.children.push(node({ id: "state", kind: "state", title: t(bad ? "timeline.conn.stateBad" : "timeline.conn.stateOk"), sub: `${hot ? `${Math.round(hot)} °C` : "—"} · ${t("timeline.track.ram")} ${Math.round(ram)}%`, color: bad ? "#d8434a" : "#2d7fd3", level: bad ? "likely" : undefined, parent: root.id }));
     }
-    for (const a of all.filter((x) => isProblem(x) && x.t > root.t && x.t - root.t < 3 * 86_400 && (x.kind === "crash" || x.name === root.name)).slice(0, 2)) top.children.push(node({ id: `a${a.id}`, kind: "after", title: titleOf(a, t), sub: t("timeline.conn.later", { hours: Math.max(1, Math.round((a.t - root.t) / 3600)) }), color: laneOf(a).color, e: a, parent: root.id }));
+    if (finding) for (const a of all.filter((x) => isProblem(x) && x.t > root.t && x.t - root.t < 3 * 86_400 && (x.kind === "crash" || x.name === root.name)).slice(0, 2)) top.children.push(node({ id: `a${a.id}`, kind: "after", title: titleOf(a, t), sub: t("timeline.conn.later", { hours: Math.max(1, Math.round((a.t - root.t) / 3600)) }), color: laneOf(a).color, e: a, parent: root.id }));
     const { w, fit, h } = place(top, width);
     const flat: Node[] = [];
     const walk = (n: Node) => {
@@ -154,7 +167,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
     };
     walk(top);
     return { top, flat, w, fit, h, best: found[0] ?? null };
-  }, [root, all, days, before, t, fmt, width, opened, finding]);
+  }, [root, all, days, before, t, fmt, width, opened, finding, pic]);
 
   const height = HEIGHT;
   const fitted = tree?.fit ?? 1;
@@ -277,7 +290,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
               {tree.flat.map((n) => {
                 const p = n.parent ? tree.flat.find((x) => x.id === n.parent) : null;
                 if (!p) return null;
-                const e = EDGE[n.kind === "after" ? "after" : n.kind === "state" && !n.level ? "state" : (n.level ?? "timing")];
+                const e = EDGE[n.kind === "mechanism" || n.kind === "module" ? "certain" : n.kind === "where" ? (n.color === "#3fa96b" ? "certain" : "state") : n.kind === "after" ? "after" : n.kind === "state" && !n.level ? "state" : (n.level ?? "timing")];
                 // From under the parent's caption to the top of the child.
                 const y1 = p.depth === 0 ? p.y + R[0] + 4 : p.y + R[p.depth] + 62;
                 const y2 = n.y - R[n.depth] - 8;
@@ -293,7 +306,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
                 );
               })}
               {tree.flat.map((n) => {
-                const Icon = n.kind === "bundle" ? Layers : n.kind === "state" ? Thermometer : n.e ? iconOf(n.e) : Layers;
+                const Icon = n.kind === "bundle" ? Layers : n.kind === "state" ? Thermometer : n.kind === "mechanism" ? Binary : n.kind === "module" ? Blocks : n.kind === "where" ? Compass : n.e ? iconOf(n.e) : Layers;
                 const r = R[n.depth];
                 const on = picked === n.id;
                 const cap = n.depth === 0;
@@ -327,7 +340,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
                     <Icon x={n.x - r * 0.46} y={n.y - r * 0.46} width={r * 0.92} height={r * 0.92} color="#fff" strokeWidth={2} />
                     <foreignObject x={cap ? n.x + r + 14 : n.x - COL / 2 + 4} y={cap ? n.y - 24 : n.y + r + 8} width={cap ? 280 : COL - 8} height={cap ? 60 : 60} style={{ pointerEvents: "none", overflow: "visible" }}>
                       <div className={cap ? "" : "text-center"}>
-                        <div className={`${cap ? "text-[15px] font-semibold" : "line-clamp-2 text-[12.5px] font-medium"} leading-[1.2] text-fg`}>{n.title}</div>
+                        <div className={`${cap ? "text-[15px] font-semibold" : "line-clamp-2 break-words text-[12.5px] font-medium"} leading-[1.2] text-fg`}>{n.title}</div>
                         <div className="truncate text-[11px] text-muted">{n.sub}</div>
                       </div>
                     </foreignObject>
@@ -336,12 +349,21 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
               })}
             </g>
           </svg>
-          {!tree.top.children.length && <p className="absolute inset-x-8 bottom-10 text-center text-[0.8125rem] text-muted">{t("timeline.before.none")}</p>}
+          {!tree.top.children.length && (
+            <div className="pointer-events-none absolute inset-x-8 top-[44%] text-center">
+              <p className="text-[0.8125rem] text-muted">{t(searching ? "timeline.search.running" : finding ? "timeline.search.verdict.nothing" : "timeline.conn.bare")}</p>
+            </div>
+          )}
           <p className="pointer-events-none absolute bottom-2.5 left-4 right-4 text-[0.6875rem] text-muted">{t("timeline.conn.hint")}</p>
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
           {(searching || finding) && <SearchSteps done={steps} running={searching} />}
+          {(searching || finding) && !chosen && (
+            <section className="rounded-card border border-line bg-surface p-5">
+              <Levels at={root.t} event={root} all={all} onPicture={setPic} />
+            </section>
+          )}
           {finding && !chosen && (
             <SearchResult
               problem={root}
@@ -356,7 +378,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
             <section className="rounded-card border border-line bg-surface p-5">
               <h3 className="font-display text-[1rem] font-semibold">{chosen.title}</h3>
               <p className="mt-1 text-[0.75rem] text-muted">{t("timeline.conn.bundleText", { count: chosen.bundle.items.length })}</p>
-              <Reasons c={chosen.bundle.items[0]} />
+              <Five c={chosen.bundle.items[0]} s={finding?.suspects.find((x) => x.cause.e.id === chosen.bundle!.items[0].e.id) ?? null} />
               <div className="mt-2">
                 {chosen.bundle.items.map((c) => (
                   <EventRow key={c.e.id} e={c.e} note={`${t(`timeline.level.${c.level}`)} · ${fmt.dateTime(c.e.t)}`} onPick={() => setPicked(tree.flat.some((n) => n.id === `c${c.e.id}`) ? `c${c.e.id}` : chosen.id)} />
@@ -365,12 +387,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
             </section>
           ) : chosen?.e ? (
             <>
-              {chosen.cause && (
-                <section className="rounded-card border border-line bg-surface p-5">
-                  <h3 className="text-[0.8125rem] font-medium">{t("timeline.conn.why")}</h3>
-                  <Reasons c={chosen.cause} />
-                </section>
-              )}
+              {chosen.cause && <Five c={chosen.cause} s={finding?.suspects.find((x) => x.cause.e.id === chosen.cause!.e.id) ?? null} />}
               <EventCard
                 e={chosen.e}
                 all={all}
@@ -379,6 +396,19 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
                 }}
               />
             </>
+          ) : chosen && (chosen.kind === "mechanism" || chosen.kind === "module" || chosen.kind === "where") ? (
+            <section className="rounded-card border border-line bg-surface p-5" data-testid="five">
+              <h3 className="font-display text-[1rem] font-semibold">{chosen.title}</h3>
+              <Answers
+                rows={[
+                  ["what", chosen.kind === "where" ? t("timeline.five.whereWhat") : chosen.sub],
+                  ["source", t(chosen.kind === "module" ? "timeline.five.srcFile" : chosen.kind === "mechanism" ? "timeline.five.srcCrash" : "timeline.five.srcAll")],
+                  ["when", fmt.dateTime(root.t)],
+                  ["why", t(`timeline.five.why_${chosen.kind}`)],
+                  ["proof", t(chosen.kind === "where" ? "timeline.five.proofWhere" : "timeline.five.proofCertain")],
+                ]}
+              />
+            </section>
           ) : chosen?.kind === "state" ? (
             <section className="rounded-card border border-line bg-surface p-5 text-[0.8125rem] leading-relaxed">
               <h3 className="font-display text-[1rem] font-semibold">{chosen.title}</h3>
@@ -387,16 +417,68 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
             </section>
           ) : finding || searching ? null : (
             <section className="rounded-card border border-line bg-surface p-5" data-testid="conn-summary">
-              <h3 className="font-display text-[1rem] font-semibold">{t("timeline.conn.summary")}</h3>
-              <p className="mt-2 text-[0.8125rem] leading-relaxed">{tree.best ? t(`timeline.conn.best.${tree.best.level}`, { name: titleOf(tree.best.items[0].e, t) }) : t("timeline.before.none")}</p>
-              {tree.best && <Reasons c={tree.best.items[0]} />}
-              <p className="mt-3 text-[0.75rem] leading-relaxed text-muted">{t("timeline.before.note")}</p>
-              <p className="mt-2 text-[0.75rem] text-muted">{t("timeline.conn.click")}</p>
+              <h3 className="font-display text-[1rem] font-semibold">{t("timeline.conn.bareTitle")}</h3>
+              <p className="mt-2 text-[0.8125rem] leading-relaxed">{t("timeline.conn.bareText")}</p>
             </section>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+/** The five questions any link should be able to answer. */
+function Answers({ rows }: { rows: [string, React.ReactNode][] }) {
+  const { t } = useTranslation();
+  return (
+    <dl className="mt-3 grid gap-3">
+      {rows.map(([k, v]) => (
+        <div key={k} data-q={k}>
+          <dt className="text-[0.6875rem] text-muted">{t(`timeline.five.${k}`)}</dt>
+          <dd className="text-[0.8125rem] leading-relaxed">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Five({ c, s }: { c: Cause; s: Suspect | null }) {
+  const { t } = useTranslation();
+  const fmt = useFmt();
+  const value = valueOf(c.e, t);
+  return (
+    <section className="rounded-card border border-line bg-surface p-5" data-testid="five">
+      <h3 className="font-display text-[1rem] font-semibold">{titleOf(c.e, t)}</h3>
+      <Answers
+        rows={[
+          ["what", `${t(`timeline.lane.${laneOf(c.e).id}.name`)}: ${t(`timeline.action.${c.e.action}`)}${value && c.e.kind !== "service" ? ` (${value.split("\n")[0]})` : ""}`],
+          ["source", t(`timeline.source.${c.e.source}`)],
+          ["when", c.e.dayOnly ? t("timeline.thatDay", { date: fmt.date(c.e.t) }) : fmt.dateTime(c.e.t)],
+          ["why", <Reasons key="r" c={c} />],
+          [
+            "proof",
+            s && (s.for.length || s.against.length) ? (
+              <ul key="p" className="space-y-0.5">
+                {s.for.map((p, i) => (
+                  <li key={`f${i}`} className="text-[0.75rem]">
+                    <span className="mr-1.5 text-risk">+</span>
+                    {t(`timeline.proof.${p.id}`, p.values ?? {})}
+                  </li>
+                ))}
+                {s.against.map((p, i) => (
+                  <li key={`a${i}`} className="text-[0.75rem]">
+                    <span className="mr-1.5 text-safe">−</span>
+                    {t(`timeline.proof.${p.id}`, p.values ?? {})}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              t("timeline.five.none")
+            ),
+          ],
+        ]}
+      />
+    </section>
   );
 }
 

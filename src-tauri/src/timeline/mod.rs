@@ -7,7 +7,10 @@
 
 mod alarms;
 mod changes;
+mod code;
+mod deep;
 mod past;
+mod programs;
 mod snapshots;
 
 use std::collections::HashMap;
@@ -25,6 +28,10 @@ const EVENT_DAYS: i64 = 730;
 const DAY: i64 = 86_400;
 const FLUSH: Duration = Duration::from_secs(300);
 const LOOK_EVERY: Duration = Duration::from_secs(1800);
+/// How long the kernel's counters are kept by the minute.
+const DEEP_DAYS: i64 = 30;
+/// Ticks of the metrics sampler (seconds) between looks at which programs work.
+pub const PROGRAMS_EVERY: u32 = programs::EVERY as u32;
 
 const SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS minutes (
@@ -44,13 +51,24 @@ const SCHEMA: &str = "
         was TEXT, now TEXT,          -- the value before and after, when there is one
         source TEXT NOT NULL,        -- 'seen' by DelphEye as it happened, 'windows' from Windows' own records
         day_only INTEGER NOT NULL DEFAULT 0,  -- the time of day is not known
-        uniq TEXT NOT NULL UNIQUE
+        uniq TEXT NOT NULL UNIQUE,
+        detail TEXT                  -- JSON with more, for those kinds that have more to tell
     );
     CREATE INDEX IF NOT EXISTS events_t ON events (t);
     CREATE TABLE IF NOT EXISTS present (
         kind TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, value TEXT,
         PRIMARY KEY (kind, id)
     ) WITHOUT ROWID;
+    CREATE TABLE IF NOT EXISTS runs (
+        start INTEGER NOT NULL, end INTEGER NOT NULL, name TEXT NOT NULL, exe TEXT NOT NULL,
+        title TEXT, company TEXT, front INTEGER NOT NULL, cpu REAL NOT NULL, mem INTEGER NOT NULL,
+        disk INTEGER NOT NULL, game INTEGER NOT NULL, PRIMARY KEY (exe, start)
+    ) WITHOUT ROWID;
+    CREATE INDEX IF NOT EXISTS runs_end ON runs (end);
+    CREATE TABLE IF NOT EXISTS deep (
+        t INTEGER PRIMARY KEY, kernel REAL, user REAL, switches INTEGER, calls INTEGER, hard INTEGER, soft INTEGER,
+        read INTEGER, write INTEGER, processes INTEGER, threads INTEGER, handles INTEGER, commit_pct REAL, mains INTEGER, battery INTEGER
+    );
     CREATE TABLE IF NOT EXISTS snapshots (
         id INTEGER PRIMARY KEY, t INTEGER NOT NULL, name TEXT NOT NULL, auto INTEGER NOT NULL,
         data TEXT NOT NULL           -- JSON: [[kind, id, name, value], …]
@@ -73,6 +91,7 @@ pub struct Event {
     pub now: Option<String>,
     pub source: String,
     pub day_only: bool,
+    pub detail: Option<String>,
     #[serde(skip)]
     pub uniq: String,
 }
@@ -81,13 +100,13 @@ impl Event {
     fn seen(kind: &str, action: &str, name: &str, was: Option<String>, value: Option<String>) -> Self {
         let t = now();
         let uniq = format!("seen|{t}|{kind}|{action}|{name}|{}", value.as_deref().unwrap_or_default());
-        Event { t, kind: kind.into(), action: action.into(), name: name.into(), was, now: value, source: "seen".into(), day_only: false, uniq }
+        Event { t, kind: kind.into(), action: action.into(), name: name.into(), was, now: value, source: "seen".into(), day_only: false, detail: None, uniq }
     }
 
     /// From Windows' records. `key` says when two records tell of the same thing.
     fn windows(t: i64, kind: &str, action: &str, name: &str, value: Option<String>, key: &str) -> Self {
         let uniq = format!("windows|{kind}|{action}|{name}|{key}");
-        Event { t, kind: kind.into(), action: action.into(), name: name.into(), was: None, now: value, source: "windows".into(), day_only: false, uniq }
+        Event { t, kind: kind.into(), action: action.into(), name: name.into(), was: None, now: value, source: "windows".into(), day_only: false, detail: None, uniq }
     }
 }
 
@@ -114,6 +133,8 @@ pub struct Reading {
 pub struct Timeline {
     db: Mutex<Connection>,
     pending: Mutex<Vec<Reading>>,
+    deep: Mutex<Vec<deep::Deep>>,
+    runs: Mutex<Vec<programs::Run>>,
     paused: AtomicBool,
 }
 
@@ -133,7 +154,7 @@ impl Timeline {
     }
 
     fn from(db: Connection) -> Self {
-        let t = Timeline { db: Mutex::new(db), pending: Mutex::new(Vec::new()), paused: AtomicBool::new(false) };
+        let t = Timeline { db: Mutex::new(db), pending: Mutex::new(Vec::new()), deep: Mutex::new(Vec::new()), runs: Mutex::new(Vec::new()), paused: AtomicBool::new(false) };
         let paused = t.kv("paused").as_deref() == Some("1");
         t.paused.store(paused, Ordering::SeqCst);
         t
@@ -162,8 +183,8 @@ impl Timeline {
             let mut n = 0;
             for e in events {
                 n += tx.execute(
-                    "INSERT OR IGNORE INTO events (t, kind, action, name, was, now, source, day_only, uniq) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
-                    params![e.t, e.kind, e.action, e.name, e.was, e.now, e.source, e.day_only, e.uniq],
+                    "INSERT OR IGNORE INTO events (t, kind, action, name, was, now, source, day_only, uniq, detail) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+                    params![e.t, e.kind, e.action, e.name, e.was, e.now, e.source, e.day_only, e.uniq, e.detail],
                 )?;
             }
             tx.commit()?;
@@ -174,6 +195,16 @@ impl Timeline {
     }
 
     fn flush(&self) {
+        let below = std::mem::take(&mut *self.deep.lock().unwrap());
+        let mut runs = std::mem::take(&mut *self.runs.lock().unwrap());
+        runs.extend(programs::with(|t| t.going()));
+        let done = self.with(|db| {
+            deep::save(db, &below)?;
+            programs::save(db, &runs)
+        });
+        if let Err(e) = done {
+            crate::errlog::write("timeline", &format!("flush runs: {e}"));
+        }
         let rows = std::mem::take(&mut *self.pending.lock().unwrap());
         if rows.is_empty() {
             return;
@@ -216,6 +247,8 @@ impl Timeline {
             }
             tx.execute("DELETE FROM minutes WHERE t < ?1", [at - QUARTER_DAYS * DAY])?;
             tx.execute("DELETE FROM events WHERE t < ?1", [at - EVENT_DAYS * DAY])?;
+            tx.execute("DELETE FROM runs WHERE end < ?1", [at - QUARTER_DAYS * DAY])?;
+            tx.execute("DELETE FROM deep WHERE t < ?1", [at - DEEP_DAYS * DAY])?;
             tx.commit()?;
             db.execute_batch("PRAGMA incremental_vacuum; PRAGMA wal_checkpoint(TRUNCATE);")
         });
@@ -256,9 +289,9 @@ impl Timeline {
 
     fn events(&self, from: i64, to: i64) -> Vec<Event> {
         self.with(|db| {
-            let mut q = db.prepare("SELECT t, kind, action, name, was, now, source, day_only FROM events WHERE t >= ?1 AND t < ?2 ORDER BY t")?;
+            let mut q = db.prepare("SELECT t, kind, action, name, was, now, source, day_only, detail FROM events WHERE t >= ?1 AND t < ?2 ORDER BY t")?;
             q.query_map([from, to], |r| {
-                Ok(Event { t: r.get(0)?, kind: r.get(1)?, action: r.get(2)?, name: r.get(3)?, was: r.get(4)?, now: r.get(5)?, source: r.get(6)?, day_only: r.get(7)?, uniq: String::new() })
+                Ok(Event { t: r.get(0)?, kind: r.get(1)?, action: r.get(2)?, name: r.get(3)?, was: r.get(4)?, now: r.get(5)?, source: r.get(6)?, day_only: r.get(7)?, detail: r.get(8)?, uniq: String::new() })
             })?
             .collect()
         })
@@ -385,6 +418,9 @@ pub fn minute(app: &AppHandle, cpu_temp: Option<f64>, gpu_temp: Option<f64>, gpu
         hot: hot as i64,
         top,
     };
+    if let Some(d) = deep::sample(now()) {
+        line.deep.lock().unwrap().push(d);
+    }
     let raised = alarms::check(&reading, now());
     if !raised.is_empty() {
         line.add(&raised);
@@ -393,6 +429,19 @@ pub fn minute(app: &AppHandle, cpu_temp: Option<f64>, gpu_temp: Option<f64>, gpu
 }
 
 // ───────────────────────── the recorder ─────────────────────────
+
+/// Which programs work now; called every few seconds.
+pub fn programs_look(app: &AppHandle) {
+    let Some(line) = app.try_state::<Timeline>() else { return };
+    if line.off() {
+        return;
+    }
+    let (front, full) = (programs::front(), full_screen());
+    let ended = crate::processes::peek(|s| programs::with(|t| t.look(s, front, full, now())));
+    if !ended.is_empty() {
+        line.runs.lock().unwrap().extend(ended);
+    }
+}
 
 /// A game or a presentation fills the screen: nothing slow runs now.
 fn full_screen() -> bool {
@@ -496,6 +545,46 @@ pub async fn timeline_stats(app: AppHandle) -> Option<Stats> {
     stats(&app.state::<Timeline>())
 }
 
+/// Programs that worked between two moments, those still working included.
+#[tauri::command]
+pub async fn timeline_runs(app: AppHandle, from: i64, to: i64) -> Vec<programs::Run> {
+    let line = app.state::<Timeline>();
+    let mut out = line.with(|db| programs::load(db, from, to)).unwrap_or_default();
+    let fresh: Vec<programs::Run> = line.runs.lock().unwrap().iter().cloned().chain(programs::with(|t| t.going())).collect();
+    for r in fresh.into_iter().filter(|r| r.end >= from && r.start < to) {
+        match out.iter_mut().find(|o| o.exe == r.exe && o.start == r.start) {
+            Some(o) => *o = programs::Run { title: o.title.take(), company: o.company.take(), ..r },
+            None => out.push(r),
+        }
+    }
+    out.sort_by_key(|r| r.start);
+    out
+}
+
+#[tauri::command]
+pub async fn timeline_deep(app: AppHandle, from: i64, to: i64) -> Vec<deep::Deep> {
+    let line = app.state::<Timeline>();
+    let mut out = line.with(|db| deep::load(db, from, to)).unwrap_or_default();
+    out.extend(line.deep.lock().unwrap().iter().filter(|d| d.t >= from && d.t < to).cloned());
+    out
+}
+
+/// A local file as the machine sees it; for a crash, the instructions at its address.
+#[tauri::command]
+pub async fn timeline_code(path: String, offset: Option<String>, stamp: Option<String>) -> Option<code::Code> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = std::path::PathBuf::from(&path);
+        if !file.is_absolute() || path.starts_with(r"\\") {
+            return None;
+        }
+        let hex = |s: Option<String>| s.and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok());
+        code::read(&file, hex(offset), hex(stamp).map(|s| s as u32))
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Maker {
@@ -519,7 +608,9 @@ pub async fn timeline_module(path: String) -> Option<Maker> {
         let f = crate::startup::fileinfo::inspect(&file, true);
         let inside = crate::system::Dirs::real().is_some_and(|d| path.to_lowercase().starts_with(&d.windows.to_string_lossy().to_lowercase()));
         let windows = inside && f.company.as_deref().is_some_and(|c| c.contains("Microsoft"));
-        Some(Maker { exists: f.exists, company: f.company, description: f.description, signed: f.signed, windows })
+        // Windows' own files are signed through its catalogue, which a look at the file alone does not see.
+        let signed = if inside { f.signed.filter(|s| *s) } else { f.signed };
+        Some(Maker { exists: f.exists, company: f.company, description: f.description, signed, windows })
     })
     .await
     .ok()
@@ -575,10 +666,13 @@ pub fn timeline_pause(line: State<'_, Timeline>, on: bool) {
 pub async fn timeline_erase(app: AppHandle) -> Result<(), String> {
     let line = app.state::<Timeline>();
     line.pending.lock().unwrap().clear();
+    line.deep.lock().unwrap().clear();
+    line.runs.lock().unwrap().clear();
+    programs::with(|t| *t = Default::default());
     // Windows' own records are older than this moment: they are not read back in afterwards.
     let at = now().to_string();
     line.with(|db| {
-        db.execute_batch("DELETE FROM minutes; DELETE FROM events; DELETE FROM present; DELETE FROM snapshots; DELETE FROM kv WHERE key <> 'paused';")?;
+        db.execute_batch("DELETE FROM minutes; DELETE FROM events; DELETE FROM present; DELETE FROM snapshots; DELETE FROM runs; DELETE FROM deep; DELETE FROM kv WHERE key <> 'paused';")?;
         db.execute("INSERT INTO kv VALUES ('past', ?1), ('from', ?1)", [&at])?;
         db.execute_batch("PRAGMA wal_checkpoint(TRUNCATE); VACUUM; PRAGMA wal_checkpoint(TRUNCATE);")
     })

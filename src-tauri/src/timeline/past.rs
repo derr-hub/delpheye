@@ -158,9 +158,79 @@ pub fn app_crashes(records: &[Record]) -> Vec<Event> {
             let mut e = Event::windows(r.t, "appcrash", "happened", r.get("AppName"), Some(r.get("ModuleName").into()), &(r.t / 86_400).to_string());
             // Where the module is: whose it is can be asked later.
             e.was = Some(r.get("ModulePath").to_string()).filter(|p| !p.is_empty());
+            e.detail = Some(
+                serde_json::json!({
+                    "code": r.get("ExceptionCode"), "offset": r.get("FaultingOffset"), "stamp": r.get("ModuleTimeStamp"),
+                    "moduleVersion": r.get("ModuleVersion"), "app": r.get("AppPath"), "appVersion": r.get("AppVersion"),
+                })
+                .to_string(),
+            );
             e
         })
         .collect()
+}
+
+/// Programs that stopped answering, once per program and day.
+pub fn hangs(records: &[Record]) -> Vec<Event> {
+    records
+        .iter()
+        .filter(|r| !r.get("AppName").is_empty())
+        .map(|r| {
+            let mut e = Event::windows(r.t, "hang", "happened", r.get("AppName"), Some(r.get("AppVersion").into()).filter(|v: &String| !v.is_empty()), &(r.t / 86_400).to_string());
+            e.was = Some(r.get("ExeFileName").to_string()).filter(|p| !p.is_empty());
+            e
+        })
+        .collect()
+}
+
+/// Services that stopped on their own, once per service and day, with how many times.
+pub fn service_crashes(records: &[Record]) -> Vec<Event> {
+    let mut out: Vec<Event> = Vec::new();
+    for r in records.iter().filter(|r| !r.get("param1").is_empty()) {
+        let e = Event::windows(r.t, "svccrash", "happened", r.get("param1"), Some("1".into()), &(r.t / 86_400).to_string());
+        match out.iter_mut().find(|x| x.uniq == e.uniq) {
+            Some(x) => x.now = x.now.as_ref().and_then(|n| n.parse::<u32>().ok()).map(|n| (n + 1).to_string()),
+            None => out.push(e),
+        }
+    }
+    out
+}
+
+/// The computer's own day: on, off, asleep, awake. A wake seconds after going to sleep is no sleep.
+pub fn power(records: &[Record], name: &str) -> Vec<Event> {
+    records.iter().map(|r| Event::windows(r.t, "power", "happened", name, Some(r.get("Reason").to_string()).filter(|s| !s.is_empty()), &(r.t / 300).to_string())).collect()
+}
+
+pub fn supply(records: &[Record]) -> Vec<Event> {
+    records.iter().filter_map(|r| match r.get("AcOnline") { "true" => Some((r, "plugged")), "false" => Some((r, "unplugged")), _ => None }).map(|(r, n)| Event::windows(r.t, "power", "happened", n, None, &r.t.to_string())).collect()
+}
+
+/// Networks joined and left. Windows often writes the same thing several times in a row.
+pub fn networks(records: &[Record], action: &str) -> Vec<Event> {
+    let mut out: Vec<Event> = Vec::new();
+    for r in records {
+        let name = r.get("Name");
+        // "Identifying…" is Windows still finding out, not a network.
+        if name.is_empty() || name.ends_with("...") || name.ends_with('…') || out.iter().rev().take(4).any(|e| e.name == name && r.t - e.t < 600) {
+            continue;
+        }
+        out.push(Event::windows(r.t, "net", action, name, None, &r.t.to_string()));
+    }
+    out
+}
+
+pub fn defender(records: &[Record], name: &str) -> Vec<Event> {
+    records
+        .iter()
+        .map(|r| {
+            let threat = r.get("Threat Name");
+            Event::windows(r.t, "security", "happened", name, Some(threat.to_string()).filter(|t| !t.is_empty()), &r.t.to_string())
+        })
+        .collect()
+}
+
+pub fn plain(records: &[Record], kind: &str, name: &str) -> Vec<Event> {
+    records.iter().map(|r| Event::windows(r.t, kind, "happened", name, None, &(r.t / 3600).to_string())).collect()
 }
 
 /// "20261120" at noon: the installer noted only the day.
@@ -212,6 +282,32 @@ pub fn look(line: &Timeline, windows: &Path) {
     read("Application", "Provider[@Name='MsiInstaller'] and EventID=1033", &|r| packages(r, "added"));
     read("Application", "Provider[@Name='MsiInstaller'] and EventID=1034", &|r| packages(r, "removed"));
     read("Application", "Provider[@Name='Application Error'] and EventID=1000", &app_crashes);
+    let system = |p: &str, id: u32| format!("Provider[@Name='{p}'] and EventID={id}");
+    read("Application", "Provider[@Name='Application Hang'] and EventID=1002", &hangs);
+    read("System", "Provider[@Name='Service Control Manager'] and (EventID=7031 or EventID=7034)", &service_crashes);
+    read("System", &system("Microsoft-Windows-Kernel-General", 12), &|r| power(r, "boot"));
+    read("System", &system("Microsoft-Windows-Kernel-General", 13), &|r| power(r, "off"));
+    read("System", &system("Microsoft-Windows-Kernel-Power", 42), &|r| power(r, "sleep"));
+    read("System", &system("Microsoft-Windows-Power-Troubleshooter", 1), &|r| power(r, "wake"));
+    read("System", &system("Microsoft-Windows-Kernel-Power", 506), &|r| power(r, "sleep"));
+    read("System", &system("Microsoft-Windows-Kernel-Power", 507), &|r| power(r, "wake"));
+    read("System", &system("Microsoft-Windows-Kernel-Power", 105), &supply);
+    read("System", "Provider[@Name='disk'] and (EventID=7 or EventID=11 or EventID=51 or EventID=153 or EventID=154)", &|r| plain(r, "io", "disk"));
+    read("System", "Provider[@Name='Ntfs'] and EventID=55", &|r| plain(r, "io", "ntfs"));
+    read("System", "Provider[@Name='storahci' or @Name='stornvme'] and EventID=129", &|r| plain(r, "io", "reset"));
+    read("System", &system("Microsoft-Windows-Resource-Exhaustion-Detector", 2004), &|r| plain(r, "alert", "commit-full"));
+    // Some computers have these logs switched off; that is no reason to read everything again next time.
+    for (log, id, make) in [
+        ("Microsoft-Windows-NetworkProfile/Operational", "EventID=10000", &(|r: &[Record]| networks(r, "added")) as &dyn Fn(&[Record]) -> Vec<Event>),
+        ("Microsoft-Windows-NetworkProfile/Operational", "EventID=10001", &|r| networks(r, "removed")),
+        ("Microsoft-Windows-Windows Defender/Operational", "EventID=1116", &|r| defender(r, "threat")),
+        ("Microsoft-Windows-Windows Defender/Operational", "EventID=5001", &|r| defender(r, "guard-off")),
+        ("Microsoft-Windows-Windows Defender/Operational", "EventID=5000", &|r| defender(r, "guard-on")),
+    ] {
+        if let Some(records) = query(windows, log, id, since) {
+            line.add(&make(&records));
+        }
+    }
     if let Some(log) = crate::monitor::health::read_crash_log(windows) {
         let events: Vec<Event> = log
             .incidents
@@ -251,6 +347,15 @@ mod tests {
         let d = |t, v, inbox, who| rec(t, &[("ClassGuid", gpu), ("DriverVersion", v), ("DriverInbox", inbox), ("DriverProvider", who), ("DriverPackageId", "nv.inf_amd64_1"), ("Status", "0x0")]);
         let e = drivers(&[d(5, "9", "true", "Microsoft"), d(10, "1", "false", "NVIDIA"), d(20, "1", "false", "NVIDIA"), d(30, "2", "false", "NVIDIA")]);
         assert_eq!(e.iter().map(|e| (e.t, e.name.as_str(), e.now.as_deref())).collect::<Vec<_>>(), vec![(10, "NVIDIA|display|nv", Some("1")), (30, "NVIDIA|display|nv", Some("2"))]);
+    }
+
+    #[test]
+    fn repeated_network_lines_and_service_crashes_are_folded() {
+        let n = |t, name: &str| rec(t, &[("Name", name)]);
+        assert_eq!(networks(&[n(0, "Home"), n(5, "Home"), n(300, "Home"), n(9000, "Home"), n(9001, "Cafe")], "added").len(), 3);
+        let s = |t| rec(t, &[("param1", "Energy")]);
+        let e = service_crashes(&[s(10), s(20), s(30), s(90_000)]);
+        assert_eq!(e.iter().map(|e| e.now.as_deref()).collect::<Vec<_>>(), vec![Some("3"), Some("1")]);
     }
 
     #[test]

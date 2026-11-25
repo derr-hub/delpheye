@@ -102,7 +102,7 @@ export function SearchResult({ problem, f, onPick }: { problem: TimelineEvent; f
         )}
         {f.maker?.exists && (
           <p className="mt-2 text-[0.75rem] text-muted">
-            {t("timeline.search.file", { name: f.module ?? "", company: f.maker.company ?? "?" })} {f.maker.signed === false && t("timeline.search.unsigned")}
+            {t("timeline.search.file", { name: f.module ?? "", company: f.maker.company ?? t("timeline.unknownMaker") })} {f.maker.signed === false && t("timeline.search.unsigned")}
           </p>
         )}
         <h4 className="mt-4 text-[0.75rem] font-medium">{t("timeline.search.next")}</h4>

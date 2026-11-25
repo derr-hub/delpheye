@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { Camera, CircleHelp, Clock, Crosshair, Database, GitBranch, GitCompareArrows, Layers, Loader2, MousePointerClick, Move, Pause, Play, Radio, Rewind as RewindIcon, Spline, ZoomIn } from "lucide-react";
+import { Camera, CircleHelp, Clock, Crosshair, Database, GitBranch, GitCompareArrows, Layers, Loader2, MousePointerClick, Move, Pause, Play, Radio, Rewind as RewindIcon, Spline, TextSelect, ZoomIn } from "lucide-react";
 import { useFmt } from "../lib/format";
 import { LANES, TRACKS, laneOf, loadEvents, loadReadings, type LaneId, type Reading, type Row, type Stats, type TimelineEvent, type TrackId } from "../lib/timeline";
 import { Board, Overview, type View } from "./timeline/Board";
-import { EventCard, EventList, MomentCard } from "./timeline/Cards";
+import { loadRuns, type Run } from "../lib/levels";
+import { EventCard, EventList, MomentCard, RunCard } from "./timeline/Cards";
+import { Story } from "./timeline/Story";
 import { Compare } from "./timeline/Compare";
 import { Connections } from "./timeline/Connections";
 import { Rewind } from "./timeline/Rewind";
@@ -63,6 +65,10 @@ export function Timeline() {
   const [problem, setProblem] = useState<TimelineEvent | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [step, setStep] = useState(60);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [run, setRun] = useState<Run | null>(null);
+  const [span, setSpan] = useState<View | null>(null);
+  const [choosing, setChoosing] = useState(false);
   const [tracks, setTracks] = useState(() => remembered("timeline.tracksOff", TRACK_IDS));
   const [lanes, setLanes] = useState(() => remembered("timeline.lanesOff", LANE_IDS));
   const [layers, setLayers] = useState(false);
@@ -115,6 +121,9 @@ export function Timeline() {
           setReadings(r);
           setStep(s);
         })
+        .catch(() => {});
+      loadRuns(view.from - span / 2, view.to + span / 2)
+        .then((r) => alive && setRuns(r))
         .catch(() => {});
     }, 120);
     return () => {
@@ -179,6 +188,7 @@ export function Timeline() {
 
   const focus = (e: TimelineEvent) => {
     setPlaying(false);
+    setRun(null);
     setPicked(e);
     const w = view.to - view.from;
     if (e.t >= view.from && e.t <= view.to) return setCursor(e.t);
@@ -324,6 +334,19 @@ export function Timeline() {
                 <Crosshair size={13} />
                 {t("timeline.toNow")}
               </button>
+              <button
+                onClick={() => {
+                  setChoosing(!choosing);
+                  if (span) setSpan(null);
+                }}
+                aria-pressed={choosing || !!span}
+                className={tool(choosing || !!span)}
+                title={t("timeline.spanHint")}
+                data-testid="timeline-interval"
+              >
+                <TextSelect size={13} />
+                {t("timeline.interval")}
+              </button>
               <button onClick={() => setLayers(!layers)} aria-pressed={layers} className={tool(layers)} title={t("timeline.layersHint")} data-testid="timeline-layers">
                 <Layers size={13} />
                 {t("timeline.layers")}
@@ -357,7 +380,19 @@ export function Timeline() {
               step={step}
               events={shown}
               picked={picked}
-              onPick={setPicked}
+              onPick={(e) => {
+                setRun(null);
+                setPicked(e);
+              }}
+              runs={runs}
+              run={run}
+              onRun={(r) => {
+                setPicked(null);
+                setRun(r);
+              }}
+              span={span}
+              onSpan={setSpan}
+              choosing={choosing}
               tracks={tracks}
               lanes={lanes}
               onTrack={(id: TrackId) => {
@@ -388,8 +423,33 @@ export function Timeline() {
             </div>
           </section>
 
+          {span && span.to - span.from > 30 && (
+            <Story
+              from={span.from}
+              to={span.to}
+              events={events}
+              runs={runs}
+              readings={readings}
+              onCursor={setCursor}
+              onEvent={(e) => {
+                setRun(null);
+                setPicked(e);
+              }}
+              onRun={(r) => {
+                setPicked(null);
+                setRun(r);
+              }}
+              onClose={() => {
+                setSpan(null);
+                setChoosing(false);
+              }}
+            />
+          )}
+
           <div className="grid items-start gap-4 lg:grid-cols-2">
-            {picked ? (
+            {run && !picked ? (
+              <RunCard r={run} at={Math.min(Math.max(Math.floor(cursor / 60) * 60, run.start), run.end)} all={events} onPick={focus} onRewind={rewindTo} />
+            ) : picked ? (
               <EventCard
                 e={picked}
                 all={events}

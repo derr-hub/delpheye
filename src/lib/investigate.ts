@@ -21,7 +21,8 @@ export interface Proof {
     | "hour"
     | "program"
     | "windowsModule"
-    | "foreignModule";
+    | "foreignModule"
+    | "unknownModule";
   values?: Record<string, string | number>;
 }
 
@@ -204,13 +205,13 @@ export async function investigate(problem: TimelineEvent, all: TimelineEvent[], 
 
   // 6. Whose file crashed.
   let maker: Maker | null = null;
-  const path = problem.kind === "appcrash" ? problem.was : null;
+  const path = problem.kind === "appcrash" || problem.kind === "hang" ? problem.was : null;
   const found: Proof[] = [];
   if (path) maker = await src.maker(path);
   if (maker?.exists) {
     if (maker.windows) found.push({ id: "windowsModule", values: { name: problem.now ?? "" } });
     else {
-      found.push({ id: "foreignModule", values: { name: problem.now ?? "", company: maker.company ?? "?" } });
+      found.push(maker.company ? { id: "foreignModule", values: { name: problem.now ?? "", company: maker.company } } : { id: "unknownModule", values: { name: problem.now ?? "" } });
       const theirs = words(`${maker.company ?? ""} ${maker.description ?? ""}`);
       for (const s of suspects) {
         const own = words(s.cause.e.name);

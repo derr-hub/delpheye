@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { AppWindow, Cpu, Download, Flame, Network, Package, Rocket, ScanEye, ServerCog, Skull, TriangleAlert, type LucideIcon } from "lucide-react";
+import { AppWindow, Cpu, Download, Flame, HardDrive, Hourglass, Network, Package, Power, Rocket, ScanEye, ServerCog, ServerCrash, ShieldAlert, Skull, TriangleAlert, Wifi, type LucideIcon } from "lucide-react";
 import type { TFunction } from "i18next";
 import type { Page } from "./app";
 
@@ -23,13 +23,15 @@ export interface Reading {
 export interface TimelineEvent {
   id: string;
   t: number;
-  kind: "program" | "driver" | "update" | "service" | "startup" | "port" | "appcrash" | "crash" | "alert" | "recorder" | "delpheye";
+  kind: "program" | "driver" | "update" | "service" | "startup" | "port" | "appcrash" | "crash" | "hang" | "svccrash" | "io" | "alert" | "net" | "power" | "security" | "recorder" | "delpheye";
   action: "added" | "removed" | "changed" | "happened" | "dated";
   name: string;
   was: string | null;
   now: string | null;
   source: "seen" | "windows";
   dayOnly: boolean;
+  /** JSON with more, for some kinds. */
+  detail?: string | null;
 }
 
 export interface Stats {
@@ -57,18 +59,20 @@ export interface Snapshot {
 
 /** Event lanes, top to bottom: the direction a change came from. */
 export const LANES = [
-  { id: "crash", kinds: ["crash", "appcrash"], color: "#d8434a", icon: TriangleAlert },
+  { id: "crash", kinds: ["crash", "appcrash", "hang", "svccrash", "io"], color: "#d8434a", icon: TriangleAlert },
   { id: "alert", kinds: ["alert"], color: "#d9702b", icon: Flame },
+  { id: "security", kinds: ["security"], color: "#c0506b", icon: ShieldAlert },
   { id: "driver", kinds: ["driver"], color: "#8457d6", icon: Cpu },
   { id: "update", kinds: ["update"], color: "#2d7fd3", icon: Download },
   { id: "program", kinds: ["program"], color: "#1f9a86", icon: Package },
   { id: "startup", kinds: ["startup", "service"], color: "#b9791f", icon: Rocket },
-  { id: "network", kinds: ["port"], color: "#b04c93", icon: Network },
+  { id: "network", kinds: ["port", "net"], color: "#b04c93", icon: Network },
+  { id: "power", kinds: ["power"], color: "#4b7f9e", icon: Power },
   { id: "delpheye", kinds: ["delpheye", "recorder"], color: "#637389", icon: ScanEye },
 ] as const;
 
 export const iconOf = (e: { kind: string }): LucideIcon =>
-  ({ crash: Skull, appcrash: AppWindow, alert: Flame, driver: Cpu, update: Download, program: Package, startup: Rocket, service: ServerCog, port: Network })[e.kind as "crash"] ?? ScanEye;
+  ({ crash: Skull, appcrash: AppWindow, alert: Flame, driver: Cpu, update: Download, program: Package, startup: Rocket, service: ServerCog, port: Network, net: Wifi, power: Power, security: ShieldAlert, hang: Hourglass, svccrash: ServerCrash, io: HardDrive })[e.kind as "crash"] ?? ScanEye;
 export type LaneId = (typeof LANES)[number]["id"];
 export const laneOf = (e: TimelineEvent) => LANES.find((l) => (l.kinds as readonly string[]).includes(e.kind)) ?? LANES[LANES.length - 1];
 
@@ -82,7 +86,7 @@ export const TRACKS = [
 export type TrackId = (typeof TRACKS)[number]["id"];
 
 /** Where each kind of event can be acted on. */
-export const PAGE_OF: Partial<Record<TimelineEvent["kind"], Page>> = { program: "leftovers", driver: "updates", update: "updates", service: "startup", startup: "startup", port: "network", appcrash: "monitoring", crash: "monitoring", alert: "monitoring", delpheye: "journal" };
+export const PAGE_OF: Partial<Record<TimelineEvent["kind"], Page>> = { program: "leftovers", driver: "updates", update: "updates", service: "startup", startup: "startup", port: "network", appcrash: "monitoring", crash: "monitoring", alert: "monitoring", hang: "processes", svccrash: "startup", io: "monitoring", net: "network", security: "security", delpheye: "journal" };
 
 export async function loadEvents(): Promise<TimelineEvent[]> {
   const far = Math.floor(Date.now() / 1000) + 86_400;
@@ -127,6 +131,8 @@ export function titleOf(e: TimelineEvent, t: TFunction): string {
   if (e.kind === "crash") return t(`timeline.crash.${e.name}`, { defaultValue: t("timeline.crash.shutdown") });
   if (e.kind === "delpheye") return t(`journal.${e.name}`, { defaultValue: e.name });
   if (e.kind === "alert") return t(`timeline.alert.${e.name}`);
+  if (e.kind === "power" || e.kind === "io") return t(`timeline.${e.kind}.${e.name}`);
+  if (e.kind === "security") return e.now ? t("timeline.security.threatName", { name: e.now }) : t(`timeline.security.${e.name}`);
   if (e.kind === "recorder") return t(`timeline.recorder.${e.action}`);
   return e.name;
 }
@@ -138,6 +144,9 @@ export function valueOf(e: TimelineEvent, t: TFunction): string {
     return cause && cause !== "unknown" ? `${t(`monitor.verdict.cause.${cause}.title`, { defaultValue: cause })} (${t(`monitor.verdict.confidence.${confidence}`, { defaultValue: confidence })})` : t("timeline.crash.unknown");
   }
   if (e.kind === "alert") return e.now ? (e.name === "ram-full" ? `${e.now}%` : e.name === "disk-full" ? `${(Number(e.now) / 1024).toFixed(1)} GB` : `${e.now} °C`) : "";
+  if (e.kind === "power" || e.kind === "security") return "";
+  if (e.kind === "svccrash") return t("timeline.svcTimes", { count: Number(e.now ?? 1) });
+  if (e.kind === "hang") return e.now ?? "";
   if (e.kind === "appcrash") return e.now ? t("timeline.module", { name: e.now }) : "";
   if (e.was && e.now) return `${e.was} → ${e.now}`;
   if (e.kind === "program" && e.now?.includes("\n")) return t("timeline.packages", { count: e.now.split("\n").length });
@@ -156,7 +165,7 @@ export interface Cause {
   reasons: Reason[];
 }
 
-const WEIGHT: Partial<Record<TimelineEvent["kind"], number>> = { alert: 0.4, driver: 0.3, update: 0.28, service: 0.18, program: 0.16, startup: 0.14, port: 0.05 };
+const WEIGHT: Partial<Record<TimelineEvent["kind"], number>> = { alert: 0.4, io: 0.4, driver: 0.3, update: 0.28, service: 0.18, program: 0.16, startup: 0.14, port: 0.05 };
 const COMMON = new Set(["corporation", "update", "driver", "microsoft", "windows", "service", "services", "host", "runtime", "desktop", "loader", "system", "kernel", "kernelbase", "ntdll", "client", "server", "helper", "launcher", "agent", "manager", "software", "technology", "technologies", "graphics", "audio", "network", "application", "shipping", "win64", "program", "programs", "files", "file", "common", "steam", "tools", "tool", "process", "module", "library", "version", "offline", "online", "games", "input", "output", "display", "sound", "bluetooth", "storage", "camera", "component", "firmware", "other", "device", "devices", "controller", "engine", "framework", "platform", "support", "setup", "installer", "security", "control", "monitor", "native"]);
 /** Makers of half of what is on any computer: sharing one says little. */
 export const GIANTS = ["intel", "nvidia", "realtek", "samsung", "asus", "asustek", "google", "adobe", "qualcomm", "mediatek", "lenovo", "advanced"];
@@ -164,7 +173,7 @@ export const words = (s: string) => s.toLowerCase().split(/[^a-zа-яіїєґ0-9
 /** The same word, or a long one beginning with the other: never a piece from the middle. */
 export const akin = (a: string, b: string) => a === b || (a.length >= 6 && b.length >= 6 && (a.startsWith(b) || b.startsWith(a)));
 
-export const isProblem = (e: TimelineEvent) => e.kind === "crash" || e.kind === "appcrash" || e.kind === "alert";
+export const isProblem = (e: TimelineEvent) => ["crash", "appcrash", "hang", "svccrash", "io", "alert"].includes(e.kind);
 
 /** What changed before a problem, weighed. Nothing here is proof; the level says how much it is worth. */
 export function causes(problem: TimelineEvent, all: TimelineEvent[], days = 3): Cause[] {
@@ -176,12 +185,12 @@ export function causes(problem: TimelineEvent, all: TimelineEvent[], days = 3): 
     if (!weight || e.id === problem.id || e.t > problem.t || e.t < problem.t - days * 86_400) continue;
     const hours = (problem.t - e.t) / 3600;
     // Heat explains a shutdown minutes later, not days later; and it does not explain itself.
-    if (e.kind === "alert" && (problem.kind === "alert" || hours > 2)) continue;
+    if ((e.kind === "alert" || e.kind === "io") && (problem.kind === e.kind || hours > (e.kind === "io" ? 24 : 2))) continue;
     const reasons: Reason[] = [];
     let score = weight * Math.exp(-hours / 48);
     // A service's value is a path: its folders are not its name.
     const theirs = words(e.kind === "service" ? e.name : `${e.name} ${e.now ?? ""}`);
-    if (problem.kind === "appcrash" && theirs.some((w) => [...own].some((o) => akin(w, o)))) {
+    if ((problem.kind === "appcrash" || problem.kind === "hang" || problem.kind === "svccrash") && theirs.some((w) => [...own].some((o) => akin(w, o)))) {
       score += 0.4;
       reasons.push(e.kind === "program" ? "sameName" : "module");
     }
@@ -296,4 +305,19 @@ export function difference(all: TimelineEvent[], from: number): Change[] {
     else out.set(key, { ...seen, now: e.now, t: e.t, how: seen.how });
   }
   return [...out.values()].filter((c) => !(c.how === "changed" && c.was !== null && c.was === c.now)).sort((a, b) => b.t - a.t);
+}
+
+/** When the computer was on, from its own power records: covers the time before DelphEye recorded. */
+export function awake(all: TimelineEvent[], now: number): { from: number; to: number }[] {
+  const out: { from: number; to: number }[] = [];
+  let since: number | null = null;
+  for (const e of all) {
+    if (e.kind === "power" && (e.name === "boot" || e.name === "wake")) since ??= e.t;
+    else if (since !== null && ((e.kind === "power" && (e.name === "off" || e.name === "sleep")) || (e.kind === "crash" && e.name === "shutdown"))) {
+      if (e.t - since > 30) out.push({ from: since, to: e.t });
+      since = null;
+    }
+  }
+  if (since !== null) out.push({ from: since, to: now });
+  return out;
 }

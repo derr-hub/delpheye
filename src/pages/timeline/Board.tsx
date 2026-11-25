@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Gauge, Power } from "lucide-react";
-import { LANES, TRACKS, causes, iconOf, laneOf, titleOf, type LaneId, type Level, type Reading, type TimelineEvent, type TrackId } from "../../lib/timeline";
+import { AppWindow, Gamepad2, Power } from "lucide-react";
+import type { Run } from "../../lib/levels";
+import { LANES, TRACKS, awake, causes, isProblem, iconOf, laneOf, titleOf, type LaneId, type Level, type Reading, type TimelineEvent, type TrackId } from "../../lib/timeline";
 
 export interface View {
   from: number;
@@ -96,6 +97,12 @@ export function Board({
   layers,
   links,
   playing,
+  runs,
+  run,
+  onRun,
+  span: chosen,
+  onSpan,
+  choosing,
 }: {
   view: View;
   extent: View;
@@ -116,17 +123,42 @@ export function Board({
   layers: boolean;
   links: boolean;
   playing: boolean;
+  runs: Run[];
+  run: Run | null;
+  onRun: (r: Run) => void;
+  /** A stretch chosen with Shift, or with the interval tool on. */
+  span: View | null;
+  onSpan: (v: View | null) => void;
+  choosing: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const [ref, w] = useWidth<HTMLDivElement>();
   const svg = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<{ x: number; y: number; items: TimelineEvent[] } | null>(null);
-  const drag = useRef<{ x: number; view: View; moved: boolean } | null>(null);
+  const drag = useRef<{ x: number; view: View; moved: boolean; pick: boolean } | null>(null);
   const locale = i18n.language.startsWith("uk") ? "uk-UA" : "en-US";
 
   const span = view.to - view.from;
   const x = (s: number) => ((s - view.from) / span) * w;
   const time = (px: number) => view.from + (px / w) * span;
+
+  /** Programs at work, in as few rows as they need (three at most): games and long work first. */
+  const works = useMemo(() => {
+    const least = span > 20 * 86_400 ? 1800 : span > 3 * 86_400 ? 300 : span > 86_400 ? 90 : 15;
+    const list = runs.filter((r) => (r.front >= least || (r.game && r.end - r.start >= least)) && r.end >= view.from && r.start <= view.to).sort((a, b) => Number(b.game) - Number(a.game) || b.front - a.front);
+    const taken: [number, number][][] = [[], [], []];
+    const out: { r: Run; row: number }[] = [];
+    for (const r of list.slice(0, 160)) {
+      const pad = span / 260;
+      const row = taken.findIndex((x) => x.every(([a, b]) => r.end + pad < a || r.start - pad > b));
+      if (row < 0) continue;
+      taken[row].push([r.start, r.end]);
+      out.push({ r, row });
+    }
+    return { out, rows: Math.max(1, taken.filter((x) => x.length).length) };
+  }, [runs, view.from, view.to, span]);
+  const empty = useMemo(() => new Set(LANES.filter((l) => !events.some((e) => laneOf(e).id === l.id)).map((l) => l.id)), [events]);
+  const past = useMemo(() => awake(events, extent.to), [events, extent.to]);
 
   const rows = useMemo(() => {
     let y = AXIS_H;
@@ -136,7 +168,7 @@ export function Board({
       return at0;
     };
     const session = take(26);
-    const activity = take(ROW);
+    const activity = take(works.rows * 30 + 8);
     const overlay = layers ? take(LAYERS_H) : 0;
     const tr = TRACKS.map((k) => {
       const on = tracks.has(k.id);
@@ -145,11 +177,11 @@ export function Board({
     });
     const ln = LANES.map((l) => {
       const on = lanes.has(l.id);
-      const h = on ? ROW : SMALL;
+      const h = on && !empty.has(l.id) ? ROW : SMALL;
       return { l, on, y: take(h), h };
     });
     return { session, activity, overlay, tr, ln, h: y };
-  }, [tracks, lanes, layers]);
+  }, [tracks, lanes, layers, works.rows, empty]);
 
   // The page must not scroll while the wheel zooms, so the listener is not passive.
   const live = useRef({ view, w, extent, onView });
@@ -227,7 +259,7 @@ export function Board({
   const groups = useMemo(() => {
     const out: Group[] = [];
     for (const row of rows.ln) {
-      if (!row.on) continue;
+      if (!row.on || empty.has(row.l.id)) continue;
       const mine: Group[] = [];
       for (const e of events) {
         if (laneOf(e).id !== row.l.id || e.t < view.from - span * 0.1 || e.t > view.to) continue;
@@ -258,7 +290,7 @@ export function Board({
   /** Lines from a change to the problem after it. All of the picked one's, the strongest of the others'. */
   const lines = useMemo(() => {
     if (!links) return [];
-    const problems = picked && (picked.kind === "crash" || picked.kind === "appcrash" || picked.kind === "alert") ? [picked] : groups.filter((g) => g.lane === "crash").map((g) => g.items.find((e) => e.kind === "crash") ?? g.items[g.items.length - 1]).slice(-8);
+    const problems = picked && (isProblem(picked)) ? [picked] : groups.filter((g) => g.lane === "crash").map((g) => g.items.find((e) => e.kind === "crash") ?? g.items[g.items.length - 1]).slice(-8);
     const seen = new Set<string>();
     const out: { key: string; d: string; level: Level; strong: boolean }[] = [];
     for (const p of problems) {
@@ -314,8 +346,8 @@ export function Board({
           <Power size={14} className="shrink-0 text-accent" />
           {t("timeline.row.session")}
         </div>
-        <div className={head} style={{ top: rows.activity, height: ROW }}>
-          <Gauge size={15} className="shrink-0 text-accent" />
+        <div className={head} style={{ top: rows.activity, height: works.rows * 30 + 8 }}>
+          <AppWindow size={15} className="shrink-0 text-accent" />
           <span className="min-w-0 text-[0.75rem]">
             <span className="block">{t("timeline.row.activity")}</span>
             <span className="block truncate text-[0.625rem] text-muted">{at?.top ?? "—"}</span>
@@ -350,6 +382,7 @@ export function Board({
           <button key={l.id} onClick={() => onLane(l.id)} aria-pressed={on} title={t(`timeline.lane.${l.id}.hint`)} className={`${head} ${on ? "" : "opacity-45"}`} style={{ top: y, height: h }} data-testid={`lane-${l.id}`}>
             <l.icon size={on ? 15 : 12} className="shrink-0" style={{ color: l.color }} />
             <span className="truncate text-[0.75rem]">{t(`timeline.lane.${l.id}.name`)}</span>
+            {empty.has(l.id) && <span className="ml-auto shrink-0 text-[0.625rem] text-muted">{t("timeline.emptyLane")}</span>}
           </button>
         ))}
       </div>
@@ -359,7 +392,7 @@ export function Board({
           ref={svg}
           width={w}
           height={rows.h}
-          className="block cursor-grab touch-none select-none outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-accent"
+          className={`block touch-none select-none outline-none ${choosing ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing"} focus-visible:ring-2 focus-visible:ring-accent`}
           tabIndex={0}
           role="application"
           aria-label={t("timeline.boardLabel")}
@@ -367,12 +400,20 @@ export function Board({
           onPointerDown={(e) => {
             if (e.button !== 0) return;
             svg.current!.setPointerCapture(e.pointerId);
-            drag.current = { x: e.clientX, view, moved: false };
+            drag.current = { x: e.clientX, view, moved: false, pick: e.shiftKey || choosing };
+            if (e.shiftKey || choosing) onSpan(null);
           }}
           onPointerMove={(e) => {
             const d = drag.current;
             if (!d) return;
             if (Math.abs(e.clientX - d.x) > 4) d.moved = true;
+            if (d.moved && d.pick) {
+              const a = view.from + ((d.x - svg.current!.getBoundingClientRect().left) / w) * span;
+              const b = time(px(e));
+              const keep = (s: number) => Math.min(extent.to, Math.max(extent.from, s));
+              onSpan({ from: keep(Math.min(a, b)), to: keep(Math.max(a, b)) });
+              return;
+            }
             if (d.moved) {
               const by = ((d.x - e.clientX) / w) * (d.view.to - d.view.from);
               setHover(null);
@@ -385,6 +426,14 @@ export function Board({
             if (!d || d.moved) return;
             const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-mark]");
             const g = hit ? groups[Number(hit.getAttribute("data-mark"))] : null;
+            const job = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-run]");
+            if (job) {
+              const w0 = works.out[Number(job.getAttribute("data-run"))];
+              if (w0) {
+                onRun(w0.r);
+                return onCursor(Math.min(Math.max(time(px(e)), w0.r.start), w0.r.end));
+              }
+            }
             if (g) {
               const first = g.items[0].t;
               const last = g.items[g.items.length - 1].t;
@@ -401,7 +450,7 @@ export function Board({
           }}
           onPointerCancel={() => (drag.current = null)}
           onDoubleClick={(e) => {
-            if (document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-mark]")) return;
+            if (document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-mark],[data-run]")) return;
             const here = time(px(e));
             onView(fit({ from: here - span / 6, to: here + span / 6 }, extent));
           }}
@@ -440,6 +489,11 @@ export function Board({
 
           {/* The thread of time, bright where the computer was watched. */}
           <line x1={0} x2={w} y1={rows.session + 13} y2={rows.session + 13} stroke="var(--color-line)" strokeWidth={6} strokeLinecap="round" />
+          {past.map((b) => {
+            const a = Math.max(0, x(b.from));
+            const z = Math.min(w, x(b.to));
+            return z < 0 || a > w || z - a < 0.5 ? null : <line key={`p${b.from}`} x1={a} x2={z} y1={rows.session + 13} y2={rows.session + 13} stroke="var(--color-accent)" strokeOpacity={0.28} strokeWidth={6} strokeLinecap="round" />;
+          })}
           {sessions.map((b) => {
             const a = Math.max(0, x(b.from));
             const z = Math.min(w, x(b.to));
@@ -452,7 +506,29 @@ export function Board({
             );
           })}
 
-          {activity.map((b) => {
+          {works.out.map(({ r, row }, i) => {
+            const a = Math.max(-6, x(r.start));
+            const width = Math.max(4, Math.min(w + 6, x(r.end)) - a);
+            const on = run?.exe === r.exe && run.start === r.start;
+            const y = rows.activity + 4 + row * 30;
+            const Icon = r.game ? Gamepad2 : AppWindow;
+            const name = r.title || r.name.replace(/\.exe$/i, "");
+            const room = Math.floor((width - 30) / 6.1);
+            return (
+              <g key={`${r.exe}${r.start}`} data-run={i} className="tl-block cursor-pointer">
+                <title>{`${name} · ${length(r.end - r.start)}`}</title>
+                {on && <rect x={a - 2.5} y={y - 1.5} width={width + 5} height={29} rx={9} fill="none" stroke="var(--color-accent)" strokeWidth={2} />}
+                <rect x={a} y={y + 1} width={width} height={24} rx={Math.min(7, width / 2)} fill={r.game ? "#7a4fd0" : "#2f6fb0"} fillOpacity={0.85} />
+                {width > 26 && <Icon x={a + 8} y={y + 6} width={14} height={14} color="#fff" strokeWidth={2} />}
+                {room >= 4 && (
+                  <text x={a + 27} y={y + 17} className="text-[0.6875rem] font-medium" fill="#fff" pointerEvents="none">
+                    {name.length > room ? `${name.slice(0, room - 1)}…` : name}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          {!works.out.length && activity.map((b) => {
             const a = Math.max(-4, x(b.from));
             const z = Math.min(w + 4, x(b.to));
             if (z < 0 || a > w || z - a < 0.8) return null;
@@ -460,9 +536,9 @@ export function Board({
             return (
               <g key={b.key}>
                 <title>{`${b.label || t("timeline.row.quiet")} · ${length(b.to - b.from)}`}</title>
-                <rect x={a} y={rows.activity + 6} width={width} height={ROW - 12} rx={Math.min(7, width / 2)} fill={b.color} fillOpacity={b.label ? 0.78 : 0.28} />
+                <rect x={a} y={rows.activity + 6} width={width} height={26} rx={Math.min(7, width / 2)} fill={b.color} fillOpacity={b.label ? 0.78 : 0.28} />
                 {width > 70 && b.label && (
-                  <text x={a + 9} y={rows.activity + ROW / 2 + 3.5} className="text-[0.6875rem] font-medium" fill="#fff" pointerEvents="none">
+                  <text x={a + 9} y={rows.activity + 22.5} className="text-[0.6875rem] font-medium" fill="#fff" pointerEvents="none">
                     {`${b.label.replace(/\.exe$/i, "")}${width > 150 ? ` · ${length(b.to - b.from)}` : ""}`.slice(0, Math.floor((width - 14) / 6.2))}
                   </text>
                 )}
@@ -493,8 +569,8 @@ export function Board({
                 <line key={k.id} x1={0} x2={w} y1={y + h / 2} y2={y + h / 2} stroke="var(--color-line)" strokeDasharray="2 5" />
               ),
             )}
-          {!readings.length && (
-            <text x={w / 2} y={rows.activity + ROW / 2 + 4} textAnchor="middle" className="fill-muted text-[0.6875rem]">
+          {!readings.length && !works.out.length && (
+            <text x={w / 2} y={rows.activity + 22} textAnchor="middle" className="fill-muted text-[0.6875rem]">
               {t("timeline.noReadings")}
             </text>
           )}
@@ -543,6 +619,14 @@ export function Board({
               </g>
             );
           })}
+          {chosen && (
+            <g pointerEvents="none" data-testid="timeline-span">
+              <rect x={x(chosen.from)} y={AXIS_H - 10} width={Math.max(1, x(chosen.to) - x(chosen.from))} height={rows.h - AXIS_H + 10} fill="var(--color-accent)" fillOpacity={0.1} />
+              {[chosen.from, chosen.to].map((s) => (
+                <line key={s} x1={x(s)} x2={x(s)} y1={AXIS_H - 10} y2={rows.h} stroke="var(--color-accent)" strokeDasharray="4 4" />
+              ))}
+            </g>
+          )}
           {cx >= 0 && cx <= w && <line x1={cx} x2={cx} y1={AXIS_H - 10} y2={rows.h} stroke="var(--color-accent)" strokeWidth={1.5} pointerEvents="none" />}
         </svg>
         {cx >= 0 && cx <= w && (

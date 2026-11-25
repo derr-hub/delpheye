@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { ArrowUpRight, GitBranch, History } from "lucide-react";
+import { AppWindow, ArrowUpRight, Gamepad2, GitBranch, History } from "lucide-react";
 import { Button } from "../../components/ui";
 import { go } from "../../lib/app";
 import { useFmt } from "../../lib/format";
 import { PAGE_OF, TRACKS, causes, iconOf, isProblem, laneOf, loadReadings, titleOf, valueOf, type Reading, type TimelineEvent } from "../../lib/timeline";
+import type { Run } from "../../lib/levels";
 import { useWidth } from "./Board";
+import { Levels } from "./Levels";
 
 export function Badge({ e, size = 32 }: { e: TimelineEvent; size?: number }) {
   const Icon = iconOf(e);
@@ -172,6 +174,11 @@ export function EventCard({ e, all, onPick, onConnections, onRewind }: { e: Time
             ))}
           </>
         )}
+        {!e.dayOnly && (
+          <div className="mt-5 border-t border-line pt-4">
+            <Levels at={e.t} event={e} all={all} />
+          </div>
+        )}
         <div className="mt-4 flex flex-wrap gap-2">
           {problem && onConnections && (
             <Button icon={<GitBranch size={14} />} onClick={() => onConnections(e)} data-testid="event-connections">
@@ -189,6 +196,70 @@ export function EventCard({ e, all, onPick, onConnections, onRewind }: { e: Time
             </Button>
           )}
         </div>
+      </div>
+    </motion.section>
+  );
+}
+
+/** A program's stretch of work, and the machine under it. */
+export function RunCard({ r, at, all, onPick, onRewind }: { r: Run; at: number; all: TimelineEvent[]; onPick: (e: TimelineEvent) => void; onRewind: (t: number) => void }) {
+  const { t } = useTranslation();
+  const fmt = useFmt();
+  const Icon = r.game ? Gamepad2 : AppWindow;
+  const color = r.game ? "#7a4fd0" : "#2f6fb0";
+  const inside = all.filter((e) => e.t >= r.start && e.t <= r.end + 120 && e.kind !== "power");
+  const long = (s: number) => (s >= 5400 ? `${(s / 3600).toFixed(1)} ${t("units.h")}` : `${Math.max(1, Math.round(s / 60))} ${t("units.m")}`);
+  return (
+    <motion.section key={r.exe + r.start} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden rounded-card border border-line bg-surface" data-testid="timeline-run">
+      <div className="flex gap-3 border-b border-line p-5" style={{ background: `linear-gradient(120deg, ${color}26, transparent 60%)` }}>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}33`, color }}>
+          <Icon size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.6875rem] font-medium" style={{ color }}>
+            {t(r.game ? "timeline.run.game" : "timeline.run.program")}
+          </p>
+          <h3 className="break-words font-display text-[1.125rem] font-semibold leading-snug">{r.title || r.name}</h3>
+          <p className="num text-[0.75rem] text-muted">
+            {fmt.dateTime(r.start)} — {fmt.dateTime(r.end)}
+          </p>
+        </div>
+      </div>
+      <div className="p-5 pt-4">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[0.8125rem] sm:grid-cols-3">
+          {(
+            [
+              ["worked", long(r.end - r.start)],
+              ["front", long(r.front)],
+              ["cpu", `${r.cpu}%`],
+              ["mem", fmt.bytes(r.mem * 1_048_576)],
+              ["disk", fmt.bytes(r.disk * 1_048_576)],
+              ["company", r.company ?? "—"],
+            ] as const
+          ).map(([k, v]) => (
+            <div key={k} className="min-w-0">
+              <dt className="text-[0.6875rem] text-muted">{t(`timeline.run.${k}`)}</dt>
+              <dd className="num truncate font-medium" title={v}>
+                {v}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="num mt-2 break-all text-[0.6875rem] text-muted">{r.exe}</p>
+        <div className="mt-5 border-t border-line pt-4">
+          <Levels at={at} run={r} all={all} />
+        </div>
+        {inside.length > 0 && (
+          <>
+            <h4 className="mt-4 text-[0.6875rem] font-medium uppercase tracking-wide text-muted">{t("timeline.run.inside")}</h4>
+            {inside.slice(0, 6).map((e) => (
+              <EventRow key={e.id} e={e} onPick={onPick} />
+            ))}
+          </>
+        )}
+        <Button className="mt-4" icon={<History size={14} />} onClick={() => onRewind(at)}>
+          {t("timeline.card.rewind")}
+        </Button>
       </div>
     </motion.section>
   );
@@ -240,6 +311,9 @@ export function MomentCard({ cursor, at, events, now, recordedFrom, onPick, onRe
       <Button className="mt-4" icon={<History size={14} />} onClick={() => onRewind(cursor)}>
         {t("timeline.card.rewind")}
       </Button>
+      <div className="mt-5 border-t border-line pt-4">
+        <Levels at={Math.floor(cursor / 60) * 60} all={events} />
+      </div>
       <h4 className="mb-1 mt-4 text-[0.6875rem] text-muted">{t("timeline.moment.last")}</h4>
       {near.length ? near.map((e) => <EventRow key={e.id} e={e} onPick={onPick} />) : <p className="text-[0.75rem] text-muted">{t("timeline.moment.nothing")}</p>}
     </section>

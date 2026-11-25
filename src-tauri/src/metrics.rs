@@ -149,6 +149,9 @@ pub fn spawn(app: AppHandle) {
 
             let cores = load.per_core.len().max(1) as f32;
             crate::processes::publish(&sys, cores, elapsed);
+            if tick % crate::timeline::PROGRAMS_EVERY == 0 {
+                crate::timeline::programs_look(&app);
+            }
             // Group by executable name, as Task Manager does, so an app that runs as
             // many processes shows up once with its real total.
             let mut by_name: HashMap<String, ProcessInfo> = HashMap::new();
