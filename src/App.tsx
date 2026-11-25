@@ -39,6 +39,7 @@ import i18n from "./i18n";
 import { startPrivacy } from "./lib/privacy";
 import { Journal } from "./pages/Journal";
 import { Overview } from "./pages/Overview";
+import { Timeline } from "./pages/Timeline";
 
 function PageBody({ page }: { page: Page }) {
   switch (page) {
@@ -64,6 +65,8 @@ function PageBody({ page }: { page: Page }) {
       return <Journal />;
     case "monitoring":
       return <Monitoring />;
+    case "timeline":
+      return <Timeline />;
     case "processes":
       return <Processes />;
     case "network":

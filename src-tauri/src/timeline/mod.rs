@@ -218,6 +218,25 @@ impl Timeline {
         }
     }
 
+    /// Readings averaged over `step` seconds (as stored when it is a minute).
+    fn thinned(&self, from: i64, to: i64, step: i64) -> Vec<Reading> {
+        let rows = self.readings(from, to);
+        if step <= 60 {
+            return rows;
+        }
+        let mut out: Vec<Reading> = Vec::new();
+        let mut group: Vec<Reading> = Vec::new();
+        for r in rows {
+            if group.first().is_some_and(|g| g.t.div_euclid(step) != r.t.div_euclid(step)) {
+                out.extend(merge(&group, step));
+                group.clear();
+            }
+            group.push(r);
+        }
+        out.extend(merge(&group, step));
+        out
+    }
+
     fn readings(&self, from: i64, to: i64) -> Vec<Reading> {
         let mut v: Vec<Reading> = self
             .with(|db| {
@@ -239,6 +258,37 @@ impl Timeline {
         })
         .unwrap_or_default()
     }
+}
+
+/// Several readings as one: averages by time, the hottest moment, the program busiest most often.
+fn merge(group: &[Reading], step: i64) -> Option<Reading> {
+    let first = group.first()?;
+    let mean = |get: fn(&Reading) -> Option<f64>| {
+        let (sum, n) = group.iter().filter_map(|r| Some((get(r)? * r.n as f64, r.n))).fold((0.0, 0), |a, b| (a.0 + b.0, a.1 + b.1));
+        (n > 0).then(|| tenth(sum / n as f64))
+    };
+    let max = |get: fn(&Reading) -> Option<f64>| group.iter().filter_map(get).fold(None, |a: Option<f64>, b| Some(a.map_or(b, |a| a.max(b))));
+    let mut tops: HashMap<&str, i64> = HashMap::new();
+    for r in group {
+        if let Some(t) = &r.top {
+            *tops.entry(t).or_default() += r.n;
+        }
+    }
+    Some(Reading {
+        t: first.t.div_euclid(step) * step,
+        n: group.iter().map(|r| r.n).sum(),
+        cpu: mean(|r| r.cpu),
+        ram: mean(|r| r.ram),
+        cpu_temp: mean(|r| r.cpu_temp),
+        cpu_temp_max: max(|r| r.cpu_temp_max),
+        gpu: mean(|r| r.gpu),
+        gpu_temp: max(|r| r.gpu_temp),
+        rx: mean(|r| r.rx.map(|v| v as f64)).map(|v| v as i64),
+        tx: mean(|r| r.tx.map(|v| v as f64)).map(|v| v as i64),
+        free_mb: group.iter().filter_map(|r| r.free_mb).min(),
+        hot: group.iter().map(|r| r.hot).sum(),
+        top: tops.into_iter().max_by_key(|(_, n)| *n).map(|(t, _)| t.to_string()),
+    })
 }
 
 fn prepare(db: Connection) -> rusqlite::Result<Connection> {
@@ -384,17 +434,14 @@ pub fn close(app: &AppHandle) {
 
 // ───────────────────────── commands ─────────────────────────
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Range {
-    readings: Vec<Reading>,
-    events: Vec<Event>,
+#[tauri::command]
+pub async fn timeline_readings(app: AppHandle, from: i64, to: i64, step: i64) -> Vec<Reading> {
+    app.state::<Timeline>().thinned(from, to, step)
 }
 
 #[tauri::command]
-pub async fn timeline_range(app: AppHandle, from: i64, to: i64) -> Range {
-    let line = app.state::<Timeline>();
-    Range { readings: line.readings(from, to), events: line.events(from, to) }
+pub async fn timeline_events(app: AppHandle, from: i64, to: i64) -> Vec<Event> {
+    app.state::<Timeline>().events(from, to)
 }
 
 #[derive(Serialize, Debug)]
@@ -492,6 +539,19 @@ mod tests {
         assert_eq!(r[1].n, 1);
         line.tidy(at + 500 * DAY);
         assert!(line.readings(0, at).is_empty());
+    }
+
+    #[test]
+    fn a_wide_view_is_thinned() {
+        let line = memory();
+        for i in 0..10 {
+            line.pending.lock().unwrap().push(Reading { t: i * 60, n: 1, cpu: Some(i as f64 * 10.0), cpu_temp_max: Some(50.0 + i as f64), hot: (i == 9) as i64, top: Some(if i < 4 { "a" } else { "b" }.into()), ..Default::default() });
+        }
+        assert_eq!(line.thinned(0, 600, 60).len(), 10);
+        let r = line.thinned(0, 600, 300);
+        assert_eq!(r.iter().map(|r| (r.t, r.n, r.cpu, r.cpu_temp_max, r.hot)).collect::<Vec<_>>(), vec![(0, 5, Some(20.0), Some(54.0), 0), (300, 5, Some(70.0), Some(59.0), 1)]);
+        assert_eq!(r[0].top.as_deref(), Some("a"));
+        assert!(line.thinned(5000, 6000, 300).is_empty());
     }
 
     #[test]

@@ -5,6 +5,7 @@ import {
   Brush,
   HardDrive,
   History,
+  Hourglass,
   ListTree,
   Network,
   LayoutDashboard,
@@ -34,6 +35,7 @@ export const PAGES: { id: Page; icon: LucideIcon }[] = [
   { id: "updates", icon: PackageCheck },
   { id: "disk", icon: HardDrive },
   { id: "monitoring", icon: Activity },
+  { id: "timeline", icon: Hourglass },
   { id: "processes", icon: ListTree },
   { id: "network", icon: Network },
   { id: "wifi", icon: Wifi },
@@ -62,7 +64,7 @@ export function Sidebar({ page, onChange }: { page: Page; onChange: (p: Page) =>
                 onClick={() => onChange(id)}
                 data-testid={`nav-${id}`}
                 aria-current={active ? "page" : undefined}
-                className={`reveal relative flex h-10 w-full shrink-0 items-center gap-3 rounded-lg px-3 text-left text-[0.8125rem] transition-colors duration-150 ${
+                className={`reveal relative flex h-9 w-full shrink-0 items-center gap-3 rounded-lg px-3 text-left text-[0.8125rem] transition-colors duration-150 ${
                   active ? "text-fg" : "text-muted hover:bg-surface hover:text-fg"
                 }`}
               >

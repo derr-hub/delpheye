@@ -97,7 +97,10 @@ pub fn drivers(records: &[Record]) -> Vec<Event> {
         .filter_map(|r| {
             let (class, provider, version) = (class(r.get("ClassGuid")), r.get("DriverProvider"), r.get("DriverVersion"));
             // Plugging a device in again configures the same driver; the first time is the news.
-            seen.insert((class, provider.to_string(), version.to_string())).then(|| Event::windows(r.t, "driver", "added", &format!("{provider}|{class}"), Some(version.into()), version))
+            // The package's own name ("netwtw16.inf_amd64_…") keeps one maker's different devices apart.
+            let family = r.get("DriverPackageId").split(".inf").next().unwrap_or_default().to_lowercase();
+            let name = format!("{provider}|{class}|{family}");
+            seen.insert((name.clone(), version.to_string())).then(|| Event::windows(r.t, "driver", "added", &name, Some(version.into()), version))
         })
         .collect()
 }
@@ -236,9 +239,9 @@ mod tests {
     #[test]
     fn a_driver_is_news_once() {
         let gpu = "{4d36e968-e325-11ce-bfc1-08002be10318}";
-        let d = |t, v, inbox, who| rec(t, &[("ClassGuid", gpu), ("DriverVersion", v), ("DriverInbox", inbox), ("DriverProvider", who), ("Status", "0x0")]);
+        let d = |t, v, inbox, who| rec(t, &[("ClassGuid", gpu), ("DriverVersion", v), ("DriverInbox", inbox), ("DriverProvider", who), ("DriverPackageId", "nv.inf_amd64_1"), ("Status", "0x0")]);
         let e = drivers(&[d(5, "9", "true", "Microsoft"), d(10, "1", "false", "NVIDIA"), d(20, "1", "false", "NVIDIA"), d(30, "2", "false", "NVIDIA")]);
-        assert_eq!(e.iter().map(|e| (e.t, e.name.as_str(), e.now.as_deref())).collect::<Vec<_>>(), vec![(10, "NVIDIA|display", Some("1")), (30, "NVIDIA|display", Some("2"))]);
+        assert_eq!(e.iter().map(|e| (e.t, e.name.as_str(), e.now.as_deref())).collect::<Vec<_>>(), vec![(10, "NVIDIA|display|nv", Some("1")), (30, "NVIDIA|display|nv", Some("2"))]);
     }
 
     #[test]
