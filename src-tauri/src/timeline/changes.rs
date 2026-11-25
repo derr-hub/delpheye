@@ -111,7 +111,9 @@ pub fn compare(line: &Timeline, kind: &str, after: &[Item]) {
         }
         tx.commit()
     });
-    line.set_kv(&format!("looked:{kind}"), "1");
+    if !known {
+        line.set_kv(&format!("looked:{kind}"), &super::now().to_string());
+    }
 }
 
 /// Programs come and go through the day, so an open port is news only the first time it is seen.
@@ -124,7 +126,9 @@ pub fn first_time(line: &Timeline, kind: &str, items: &[Item]) {
         }
         let _ = line.with(|db| db.execute("INSERT OR IGNORE INTO present VALUES (?1, ?2, ?3, ?4)", params![kind, id, name, value]));
     }
-    line.set_kv(&format!("looked:{kind}"), "1");
+    if !known {
+        line.set_kv(&format!("looked:{kind}"), &super::now().to_string());
+    }
 }
 
 pub fn look(line: &Timeline, windows: &Path) {

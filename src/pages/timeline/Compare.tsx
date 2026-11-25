@@ -89,7 +89,7 @@ export function Compare({ events, stats, now }: { events: TimelineEvent[]; stats
 
   const groups = useMemo(() => {
     const all = difference(events, then);
-    return LANES.filter((l) => l.id !== "crash" && l.id !== "delpheye").map((l) => ({ lane: l, items: all.filter((c) => (l.kinds as readonly string[]).includes(c.kind)) }));
+    return LANES.filter((l) => l.id !== "crash" && l.id !== "alert" && l.id !== "delpheye").map((l) => ({ lane: l, items: all.filter((c) => (l.kinds as readonly string[]).includes(c.kind)) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, back]);
   const crashes = (from: number, to: number) => events.filter((e) => e.kind === "crash" && e.t >= from && e.t < to).length;
@@ -147,7 +147,15 @@ export function Compare({ events, stats, now }: { events: TimelineEvent[]; stats
               const big = d !== null && Math.abs(d) >= matter;
               return (
                 <div key={id} className="contents">
-                  <span className="text-muted">{t(`timeline.compare.row.${id}`)}</span>
+                  <span className="text-muted">
+                    {t(`timeline.compare.row.${id}`)}
+                    {id !== "free" && typeof a === "number" && typeof b === "number" && (
+                      <span className="relative mt-1 block h-1.5 overflow-hidden rounded-full bg-raised">
+                        <motion.span key={`${id}${back}`} className="absolute inset-y-0 left-0 rounded-full bg-accent" initial={{ width: `${Math.min(100, a)}%` }} animate={{ width: `${Math.min(100, b)}%` }} transition={{ duration: 1.1, delay: 0.35, ease: [0.3, 0.8, 0.3, 1] }} />
+                        <span className="absolute inset-y-0 w-[2px] bg-fg" style={{ left: `${Math.min(99, a)}%` }} />
+                      </span>
+                    )}
+                  </span>
                   <span className="num text-right">{show(id, a, unit)}</span>
                   <span className="num text-right font-medium">{show(id, b, unit)}</span>
                   <span className={`num text-right text-[0.75rem] ${!big ? "text-muted" : Math.sign(d!) === worse ? "text-warn" : "text-safe"}`}>{d === null ? "" : !big ? t("timeline.compare.same") : `${d > 0 ? "+" : "−"}${show(id, Math.abs(d), unit)}`}</span>

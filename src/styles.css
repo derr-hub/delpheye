@@ -218,7 +218,42 @@ html.light .reveal::before {
   }
 }
 
+@keyframes tl-flow {
+  to {
+    stroke-dashoffset: -38;
+  }
+}
+@keyframes tl-pulse {
+  from {
+    opacity: 1;
+    stroke-width: 6;
+  }
+  to {
+    opacity: 0;
+    stroke-width: 1;
+  }
+}
+@keyframes tl-ring {
+  from {
+    opacity: 0.8;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 2.1;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
+  /* The time machine: a link runs from cause to effect, a block pulses as time passes it, and a
+     problem sends a wave. */
+  .tl-flow { animation: tl-flow 1.4s linear infinite; }
+  .tl-pulse { animation: tl-pulse 0.7s ease-out infinite; }
+  .tl-wave { animation: tl-pulse 1.3s ease-out 3; }
+  .tl-ring { animation: tl-ring 1.8s ease-out infinite; }
+  .tl-block { transition: filter 0.15s; }
+  .tl-block:hover { filter: brightness(1.15); }
+
   /* A page's blocks rise in one after another when it opens. "backwards", never "both": a finished
      animation that keeps its last frame traps every "position: fixed" inside its block. */
   .page-enter > * > * {

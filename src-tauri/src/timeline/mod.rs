@@ -5,8 +5,10 @@
 //! gathered in memory and written every few minutes, and the slow looks (programs, startup, event
 //! log) run rarely, at background priority, and never over a full-screen game.
 
+mod alarms;
 mod changes;
 mod past;
+mod snapshots;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -36,7 +38,7 @@ const SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS events (
         id INTEGER PRIMARY KEY,
         t INTEGER NOT NULL,
-        kind TEXT NOT NULL,          -- program, driver, update, service, startup, port, appcrash, crash, recorder
+        kind TEXT NOT NULL,          -- program, driver, update, service, startup, port, appcrash, crash, alert, recorder
         action TEXT NOT NULL,        -- added, removed, changed, happened, dated (installed or updated that day)
         name TEXT NOT NULL,
         was TEXT, now TEXT,          -- the value before and after, when there is one
@@ -49,6 +51,10 @@ const SCHEMA: &str = "
         kind TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, value TEXT,
         PRIMARY KEY (kind, id)
     ) WITHOUT ROWID;
+    CREATE TABLE IF NOT EXISTS snapshots (
+        id INTEGER PRIMARY KEY, t INTEGER NOT NULL, name TEXT NOT NULL, auto INTEGER NOT NULL,
+        data TEXT NOT NULL           -- JSON: [[kind, id, name, value], …]
+    );
     CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL) WITHOUT ROWID;
 ";
 
@@ -364,7 +370,7 @@ pub fn minute(app: &AppHandle, cpu_temp: Option<f64>, gpu_temp: Option<f64>, gpu
     let n = m.n as f64;
     // A program counts as "busiest" only if it used a noticeable share.
     let top = m.busiest.into_iter().max_by(|a, b| a.1.total_cmp(&b.1)).filter(|(_, sum)| *sum as f64 / n >= 1.0).map(|(name, _)| name);
-    line.pending.lock().unwrap().push(Reading {
+    let reading = Reading {
         t: now() / 60 * 60,
         n: 1,
         cpu: Some(tenth(m.cpu / n)),
@@ -378,7 +384,12 @@ pub fn minute(app: &AppHandle, cpu_temp: Option<f64>, gpu_temp: Option<f64>, gpu
         free_mb: free.map(|b| (b / 1_048_576) as i64),
         hot: hot as i64,
         top,
-    });
+    };
+    let raised = alarms::check(&reading, now());
+    if !raised.is_empty() {
+        line.add(&raised);
+    }
+    line.pending.lock().unwrap().push(reading);
 }
 
 // ───────────────────────── the recorder ─────────────────────────
@@ -395,6 +406,7 @@ fn look(line: &Timeline) {
     let Some(dirs) = crate::system::Dirs::real() else { return };
     changes::look(line, &dirs.windows);
     past::look(line, &dirs.windows);
+    snapshots::keep(line, now());
 }
 
 pub fn start(app: AppHandle) {
@@ -455,6 +467,9 @@ pub struct Stats {
     first_reading: Option<i64>,
     first_event: Option<i64>,
     by_kind: Vec<(String, String, i64)>,
+    /// Since when each kind (program, startup, port) is watched directly.
+    looked: Vec<(String, i64)>,
+    snapshots: i64,
 }
 
 fn stats(line: &Timeline) -> Option<Stats> {
@@ -469,6 +484,8 @@ fn stats(line: &Timeline) -> Option<Stats> {
             first_reading: one("SELECT MIN(t) FROM minutes")?,
             first_event: one("SELECT MIN(t) FROM events")?,
             by_kind: q.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?.collect::<rusqlite::Result<_>>()?,
+            looked: db.prepare("SELECT substr(key, 8), CAST(value AS INTEGER) FROM kv WHERE key LIKE 'looked:%'")?.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?.collect::<rusqlite::Result<_>>()?,
+            snapshots: one("SELECT COUNT(*) FROM snapshots")?.unwrap_or(0),
         })
     })
     .ok()
@@ -477,6 +494,40 @@ fn stats(line: &Timeline) -> Option<Stats> {
 #[tauri::command]
 pub async fn timeline_stats(app: AppHandle) -> Option<Stats> {
     stats(&app.state::<Timeline>())
+}
+
+/// What is on the computer now, as of the last look.
+#[tauri::command]
+pub async fn timeline_present(app: AppHandle) -> Vec<snapshots::Row> {
+    snapshots::present(&app.state::<Timeline>())
+}
+
+#[tauri::command]
+pub async fn timeline_snapshots(app: AppHandle) -> Vec<snapshots::Snapshot> {
+    snapshots::list(&app.state::<Timeline>())
+}
+
+#[tauri::command]
+pub async fn timeline_snapshot_make(app: AppHandle, name: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let line = app.state::<Timeline>();
+        if let Some(dirs) = crate::system::Dirs::real() {
+            changes::look(&line, &dirs.windows);
+        }
+        snapshots::make(&line, now(), name.trim(), false).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn timeline_snapshot_get(app: AppHandle, id: i64) -> Option<Vec<snapshots::Row>> {
+    snapshots::get(&app.state::<Timeline>(), id)
+}
+
+#[tauri::command]
+pub async fn timeline_snapshot_delete(app: AppHandle, id: i64) -> Result<(), String> {
+    snapshots::delete(&app.state::<Timeline>(), id).map(|_| ()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -497,7 +548,7 @@ pub async fn timeline_erase(app: AppHandle) -> Result<(), String> {
     // Windows' own records are older than this moment: they are not read back in afterwards.
     let at = now().to_string();
     line.with(|db| {
-        db.execute_batch("DELETE FROM minutes; DELETE FROM events; DELETE FROM present; DELETE FROM kv WHERE key <> 'paused';")?;
+        db.execute_batch("DELETE FROM minutes; DELETE FROM events; DELETE FROM present; DELETE FROM snapshots; DELETE FROM kv WHERE key <> 'paused';")?;
         db.execute("INSERT INTO kv VALUES ('past', ?1), ('from', ?1)", [&at])?;
         db.execute_batch("PRAGMA wal_checkpoint(TRUNCATE); VACUUM; PRAGMA wal_checkpoint(TRUNCATE);")
     })
