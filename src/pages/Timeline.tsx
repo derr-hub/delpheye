@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { Camera, CircleHelp, Clock, Crosshair, Database, GitBranch, GitCompareArrows, Layers, Loader2, MousePointerClick, Move, Pause, Play, Radio, Rewind as RewindIcon, Spline, TextSelect, ZoomIn } from "lucide-react";
+import { Camera, CircleHelp, Clock, Crosshair, Database, GitBranch, GitCompareArrows, Loader2, MousePointerClick, Move, Pause, Play, Radio, Rewind as RewindIcon, Spline, TextSelect, ZoomIn } from "lucide-react";
 import { useFmt } from "../lib/format";
 import { LANES, TRACKS, laneOf, loadEvents, loadReadings, type LaneId, type Reading, type Row, type Stats, type TimelineEvent, type TrackId } from "../lib/timeline";
 import { Board, Overview, type View } from "./timeline/Board";
@@ -71,7 +71,6 @@ export function Timeline() {
   const [choosing, setChoosing] = useState(false);
   const [tracks, setTracks] = useState(() => remembered("timeline.tracksOff", TRACK_IDS));
   const [lanes, setLanes] = useState(() => remembered("timeline.lanesOff", LANE_IDS));
-  const [layers, setLayers] = useState(false);
   const [links, setLinks] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [help, setHelp] = useState(() => {
@@ -347,10 +346,6 @@ export function Timeline() {
                 <TextSelect size={13} />
                 {t("timeline.interval")}
               </button>
-              <button onClick={() => setLayers(!layers)} aria-pressed={layers} className={tool(layers)} title={t("timeline.layersHint")} data-testid="timeline-layers">
-                <Layers size={13} />
-                {t("timeline.layers")}
-              </button>
               <button onClick={() => setLinks(!links)} aria-pressed={links} className={tool(links)} title={t("timeline.linksHint")} data-testid="timeline-links">
                 <Spline size={13} />
                 {t("timeline.links")}
@@ -406,7 +401,6 @@ export function Timeline() {
                 remember("timeline.lanesOff", LANE_IDS, next);
               }}
               at={at}
-              layers={layers}
               links={links}
               playing={playing}
             />

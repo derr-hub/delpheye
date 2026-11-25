@@ -48,6 +48,17 @@ export interface Code {
   lines: { at: string; bytes: string; text: string; here: boolean }[];
   access: "read" | "write" | "jump" | "none" | null;
   hex: string[];
+  symbol: string | null;
+  exports: string[];
+  exportCount: number;
+  abilities: string[];
+  aslr: boolean;
+  dep: boolean;
+  cfg: boolean;
+  writableCode: string[];
+  packed: string[];
+  missing: string[];
+  modified: number;
 }
 
 /** What Windows wrote down about a crash, beyond its name. */
@@ -62,7 +73,68 @@ export interface CrashDetail {
 
 export const loadRuns = (from: number, to: number) => invoke<Run[]>("timeline_runs", { from: Math.floor(from), to: Math.ceil(to) });
 export const loadDeep = (from: number, to: number) => invoke<Deep[]>("timeline_deep", { from: Math.floor(from), to: Math.ceil(to) });
-export const loadCode = (path: string, offset?: string, stamp?: string) => invoke<Code | null>("timeline_code", { path, offset: offset || null, stamp: stamp || null });
+export const loadCode = (path: string, offset?: string, stamp?: string, symbol?: string) => invoke<Code | null>("timeline_code", { path, offset: offset || null, stamp: stamp || null, symbol: symbol || null });
+
+/** A file that takes part: the event's own, or the piece of Windows that does this kind of thing. */
+export interface Part {
+  path: string;
+  role: "module" | "program" | "service" | "driver" | "startup" | "listener" | "api" | "gate" | "kernel" | "system";
+  level: LevelId;
+  symbol?: string;
+  /** The exact place, for a crash. */
+  offset?: string;
+  stamp?: string;
+}
+
+const S32 = "%SystemRoot%\\System32\\";
+const DRV = `${S32}drivers\\`;
+type Chain = [file: string, role: Part["role"], level: LevelId, symbol?: string][];
+/** Which functions of Windows do this kind of thing, from the one programs call down to the kernel's. */
+const CHAINS: Record<string, Chain> = {
+  start: [[`${S32}kernelbase.dll`, "api", "library", "CreateProcessW"], [`${S32}ntdll.dll`, "gate", "library", "NtCreateUserProcess"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "PsCreateSystemThread"]],
+  files: [[`${S32}kernelbase.dll`, "api", "library", "CreateFileW"], [`${S32}ntdll.dll`, "gate", "library", "NtCreateFile"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "NtCreateFile"], [`${DRV}ntfs.sys`, "system", "driver"]],
+  driver: [[`${S32}ntdll.dll`, "gate", "library", "NtLoadDriver"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "IoCreateDevice"], [`${DRV}pci.sys`, "system", "driver"]],
+  service: [[`${S32}sechost.dll`, "api", "library", "StartServiceW"], [`${S32}services.exe`, "system", "process"], [`${S32}ntdll.dll`, "gate", "library", "NtCreateUserProcess"]],
+  net: [[`${S32}ws2_32.dll`, "api", "library", "connect"], [`${S32}ntdll.dll`, "gate", "library", "NtDeviceIoControlFile"], [`${DRV}afd.sys`, "system", "driver"], [`${DRV}tcpip.sys`, "system", "driver"], [`${DRV}ndis.sys`, "system", "driver", "NdisSendNetBufferLists"]],
+  power: [[`${S32}powrprof.dll`, "api", "library", "SetSuspendState"], [`${S32}ntdll.dll`, "gate", "library", "NtInitiatePowerAction"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "PoRequestPowerIrp"], [`${DRV}acpi.sys`, "system", "driver"]],
+  crash: [[`${S32}ntoskrnl.exe`, "kernel", "kernel", "KeBugCheckEx"], [`${DRV}crashdmp.sys`, "system", "driver"], [`${DRV}acpi.sys`, "system", "driver"]],
+  fault: [[`${S32}kernelbase.dll`, "api", "library", "UnhandledExceptionFilter"], [`${S32}ntdll.dll`, "gate", "library", "KiUserExceptionDispatcher"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "ExRaiseStatus"]],
+  hang: [[`${S32}user32.dll`, "api", "library", "IsHungAppWindow"], [`${S32}win32u.dll`, "gate", "library", "NtUserGetMessage"], [`${S32}ntdll.dll`, "gate", "library", "NtWaitForSingleObject"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "KeWaitForSingleObject"]],
+  heat: [[`${DRV}intelppm.sys`, "system", "driver"], [`${DRV}amdppm.sys`, "system", "driver"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "PoRegisterPowerSettingCallback"], [`${DRV}acpi.sys`, "system", "driver"]],
+  memory: [[`${S32}kernelbase.dll`, "api", "library", "VirtualAlloc"], [`${S32}ntdll.dll`, "gate", "library", "NtAllocateVirtualMemory"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "ExAllocatePool2"]],
+  disk: [[`${DRV}ntfs.sys`, "system", "driver"], [`${DRV}disk.sys`, "system", "driver"], [`${DRV}stornvme.sys`, "system", "driver"], [`${DRV}storport.sys`, "system", "driver", "StorPortNotification"]],
+  guard: [[`${S32}amsi.dll`, "api", "library", "AmsiScanBuffer"], [`${DRV}wd\\WdFilter.sys`, "system", "driver"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "PsSetCreateProcessNotifyRoutine"]],
+  update: [[`${S32}wuaueng.dll`, "system", "program"], [`${S32}cabinet.dll`, "api", "library", "FDICopy"], [`${S32}wintrust.dll`, "api", "library", "WinVerifyTrust"]],
+  work: [[`${S32}kernelbase.dll`, "api", "library", "ReadFile"], [`${S32}ntdll.dll`, "gate", "library", "NtReadFile"], [`${S32}ntoskrnl.exe`, "kernel", "kernel", "NtReadFile"], [`${DRV}ntfs.sys`, "system", "driver"]],
+  graphics: [[`${S32}dxgi.dll`, "api", "library", "CreateDXGIFactory"], [`${S32}d3d12.dll`, "api", "library", "D3D12CreateDevice"], [`${S32}win32u.dll`, "gate", "library", "NtGdiDdDDIPresent"], [`${DRV}dxgkrnl.sys`, "system", "driver"]],
+};
+const CHAIN_OF: Partial<Record<TimelineEvent["kind"], string>> = { program: "files", startup: "start", service: "service", svccrash: "service", driver: "driver", net: "net", port: "net", power: "power", crash: "crash", appcrash: "fault", hang: "hang", io: "disk", security: "guard", update: "update", delpheye: "files", recorder: "files" };
+
+export function chainOf(event: TimelineEvent | null, run: Run | null): string {
+  if (event?.kind === "alert") return event.name.includes("ram") || event.name.includes("commit") ? "memory" : event.name.includes("disk") ? "disk" : "heat";
+  if (event?.kind === "crash" && event.name === "gpu") return "graphics";
+  if (event) return CHAIN_OF[event.kind] ?? "work";
+  return run?.game ? "graphics" : "work";
+}
+
+/** Every file that stands behind an event or a moment, from the program down to the drivers. */
+export async function partsOf(event: TimelineEvent | null, run: Run | null, fronts: Run[]): Promise<Part[]> {
+  const out: Part[] = [];
+  const d = crashDetail(event);
+  const add = (p: Part) => p.path && !out.some((x) => x.path.toLowerCase() === p.path.toLowerCase() && x.symbol === p.symbol) && out.push(p);
+  if (event?.kind === "appcrash") {
+    if (event.was?.includes(":")) add({ path: event.was, role: "module", level: "library", offset: d?.offset, stamp: d?.stamp });
+    if (d?.app) add({ path: d.app, role: "program", level: "program" });
+  } else if (event?.kind === "hang" && event.was?.includes(":")) add({ path: event.was, role: "program", level: "program" });
+  else if (event) {
+    const found = await invoke<{ path: string; role: Part["role"] }[]>("timeline_parts", { kind: event.kind, name: event.name, now: event.now }).catch(() => []);
+    for (const f of found) add({ ...f, level: f.role === "driver" ? "driver" : "program" });
+  }
+  if (run) add({ path: run.exe, role: "program", level: "program" });
+  else if (!event && fronts[0]) add({ path: fronts[0].exe, role: "program", level: "program" });
+  for (const [path, role, level, symbol] of CHAINS[chainOf(event, run)]) add({ path, role, level, symbol });
+  return out;
+}
 export const loadMaker = (path: string) => invoke<Maker | null>("timeline_module", { path }).catch(() => null);
 
 export function crashDetail(e: TimelineEvent | null): CrashDetail | null {
@@ -101,6 +173,7 @@ export interface Picture {
   detail: CrashDetail | null;
   fronts: Run[];
   path: string | null;
+  parts: Part[];
 }
 
 /** Exception codes whose meaning is certain, whatever their cause. */
@@ -138,9 +211,11 @@ export async function picture(at: number, o: { event?: TimelineEvent | null; run
   const reading = nearest(readings, 420);
   const detail = crashDetail(event);
   const modulePath = event?.kind === "appcrash" ? event.was : null;
-  const path = modulePath || run?.exe || (event?.kind === "hang" ? event.was : null);
-  const [code, maker] = path ? await Promise.all([loadCode(path, modulePath ? detail?.offset : undefined, modulePath ? detail?.stamp : undefined).catch(() => null), loadMaker(path)]) : [null, null];
   const fronts = runs.filter((r) => r.front > 0 && r.start <= at + 60 && r.end >= at - 60).sort((a, b) => b.front - a.front);
+  const parts = await partsOf(event, run, fronts);
+  const path = parts[0]?.path ?? null;
+  const own = parts[0] && !["api", "gate", "kernel", "system"].includes(parts[0].role);
+  const [code, maker] = path ? await Promise.all([loadCode(path, parts[0].offset, parts[0].stamp, parts[0].symbol).catch(() => null), loadMaker(path)]) : [null, null];
   const near = (kinds: string[], back: number) => all.filter((e) => kinds.includes(e.kind) && e.t <= at + 60 && e.t >= at - back && e.id !== event?.id);
 
   /** Far from what this computer usually does, not from some ideal. */
@@ -187,12 +262,24 @@ export async function picture(at: number, o: { event?: TimelineEvent | null; run
   // Libraries and what the program is made of.
   const lib: Fact[] = [];
   if (event?.kind === "appcrash" && event.now) lib.push({ key: "module", v: { name: event.now, version: detail?.moduleVersion || "?" }, state: "bad" });
-  if (maker?.exists) lib.push({ key: maker.windows ? "makerWindows" : maker.company ? "maker" : "makerNone", v: { name: maker.company ?? "" }, state: maker.signed === false ? "warn" : "ok" });
+  if (!own && path) lib.push({ key: "stands", v: { name: path.split("\\").pop() ?? "" }, state: "ok" });
+  if (maker?.exists) lib.push({ key: maker.windows ? "makerWindows" : maker.company ? "maker" : "makerNone", v: { name: maker.company ?? "" }, state: maker.signed === false && own ? "warn" : "ok" });
   if (code) {
     if (code.made.length) lib.push({ key: "made", v: { list: code.made.join(", ") }, state: "ok" });
     lib.push({ key: "built", v: { arch: code.arch, linker: code.linker, mb: mbs(code.size) }, state: "ok" });
+    for (const f of health(code, maker, at, event, all, path)) lib.push({ key: `h_${f.key}`, v: f.v, state: f.state });
     for (const i of code.imports.slice(0, 6)) lib.push({ key: "imports", v: { dll: i.dll, n: i.count, names: i.names.slice(0, 3).join(", ") }, state: "ok" });
   } else if (path) lib.push({ key: "noFile", state: "unknown" });
+  // The file itself is gone: the next part of the chain that is still here.
+  if (!code && path)
+    for (const x of parts.slice(1)) {
+      const [c, m] = await Promise.all([loadCode(x.path, x.offset, x.stamp, x.symbol).catch(() => null), loadMaker(x.path)]);
+      if (!c) continue;
+      lib.push({ key: ["api", "gate", "kernel", "system"].includes(x.role) ? "stands" : "beside", v: { name: x.path.split("\\").pop() ?? "" }, state: "ok" });
+      for (const f of health(c, m, at, event, all, x.path)) lib.push({ key: `h_${f.key}`, v: f.v, state: f.state });
+      for (const i of c.imports.slice(0, 4)) lib.push({ key: "imports", v: { dll: i.dll, n: i.count, names: i.names.slice(0, 3).join(", ") }, state: "ok" });
+      break;
+    }
   add("library", lib, event?.kind === "appcrash" && event.now ? { key: maker?.exists ? (maker.windows ? "sModuleWindows" : maker.company ? "sModule" : "sModuleNone") : "sModuleGone", v: { name: event.now, company: maker?.company ?? "?" } } : code ? { key: "sMade", v: { list: code.made.length ? code.made.join(", ") : code.arch } } : { key: "sUnknown" });
 
   // The Windows kernel.
@@ -242,10 +329,32 @@ export async function picture(at: number, o: { event?: TimelineEvent | null; run
     if (code?.same === false) mac.push({ key: "changed", state: "unknown" });
     if (code?.function) mac.push({ key: "function", v: { a: code.function[0], b: code.function[1] }, state: "ok" });
     if (ex === "access" && code?.access && code.access !== "none") mac.push({ key: `access_${code.access}`, state: "bad" });
-  } else if (code?.lines.length) mac.push({ key: "entry", state: "ok" });
-  add("machine", mac, detail && modulePath ? { key: code?.same === false ? "sChanged" : code?.lines.length && ex && ["failfast", "dotnet", "cpp", "breakpoint"].includes(ex) ? "sSelf" : code?.lines.length ? (code.access && code.access !== "none" && ex === "access" ? `sAccess_${code.access}` : "sInstruction") : "sNoCode" } : code?.lines.length ? { key: "sEntry" } : { key: "sNoMachine" });
+  } else if (code?.lines.length) mac.push({ key: code.symbol ? "symbol" : "entry", v: { name: code.symbol ?? "" }, state: "ok" });
+  add("machine", mac, detail && modulePath ? { key: code?.same === false ? "sChanged" : code?.lines.length && ex && ["failfast", "dotnet", "cpp", "breakpoint"].includes(ex) ? "sSelf" : code?.lines.length ? (code.access && code.access !== "none" && ex === "access" ? `sAccess_${code.access}` : "sInstruction") : "sNoCode" } : code?.lines.length ? { key: own ? "sEntry" : "sSystem" } : { key: "sNoMachine" });
 
-  return { levels: lv, deep, reading, code, maker, detail, fronts, path };
+  return { levels: lv, deep, reading, code, maker, detail, fronts, path, parts };
+}
+
+/** What is and is not wrong with a file, as far as the file itself and the log can tell. */
+export function health(c: Code, maker: Maker | null, at: number, event: TimelineEvent | null, all: TimelineEvent[], path: string | null): Fact[] {
+  const out: Fact[] = [];
+  const file = (path ?? "").split("\\").pop()?.toLowerCase() ?? "";
+  const crashes = all.filter((e) => (e.kind === "appcrash" && (e.now?.toLowerCase() === file || e.name.toLowerCase() === file)) || (e.kind === "hang" && e.name.toLowerCase() === file));
+  const others = crashes.filter((e) => e.id !== event?.id);
+  // A library everything uses is where other programs' mistakes surface.
+  out.push(others.length ? { key: maker?.windows ? "crashesWindows" : "crashes", v: { n: others.length }, state: maker?.windows ? "ok" : others.length >= 3 ? "bad" : "warn" } : { key: "noCrashes", state: "ok" });
+  if (c.missing.length) out.push({ key: "missing", v: { list: c.missing.slice(0, 3).join(" · ") }, state: "unknown" });
+  else out.push({ key: "allThere", state: "ok" });
+  if (maker?.signed === false && !maker.windows) out.push({ key: "unsigned", state: "warn" });
+  else if (maker?.signed) out.push({ key: "signed", state: "ok" });
+  if (c.writableCode.length) out.push({ key: "rwx", v: { list: c.writableCode.join(" · ") }, state: "warn" });
+  if (c.packed.length) out.push({ key: "packed", v: { list: c.packed.join(" · ") }, state: "warn" });
+  // Drivers are protected by the kernel itself: these marks mean nothing in them.
+  const driver = file.endsWith(".sys");
+  const off = driver ? [] : [!c.aslr && "ASLR", !c.dep && "DEP", !c.cfg && "CFG"].filter(Boolean) as string[];
+  if (!driver) out.push(off.length ? { key: "guardsOff", v: { list: off.join(" · ") }, state: off.includes("ASLR") || off.includes("DEP") ? "warn" : "ok" } : { key: "guardsOn", state: "ok" });
+  if (c.modified && c.modified > at + 60) out.push({ key: "newer", v: { date: new Date(c.modified * 1000).toLocaleDateString() }, state: "unknown" });
+  return out;
 }
 
 // ───────────────────────── where to look ─────────────────────────

@@ -105,7 +105,7 @@ export function SearchResult({ problem, f, onPick }: { problem: TimelineEvent; f
             {t("timeline.search.file", { name: f.module ?? "", company: f.maker.company ?? t("timeline.unknownMaker") })} {f.maker.signed === false && t("timeline.search.unsigned")}
           </p>
         )}
-        <h4 className="mt-4 text-[0.75rem] font-medium">{t("timeline.search.next")}</h4>
+        {advice(problem, f).length > 0 && <h4 className="mt-4 text-[0.75rem] font-medium">{t("timeline.search.next")}</h4>}
         <ul className="mt-1 list-inside list-disc space-y-0.5 text-[0.8125rem]">
           {advice(problem, f).map((a) => (
             <li key={a}>{t(`timeline.search.advice.${a}`)}</li>

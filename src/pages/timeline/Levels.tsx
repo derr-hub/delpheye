@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { Binary, Blocks, Cable, Compass, Cpu, HardDrive, ListTree, MousePointer2, ShieldCheck, AppWindow, type LucideIcon } from "lucide-react";
+import { CodeLadder } from "./Code";
 import { LEVELS, direction, picture, type Fact, type LevelId, type LevelView, type Picture, type Run, type State } from "../../lib/levels";
 import type { TimelineEvent } from "../../lib/timeline";
 
@@ -18,46 +19,6 @@ function useFact() {
     if (typeof v.cls === "string") v.cls = t(`timeline.class.${v.cls}`, { defaultValue: "" });
     return t(`timeline.lv.fact.${f.key}`, v);
   };
-}
-
-/** The very instructions, with the one it stopped at marked. */
-export function CodeView({ p }: { p: Picture }) {
-  const { t } = useTranslation();
-  const c = p.code;
-  if (!c) return <p className="text-[0.75rem] text-muted">{t("timeline.lv.noCode")}</p>;
-  if (c.same === false) return <p className="text-[0.75rem] text-muted">{t("timeline.lv.otherBuild")}</p>;
-  return (
-    <div className="grid gap-3" data-testid="code-view">
-      {c.lines.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-line bg-[#0b0f14] p-3 font-mono text-[0.6875rem] leading-[1.7] text-[#c9d6e2]">
-          {c.lines.map((l) => (
-            <div key={l.at} className={`flex w-max min-w-full gap-4 rounded px-2 ${l.here && p.detail ? "bg-[#e5484d33] text-white" : ""}`} data-here={l.here || undefined}>
-              <span className="w-16 shrink-0 text-right text-[#6b7a8d]">{l.at}</span>
-              <span className="w-44 shrink-0 text-[#5fb3d9]">{l.bytes}</span>
-              <span>{l.text}</span>
-              {l.here && p.detail && <span className="text-[#ff9aa0]">← {t("timeline.lv.here")}</span>}
-            </div>
-          ))}
-        </div>
-      )}
-      {c.hex.length > 0 && (
-        <div>
-          <div className="mb-1 text-[0.6875rem] text-muted">{t("timeline.lv.bytes")}</div>
-          <div className="grid gap-x-6 overflow-x-auto rounded-lg border border-line bg-[#0b0f14] p-3 font-mono text-[0.6875rem] leading-[1.7] text-[#5fb3d9] md:grid-cols-2">
-            <div>{c.hex.map((h, i) => <div key={i} className="whitespace-nowrap">{h}</div>)}</div>
-            <div className="text-[#7fa08a]">{c.hex.slice(0, 2).map((h, i) => <div key={i} className="break-all">{h.split(" ").map((b) => parseInt(b, 16).toString(2).padStart(8, "0")).join(" ")}</div>)}</div>
-          </div>
-        </div>
-      )}
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-[0.6875rem] text-muted">
-        <span>{c.arch}</span>
-        <span>linker {c.linker}</span>
-        {c.sections.slice(0, 6).map(([n, s]) => (
-          <span key={n} className="num">{`${n} ${Math.round(s / 1024)} KB`}</span>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 /** One moment through every level of the machine, from the person to the bits. */
@@ -111,7 +72,7 @@ export function Levels({ at, event = null, run = null, all, start = "simple", on
       )}
       {mode === "code" ? (
         p ? (
-          <CodeView p={p} />
+          <CodeLadder p={p} at={at} event={event} all={all} />
         ) : (
           <p className="text-[0.75rem] text-muted">…</p>
         )

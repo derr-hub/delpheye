@@ -265,6 +265,11 @@ fn impact(footprint: &Footprint, boot_delay_ms: Option<u64>) -> Impact {
     }
 }
 
+/// The program behind a startup entry, by the name it is listed under.
+pub fn program_of(windows: &Path, name: &str) -> Option<std::path::PathBuf> {
+    sources::collect(windows).into_iter().find(|r| r.name == name).and_then(|r| r.program)
+}
+
 /// What starts with Windows, for the background watcher: (id, name). Windows' own scheduled
 /// tasks and services inside the Windows folder are left out — updates add and remove those.
 pub fn watch_list(windows: &Path) -> Vec<(String, String)> {

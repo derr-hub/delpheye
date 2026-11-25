@@ -9,6 +9,7 @@ mod alarms;
 mod changes;
 mod code;
 mod deep;
+mod parts;
 mod past;
 mod programs;
 mod snapshots;
@@ -569,16 +570,28 @@ pub async fn timeline_deep(app: AppHandle, from: i64, to: i64) -> Vec<deep::Deep
     out
 }
 
+/// The files behind an event.
+#[tauri::command]
+pub async fn timeline_parts(kind: String, name: String, now: Option<String>) -> Vec<parts::Part> {
+    tauri::async_runtime::spawn_blocking(move || crate::system::Dirs::real().map(|d| parts::find(&kind, &name, now.as_deref(), &d.windows)).unwrap_or_default()).await.unwrap_or_default()
+}
+
+/// The interface names Windows' own files by `%SystemRoot%`: Windows is not always on C:.
+fn own(path: String) -> String {
+    if path.starts_with("%SystemRoot%") { crate::startup::expand(&path) } else { path }
+}
+
 /// A local file as the machine sees it; for a crash, the instructions at its address.
 #[tauri::command]
-pub async fn timeline_code(path: String, offset: Option<String>, stamp: Option<String>) -> Option<code::Code> {
+pub async fn timeline_code(path: String, offset: Option<String>, stamp: Option<String>, symbol: Option<String>) -> Option<code::Code> {
     tauri::async_runtime::spawn_blocking(move || {
+        let path = own(path);
         let file = std::path::PathBuf::from(&path);
         if !file.is_absolute() || path.starts_with(r"\\") {
             return None;
         }
         let hex = |s: Option<String>| s.and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok());
-        code::read(&file, hex(offset), hex(stamp).map(|s| s as u32))
+        code::read(&file, hex(offset), hex(stamp).map(|s| s as u32), symbol.as_deref())
     })
     .await
     .ok()
@@ -600,6 +613,7 @@ pub struct Maker {
 #[tauri::command]
 pub async fn timeline_module(path: String) -> Option<Maker> {
     tauri::async_runtime::spawn_blocking(move || {
+        let path = own(path);
         let file = std::path::PathBuf::from(&path);
         // A local file only: a network path would reach out to another computer.
         if !file.is_absolute() || path.starts_with(r"\\") {

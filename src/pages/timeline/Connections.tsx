@@ -66,6 +66,13 @@ function place(root: Node, width: number): { w: number; fit: number; h: number }
     n.y = TOP + n.depth * gap;
     n.children.forEach(down);
   };
+  // Fewer branches than the width: the tree stands in the middle.
+  const aside = ((Math.max(next, 3) - next) * COL) / 2;
+  const shift = (n: Node) => {
+    n.x += aside;
+    n.children.forEach(shift);
+  };
+  shift(root);
   down(root);
   return { w, fit, h: TOP + deep * gap + 100 };
 }
@@ -350,7 +357,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
             </g>
           </svg>
           {!tree.top.children.length && (
-            <div className="pointer-events-none absolute inset-x-8 top-[44%] text-center">
+            <div className="pointer-events-none absolute inset-x-8 top-[68%] text-center">
               <p className="text-[0.8125rem] text-muted">{t(searching ? "timeline.search.running" : finding ? "timeline.search.verdict.nothing" : "timeline.conn.bare")}</p>
             </div>
           )}

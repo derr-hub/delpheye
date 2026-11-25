@@ -126,6 +126,7 @@ pub fn run() {
             timeline::timeline_runs,
             timeline::timeline_deep,
             timeline::timeline_code,
+            timeline::timeline_parts,
             timeline::timeline_present,
             timeline::timeline_snapshots,
             timeline::timeline_snapshot_make,

@@ -38,6 +38,13 @@ function Tile({ icon: Icon, title, trust, children, now }: { icon: LucideIcon; t
   );
 }
 
+/** "2026-11-18T22:24:05" in local time, as the input wants it. */
+function local(s: number) {
+  const d = new Date(Math.round(s) * 1000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 /** Drag back: the board below shows what the computer was like then, and says how each thing is known. */
 export function Rewind({ at, onAt, extent, events, stats, present, now }: { at: number; onAt: (t: number) => void; extent: View; events: TimelineEvent[]; stats: Stats; present: Row[]; now: number }) {
   const { t, i18n } = useTranslation();
@@ -204,8 +211,35 @@ export function Rewind({ at, onAt, extent, events, stats, present, now }: { at: 
           <div className="min-w-0 flex-1">
             <p className={`text-[0.6875rem] font-medium ${isNow ? "text-safe" : "text-accent"}`}>{t(isNow ? "timeline.rewind.present" : "timeline.rewind.past")}</p>
             <p className="num font-display text-[1.75rem] font-semibold leading-tight" data-testid="rewind-date">
-              {new Date(at * 1000).toLocaleString(locale, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              {new Date(at * 1000).toLocaleString(locale, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </p>
+          </div>
+          <div className="flex items-center gap-1" data-testid="rewind-exact">
+            {([-60, -1] as const).map((d) => (
+              <button key={d} onClick={() => onAt(Math.max(extent.from, Math.round(at) + d))} className="num h-9 rounded-lg border border-line px-2 text-[0.75rem] text-muted hover:bg-raised hover:text-fg">
+                {d === -60 ? t("timeline.rewind.minus") : t("timeline.rewind.minus1")}
+              </button>
+            ))}
+            <input
+              type="datetime-local"
+              step={1}
+              aria-label={t("timeline.rewind.exact")}
+              title={t("timeline.rewind.exact")}
+              value={local(at)}
+              min={local(extent.from)}
+              max={local(now)}
+              onChange={(e) => {
+                const s = new Date(e.target.value).getTime() / 1000;
+                if (s && s >= extent.from && s <= now + 1) onAt(s);
+              }}
+              className="num h-9 rounded-lg border border-line bg-bg px-2.5 text-[0.8125rem]"
+              data-testid="rewind-input"
+            />
+            {([1, 60] as const).map((d) => (
+              <button key={d} onClick={() => onAt(Math.min(now, Math.round(at) + d))} className="num h-9 rounded-lg border border-line px-2 text-[0.75rem] text-muted hover:bg-raised hover:text-fg">
+                {d === 60 ? t("timeline.rewind.plus") : t("timeline.rewind.plus1")}
+              </button>
+            ))}
           </div>
           <Button icon={<SkipForward size={14} />} onClick={toPresent} disabled={isNow} data-testid="rewind-now">
             {t("timeline.rewind.toNow")}
@@ -256,7 +290,9 @@ export function Rewind({ at, onAt, extent, events, stats, present, now }: { at: 
             <RewindIcon x={toX(at) - 5.5} y={24.5} width={11} height={11} color="var(--color-bg)" strokeWidth={2.5} />
           </svg>
         </div>
-        <p className="mt-1 text-[0.6875rem] text-muted">{t("timeline.rewind.lead")}</p>
+        <p className="mt-1 text-[0.6875rem] text-muted">
+          {t("timeline.rewind.lead")} {r && !isNow ? t("timeline.rewind.nearest", { time: new Date(r.t * 1000).toLocaleTimeString("uk-UA") }) : ""}
+        </p>
       </section>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">

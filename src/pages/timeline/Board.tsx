@@ -14,7 +14,6 @@ const ROW = 42;
 const SMALL = 20;
 const GAP = 6;
 const TRACK_H = 44;
-const LAYERS_H = 150;
 export const NARROWEST = 20 * 60;
 
 const STEPS = [300, 900, 1800, 3600, 2 * 3600, 6 * 3600, 12 * 3600, 86_400, 2 * 86_400, 7 * 86_400, 14 * 86_400, 30 * 86_400, 91 * 86_400];
@@ -94,7 +93,6 @@ export function Board({
   onTrack,
   onLane,
   at,
-  layers,
   links,
   playing,
   runs,
@@ -119,8 +117,6 @@ export function Board({
   onTrack: (id: TrackId) => void;
   onLane: (id: LaneId) => void;
   at: Reading | null;
-  /** All tracks and events drawn over one another. */
-  layers: boolean;
   links: boolean;
   playing: boolean;
   runs: Run[];
@@ -169,19 +165,18 @@ export function Board({
     };
     const session = take(26);
     const activity = take(works.rows * 30 + 8);
-    const overlay = layers ? take(LAYERS_H) : 0;
     const tr = TRACKS.map((k) => {
       const on = tracks.has(k.id);
-      const h = layers ? 0 : on ? TRACK_H : SMALL;
-      return { k, on, y: layers ? 0 : take(h), h };
+      const h = on ? TRACK_H : SMALL;
+      return { k, on, y: take(h), h };
     });
     const ln = LANES.map((l) => {
       const on = lanes.has(l.id);
       const h = on && !empty.has(l.id) ? ROW : SMALL;
       return { l, on, y: take(h), h };
     });
-    return { session, activity, overlay, tr, ln, h: y };
-  }, [tracks, lanes, layers, works.rows, empty]);
+    return { session, activity, tr, ln, h: y };
+  }, [tracks, lanes, works.rows, empty]);
 
   // The page must not scroll while the wheel zooms, so the listener is not passive.
   const live = useRef({ view, w, extent, onView });
@@ -322,7 +317,7 @@ export function Board({
   const head = "absolute left-0 right-3 flex items-center gap-2.5 rounded-lg border border-line/60 bg-raised/50 px-2.5 text-left transition-colors hover:bg-raised";
   const length = (s: number) => (s >= 5400 ? `${Math.round(s / 3600)} ${t("units.h")}` : `${Math.max(1, Math.round(s / 60))} ${t("units.m")}`);
 
-  const plot = (id: TrackId, color: string, y: number, h: number, soft: boolean) => {
+  const plot = (id: TrackId, color: string, y: number, h: number) => {
     const py = (v: number) => y + h - 2 - v * (h - 6);
     return shapes
       .find((s) => s.id === id)!
@@ -332,8 +327,8 @@ export function Board({
         if (pts.length === 1) return <circle key={i} cx={x(run[0][0])} cy={py(run[0][1])} r={2} fill={color} />;
         return (
           <g key={i}>
-            <path d={`M${pts.join("L")}L${x(run[run.length - 1][0]).toFixed(1)},${y + h}L${x(run[0][0]).toFixed(1)},${y + h}Z`} fill={color} fillOpacity={soft ? 0.1 : 0.18} />
-            <path d={`M${pts.join("L")}`} fill="none" stroke={color} strokeWidth={1.6} strokeLinejoin="round" strokeOpacity={soft ? 0.85 : 1} />
+            <path d={`M${pts.join("L")}L${x(run[run.length - 1][0]).toFixed(1)},${y + h}L${x(run[0][0]).toFixed(1)},${y + h}Z`} fill={color} fillOpacity={0.18} />
+            <path d={`M${pts.join("L")}`} fill="none" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
           </g>
         );
       });
@@ -353,21 +348,7 @@ export function Board({
             <span className="block truncate text-[0.625rem] text-muted">{at?.top ?? "—"}</span>
           </span>
         </div>
-        {layers && (
-          <div className="absolute left-0 right-3 flex flex-col justify-center gap-1" style={{ top: rows.overlay, height: LAYERS_H }}>
-            {TRACKS.map((k) => {
-              const v = at ? k.get(at) : null;
-              return (
-                <button key={k.id} onClick={() => onTrack(k.id)} aria-pressed={tracks.has(k.id)} className={`flex items-center gap-2 rounded-md px-2 py-1 text-[0.6875rem] text-muted hover:bg-raised ${tracks.has(k.id) ? "" : "opacity-40"}`}>
-                  <span className="h-[3px] w-3 rounded-full" style={{ background: k.color }} />
-                  {t(`timeline.track.${k.id}`)}
-                  <span className="num ml-auto text-fg">{v === null ? "—" : `${Math.round(v)}${k.unit}`}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {!layers &&
+        {
           rows.tr.map(({ k, on, y, h }) => {
             const v = at ? k.get(at) : null;
             return (
@@ -546,23 +527,12 @@ export function Board({
             );
           })}
 
-          {layers && (
-            <g>
-              <rect x={0} y={rows.overlay} width={w} height={LAYERS_H} rx={8} fill="var(--color-raised)" fillOpacity={0.35} />
-              {groups.map((g) => (
-                <rect key={`${g.lane}${g.items[0].id}`} x={g.x - 1} y={rows.overlay} width={Math.max(3, g.end - g.x + 3)} height={LAYERS_H} fill={LANES.find((l) => l.id === g.lane)!.color} fillOpacity={0.22} />
-              ))}
-              {TRACKS.filter((k) => tracks.has(k.id)).map((k) => (
-                <g key={k.id}>{plot(k.id, k.color, rows.overlay, LAYERS_H, true)}</g>
-              ))}
-            </g>
-          )}
-          {!layers &&
+          {
             rows.tr.map(({ k, on, y, h }) =>
               on ? (
                 <g key={k.id}>
                   <rect x={0} y={y} width={w} height={h} rx={8} fill="var(--color-raised)" fillOpacity={0.35} />
-                  {plot(k.id, k.color, y, h, false)}
+                  {plot(k.id, k.color, y, h)}
                   {k.id === "temp" && readings.filter((r) => r.hot > 0).map((r) => <rect key={r.t} x={x(r.t)} y={y} width={Math.max(2, (Math.max(step, 60) / span) * w)} height={h} fill="#e5484d" fillOpacity={0.28} />)}
                 </g>
               ) : (
