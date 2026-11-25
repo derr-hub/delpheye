@@ -280,7 +280,7 @@ export async function picture(at: number, o: { event?: TimelineEvent | null; run
       for (const i of c.imports.slice(0, 4)) lib.push({ key: "imports", v: { dll: i.dll, n: i.count, names: i.names.slice(0, 3).join(", ") }, state: "ok" });
       break;
     }
-  add("library", lib, event?.kind === "appcrash" && event.now ? { key: maker?.exists ? (maker.windows ? "sModuleWindows" : maker.company ? "sModule" : "sModuleNone") : "sModuleGone", v: { name: event.now, company: maker?.company ?? "?" } } : code ? { key: "sMade", v: { list: code.made.length ? code.made.join(", ") : code.arch } } : { key: "sUnknown" });
+  add("library", lib, event?.kind === "appcrash" && event.now ? { key: maker?.exists ? (maker.windows ? "sModuleWindows" : maker.company ? "sModule" : "sModuleNone") : "sModuleGone", v: { name: event.now, company: maker?.company ?? "?" } } : code && !own ? { key: "stands", v: { name: (path ?? "").split("\\").pop() ?? "" } } : code ? { key: "sMade", v: { list: code.made.length ? code.made.join(", ") : code.arch } } : { key: "sUnknown" });
 
   // The Windows kernel.
   const ker: Fact[] = [];
