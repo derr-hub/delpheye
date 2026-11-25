@@ -20,6 +20,7 @@ mod router;
 mod security;
 mod startup;
 mod system;
+mod timeline;
 mod updates;
 mod watcher;
 mod wifi;
@@ -93,6 +94,7 @@ pub fn run() {
         .setup(|app| {
             open_main_window(app)?;
             app.manage(journal::Journal::open_for(app.handle()));
+            app.manage(timeline::Timeline::open_for(app.handle()));
             privacy::start(app.handle().clone());
             wifi::start_history(app.handle().clone());
             watcher::start(app.handle().clone());
@@ -110,12 +112,17 @@ pub fn run() {
             monitor::spawn(app.handle().clone(), &app.state::<monitor::MonitorState>());
             overlay::start(app);
             history::start(app.handle().clone());
+            timeline::start(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             metrics::system_info,
             system::app_status,
             system::relaunch_elevated,
+            timeline::timeline_range,
+            timeline::timeline_stats,
+            timeline::timeline_pause,
+            timeline::timeline_erase,
             headphones::headphones_list,
             headphones::headphones_now,
             headphones::headphones_switch,
@@ -216,6 +223,11 @@ pub fn run() {
                 }
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                timeline::close(app);
+            }
+        });
 }

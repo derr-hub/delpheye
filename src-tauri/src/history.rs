@@ -61,6 +61,13 @@ fn sample(app: &AppHandle) {
         on_battery: frame.as_ref().is_some_and(|f| f.on_battery()),
         battery,
     });
+    let gpu = frame.as_ref().and_then(|f| {
+        f.sensors()
+            .filter(|(h, s)| h.kind.starts_with("Gpu") && s.kind == "Load" && (s.name == "GPU Core" || s.name == "D3D 3D"))
+            .map(|(_, s)| s.value)
+            .max_by(f64::total_cmp)
+    });
+    crate::timeline::minute(app, cpu_temp, gpu_temp, gpu, hot, disk.map(|d| d.0));
     let day = local_day();
     let _ = app.state::<Journal>().with(|db| {
         db.execute_batch(SCHEMA)?;

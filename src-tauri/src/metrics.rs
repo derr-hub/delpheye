@@ -166,6 +166,7 @@ pub fn spawn(app: AppHandle) {
                 entry.memory += p.memory();
             }
             let mut top: Vec<ProcessInfo> = by_name.into_values().collect();
+            let busiest = top.iter().max_by(|a, b| a.cpu.total_cmp(&b.cpu)).map(|p| (p.name.clone(), p.cpu));
             top.sort_by(|a, b| b.memory.cmp(&a.memory));
             top.truncate(TOP_PROCESSES);
 
@@ -176,6 +177,8 @@ pub fn spawn(app: AppHandle) {
                 });
 
             crate::history::note_metrics(load.total, sys.used_memory(), sys.total_memory());
+            let ram = sys.used_memory() as f64 * 100.0 / sys.total_memory().max(1) as f64;
+            crate::timeline::note(load.total, ram, (rx as f64 / elapsed) as u64, (tx as f64 / elapsed) as u64, busiest);
             let snapshot = Snapshot {
                 cpu_usage: load.total,
                 cpu_frequency: sys.cpus().first().map(|c| c.frequency()).unwrap_or(0),
