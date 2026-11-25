@@ -151,7 +151,16 @@ pub fn packages(records: &[Record], action: &str) -> Vec<Event> {
 
 /// Programs that crashed, once per program and day.
 pub fn app_crashes(records: &[Record]) -> Vec<Event> {
-    records.iter().filter(|r| !r.get("AppName").is_empty()).map(|r| Event::windows(r.t, "appcrash", "happened", r.get("AppName"), Some(r.get("ModuleName").into()), &(r.t / 86_400).to_string())).collect()
+    records
+        .iter()
+        .filter(|r| !r.get("AppName").is_empty())
+        .map(|r| {
+            let mut e = Event::windows(r.t, "appcrash", "happened", r.get("AppName"), Some(r.get("ModuleName").into()), &(r.t / 86_400).to_string());
+            // Where the module is: whose it is can be asked later.
+            e.was = Some(r.get("ModulePath").to_string()).filter(|p| !p.is_empty());
+            e
+        })
+        .collect()
 }
 
 /// "20261120" at noon: the installer noted only the day.

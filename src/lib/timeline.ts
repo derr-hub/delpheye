@@ -157,10 +157,12 @@ export interface Cause {
 }
 
 const WEIGHT: Partial<Record<TimelineEvent["kind"], number>> = { alert: 0.4, driver: 0.3, update: 0.28, service: 0.18, program: 0.16, startup: 0.14, port: 0.05 };
-const COMMON = new Set(["corporation", "update", "driver", "microsoft", "windows", "service", "services", "host", "runtime", "desktop", "loader", "system", "kernel", "kernelbase", "ntdll", "client", "server", "helper", "launcher", "agent", "manager", "software", "technology", "technologies", "graphics", "audio", "network", "application", "shipping", "win64"]);
-const words = (s: string) => s.toLowerCase().split(/[^a-zа-яіїєґ0-9]+/).filter((w) => w.length > 3 && !/^\d+$/.test(w) && !COMMON.has(w));
+const COMMON = new Set(["corporation", "update", "driver", "microsoft", "windows", "service", "services", "host", "runtime", "desktop", "loader", "system", "kernel", "kernelbase", "ntdll", "client", "server", "helper", "launcher", "agent", "manager", "software", "technology", "technologies", "graphics", "audio", "network", "application", "shipping", "win64", "program", "programs", "files", "file", "common", "steam", "tools", "tool", "process", "module", "library", "version", "offline", "online", "games", "input", "output", "display", "sound", "bluetooth", "storage", "camera", "component", "firmware", "other", "device", "devices", "controller", "engine", "framework", "platform", "support", "setup", "installer", "security", "control", "monitor", "native"]);
+/** Makers of half of what is on any computer: sharing one says little. */
+export const GIANTS = ["intel", "nvidia", "realtek", "samsung", "asus", "asustek", "google", "adobe", "qualcomm", "mediatek", "lenovo", "advanced"];
+export const words = (s: string) => s.toLowerCase().split(/[^a-zа-яіїєґ0-9]+/).filter((w) => w.length > 4 && !/^\d+$/.test(w) && !COMMON.has(w) && !GIANTS.includes(w));
 /** The same word, or a long one beginning with the other: never a piece from the middle. */
-const akin = (a: string, b: string) => a === b || (a.length >= 6 && b.length >= 6 && (a.startsWith(b) || b.startsWith(a)));
+export const akin = (a: string, b: string) => a === b || (a.length >= 6 && b.length >= 6 && (a.startsWith(b) || b.startsWith(a)));
 
 export const isProblem = (e: TimelineEvent) => e.kind === "crash" || e.kind === "appcrash" || e.kind === "alert";
 
@@ -177,7 +179,8 @@ export function causes(problem: TimelineEvent, all: TimelineEvent[], days = 3): 
     if (e.kind === "alert" && (problem.kind === "alert" || hours > 2)) continue;
     const reasons: Reason[] = [];
     let score = weight * Math.exp(-hours / 48);
-    const theirs = words(`${e.name} ${e.now ?? ""}`);
+    // A service's value is a path: its folders are not its name.
+    const theirs = words(e.kind === "service" ? e.name : `${e.name} ${e.now ?? ""}`);
     if (problem.kind === "appcrash" && theirs.some((w) => [...own].some((o) => akin(w, o)))) {
       score += 0.4;
       reasons.push(e.kind === "program" ? "sameName" : "module");

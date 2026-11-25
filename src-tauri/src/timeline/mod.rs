@@ -496,6 +496,36 @@ pub async fn timeline_stats(app: AppHandle) -> Option<Stats> {
     stats(&app.state::<Timeline>())
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Maker {
+    exists: bool,
+    company: Option<String>,
+    description: Option<String>,
+    signed: Option<bool>,
+    /// Part of Windows: inside its folder and made by Microsoft.
+    windows: bool,
+}
+
+/// Whose file a crashed module is. Only reads it.
+#[tauri::command]
+pub async fn timeline_module(path: String) -> Option<Maker> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = std::path::PathBuf::from(&path);
+        // A local file only: a network path would reach out to another computer.
+        if !file.is_absolute() || path.starts_with(r"\\") {
+            return None;
+        }
+        let f = crate::startup::fileinfo::inspect(&file, true);
+        let inside = crate::system::Dirs::real().is_some_and(|d| path.to_lowercase().starts_with(&d.windows.to_string_lossy().to_lowercase()));
+        let windows = inside && f.company.as_deref().is_some_and(|c| c.contains("Microsoft"));
+        Some(Maker { exists: f.exists, company: f.company, description: f.description, signed: f.signed, windows })
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
 /// What is on the computer now, as of the last look.
 #[tauri::command]
 pub async fn timeline_present(app: AppHandle) -> Vec<snapshots::Row> {

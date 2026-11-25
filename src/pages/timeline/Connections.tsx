@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Layers, Maximize2, Play, Thermometer } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import { Layers, Loader2, Maximize2, Search, Thermometer } from "lucide-react";
 import { useFmt } from "../../lib/format";
+import { investigate, type Finding, type Maker, type Progress } from "../../lib/investigate";
 import { bundles, causes, iconOf, isProblem, laneOf, loadReadings, titleOf, valueOf, type Bundle, type Cause, type Level, type Reading, type TimelineEvent } from "../../lib/timeline";
 import { useWidth } from "./Board";
 import { EventCard, EventRow } from "./Cards";
+import { SearchResult, SearchSteps } from "./Search";
 
 interface Node {
   id: string;
@@ -22,7 +25,6 @@ interface Node {
   x: number;
   y: number;
   depth: number;
-  order: number;
 }
 
 const COL = 122;
@@ -75,7 +77,10 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
   const [days, setDays] = useState(3);
   const [picked, setPicked] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
-  const [lit, setLit] = useState<number | null>(null);
+  const [steps, setSteps] = useState<Progress[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [finding, setFinding] = useState<Finding | null>(null);
+  const run = useRef(0);
   const [opened, setOpened] = useState<Set<string>>(new Set());
   const [before, setBefore] = useState<Reading[] | null>(null);
   const [box, width] = useWidth<HTMLDivElement>(700);
@@ -90,7 +95,10 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
     let alive = true;
     setBefore(null);
     setPicked(null);
-    setLit(null);
+    run.current++;
+    setSteps([]);
+    setSearching(false);
+    setFinding(null);
     setOpened(new Set());
     loadReadings(root.t - 1800, root.t + 60, 60)
       .then((r) => alive && setBefore(r))
@@ -102,8 +110,9 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
 
   const tree = useMemo(() => {
     if (!root) return null;
-    const found = bundles(causes(root, all, days)).slice(0, 5);
-    const node = (n: Partial<Node> & Pick<Node, "id" | "kind" | "title" | "sub" | "color">): Node => ({ children: [], x: 0, y: 0, depth: 0, order: 0, ...n });
+    // After a search the map shows what is left standing, not merely what is near.
+    const found = bundles(finding ? finding.suspects.slice(0, 9).map((s) => ({ ...s.cause, score: s.score, level: s.level as Level })) : causes(root, all, days)).slice(0, 5);
+    const node = (n: Partial<Node> & Pick<Node, "id" | "kind" | "title" | "sub" | "color">): Node => ({ children: [], x: 0, y: 0, depth: 0, ...n });
     const top = node({ id: root.id, kind: "problem", title: titleOf(root, t), sub: valueOf(root, t) || fmt.dateTime(root.t), color: laneOf(root).color, e: root });
     // Oldest on the left: the map reads in the order things happened.
     const strongest = new Set(found.filter((b) => b.items.length > 1).slice(0, 2).map((b) => b.id));
@@ -128,7 +137,9 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
         for (const c of b.items.slice(0, 3).sort((a, z) => a.e.t - z.e.t)) n.children.push(node({ id: `c${c.e.id}`, kind: "cause", title: titleOf(c.e, t), sub: c.e.kind === "service" ? t("timeline.conn.service") : valueOf(c.e, t).slice(0, 34), color: laneOf(c.e).color, e: c.e, cause: c, level: c.level, parent: n.id }));
       top.children.push(n);
     }
-    if (before && before.length) {
+    const shared = finding?.conditions.filter((c) => c.id !== "normal") ?? [];
+    for (const c of shared) top.children.push(node({ id: `s${c.id}`, kind: "state", title: t(`timeline.search.short.${c.id}`, c.values ?? {}), sub: t("timeline.search.times", { n: c.values?.n ?? 0, of: c.values?.of ?? 0 }), color: c.id === "hour" || c.id === "program" ? "#2d7fd3" : "#d8434a", level: c.id === "hour" || c.id === "program" ? "possible" : "likely", parent: root.id }));
+    if (!shared.length && before && before.length) {
       const hot = Math.max(...before.map((r) => r.cpuTempMax ?? r.cpuTemp ?? 0));
       const ram = Math.max(...before.map((r) => r.ram ?? 0));
       const bad = hot >= 92 || ram >= 92 || before.some((r) => r.hot > 0);
@@ -142,31 +153,38 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
       n.children.forEach(walk);
     };
     walk(top);
-    // The order in which the search lights up: strongest causes first, then what they consist of.
-    let i = 1;
-    for (const b of found) {
-      const n = flat.find((x) => x.id === `b${b.id}`);
-      if (!n) continue;
-      n.order = i++;
-      n.children.forEach((c) => (c.order = i++));
-    }
-    flat.forEach((n) => {
-      if (n.kind === "state" || n.kind === "after") n.order = i++;
-    });
-    return { top, flat, w, fit, h, best: found[0] ?? null, steps: i };
-  }, [root, all, days, before, t, fmt, width, opened]);
+    return { top, flat, w, fit, h, best: found[0] ?? null };
+  }, [root, all, days, before, t, fmt, width, opened, finding]);
 
   const height = HEIGHT;
   const fitted = tree?.fit ?? 1;
   useEffect(() => setPan({ x: 0, y: 0, k: 1 }), [root?.id, days]);
 
-  // The search: each step lights the next node.
-  useEffect(() => {
-    if (lit === null || !tree) return;
-    if (lit >= tree.steps) return;
-    const id = window.setTimeout(() => setLit(lit + 1), still ? 0 : 420);
-    return () => window.clearTimeout(id);
-  }, [lit, tree, still]);
+  /** The real search. Steps are held long enough to be read; a new problem abandons it. */
+  const search = async () => {
+    if (!root || searching) return;
+    const mine = ++run.current;
+    setPicked(null);
+    setFinding(null);
+    setSteps([]);
+    setSearching(true);
+    try {
+      const f = await investigate(root, all, {
+        readings: loadReadings,
+        maker: (path) => invoke<Maker | null>("timeline_module", { path }).catch(() => null),
+        now: Math.floor(Date.now() / 1000),
+        onStep: async (p) => {
+          if (mine !== run.current) return;
+          setSteps((s) => [...s, p]);
+          if (!still) await new Promise((r) => setTimeout(r, 450));
+        },
+      });
+      if (mine === run.current) setFinding(f);
+    } catch {
+      /* nothing found is shown below */
+    }
+    if (mine === run.current) setSearching(false);
+  };
 
   const area = useRef<SVGSVGElement>(null);
   useEffect(() => {
@@ -195,7 +213,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
       n.children.forEach((c) => family.add(c.id));
     }
   }
-  const dim = (n: Node) => (lit !== null && n.order > lit ? 0.12 : focus && focus !== tree.top.id && !family.has(n.id) ? 0.28 : 1);
+  const dim = (n: Node) => (searching && n.depth > 0 ? 0.45 : focus && focus !== tree.top.id && !family.has(n.id) ? 0.28 : 1);
   const scale = fitted * pan.k;
   const ox = width / 2 - (tree.w / 2) * scale + pan.x;
   const oy = Math.max(8, (height - tree.h * fitted) / 2) + pan.y;
@@ -217,12 +235,10 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
           ))}
         </div>
         <button
-          onClick={() => {
-            setPicked(null);
-            setLit(0);
-          }} className="flex h-8 items-center gap-2 rounded-lg bg-accent px-3 text-[0.75rem] font-semibold text-bg" data-testid="conn-search">
-          <Play size={13} />
-          {t("timeline.conn.search")}
+          onClick={search}
+          disabled={searching} className="flex h-8 items-center gap-2 rounded-lg bg-accent px-3 text-[0.75rem] font-semibold text-bg" data-testid="conn-search">
+          {searching ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+          {t(searching ? "timeline.search.busy" : "timeline.conn.search")}
         </button>
         <button onClick={() => setPan({ x: 0, y: 0, k: 1 })} className="flex h-8 items-center gap-1.5 rounded-lg border border-line px-2.5 text-[0.75rem] text-muted hover:bg-raised" title={t("timeline.conn.fit")}>
           <Maximize2 size={13} />
@@ -291,7 +307,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
                     className="cursor-pointer outline-none"
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: dim(n), scale: 1 }}
-                    transition={{ type: "spring", stiffness: 320, damping: 24, delay: still || lit !== null || focus ? 0 : n.depth * 0.25 + 0.1 }}
+                    transition={{ type: "spring", stiffness: 320, damping: 24, delay: still || focus ? 0 : n.depth * 0.25 + 0.1 }}
                     style={{ transformOrigin: `${n.x}px ${n.y}px`, transformBox: "view-box" }}
                     onPointerEnter={() => setHover(n.id)}
                     onPointerLeave={() => setHover(null)}
@@ -324,7 +340,18 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
           <p className="pointer-events-none absolute bottom-2.5 left-4 right-4 text-[0.6875rem] text-muted">{t("timeline.conn.hint")}</p>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+          {(searching || finding) && <SearchSteps done={steps} running={searching} />}
+          {finding && !chosen && (
+            <SearchResult
+              problem={root}
+              f={finding}
+              onPick={(id) => {
+                const n = tree.flat.find((x) => x.id === `b${id}` || x.id === `c${id}`) ?? tree.flat.find((x) => x.bundle?.items.some((c) => c.e.id === id));
+                if (n) setPicked(n.id);
+              }}
+            />
+          )}
           {chosen && chosen.kind === "bundle" && chosen.bundle ? (
             <section className="rounded-card border border-line bg-surface p-5">
               <h3 className="font-display text-[1rem] font-semibold">{chosen.title}</h3>
@@ -358,7 +385,7 @@ export function Connections({ all, start }: { all: TimelineEvent[]; start: Timel
               <p className="mt-1 text-muted">{t("timeline.conn.stateText")}</p>
               <p className="num mt-2">{chosen.sub}</p>
             </section>
-          ) : (
+          ) : finding || searching ? null : (
             <section className="rounded-card border border-line bg-surface p-5" data-testid="conn-summary">
               <h3 className="font-display text-[1rem] font-semibold">{t("timeline.conn.summary")}</h3>
               <p className="mt-2 text-[0.8125rem] leading-relaxed">{tree.best ? t(`timeline.conn.best.${tree.best.level}`, { name: titleOf(tree.best.items[0].e, t) }) : t("timeline.before.none")}</p>
@@ -377,7 +404,7 @@ function Reasons({ c }: { c: Cause }) {
   const { t } = useTranslation();
   return (
     <div className="mt-2">
-      <span className="rounded-full px-2 py-0.5 text-[0.6875rem] font-medium" style={{ background: `${EDGE[c.level].color}26`, color: EDGE[c.level].color }}>
+      <span className="inline-block rounded-full px-2 py-0.5 text-[0.6875rem] font-medium" style={{ background: `${EDGE[c.level].color}26`, color: EDGE[c.level].color }}>
         {t(`timeline.level.${c.level}`)}
       </span>
       <ul className="mt-2 list-inside list-disc space-y-0.5 text-[0.75rem] text-muted">

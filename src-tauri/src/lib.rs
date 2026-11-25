@@ -122,6 +122,7 @@ pub fn run() {
             timeline::timeline_readings,
             timeline::timeline_events,
             timeline::timeline_stats,
+            timeline::timeline_module,
             timeline::timeline_present,
             timeline::timeline_snapshots,
             timeline::timeline_snapshot_make,
